@@ -1,5 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: squeekboard
+Upstream-Contact: Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>
 Source: https://source.puri.sm/Librem5/squeekboard
 
 Files: *
@@ -52,6 +53,11 @@ License: GPL-3+
 Files: data/keyboards/se.yaml
 Copyright: 2019 Andreas Rönnquist <andreas@ronnquist.net>
            2019 Purism SPC
+License: GPL-3+
+
+Files: debian/*
+Copyright: 2019 Purism SPC
+           2020 Arnaud Ferraris <arnaud.ferraris@gmail.com>
 License: GPL-3+
 
 Files: eek/eek-layout.h
