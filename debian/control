@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>
 Build-Depends:
  cargo,
- debhelper (>= 10),
+ debhelper-compat (= 12),
  meson (>=0.51.0),
  ninja-build,
  pkg-config,
