@@ -1,2 +1,3 @@
 0001-Cargo.toml-update-to-Debian-dependencies-versions.patch
 0002-popover.rs-fix-build-with-gtk-rs-0.7.0.patch
+0003-data-keyboards-fix-typos.patch
