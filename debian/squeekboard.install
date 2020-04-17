@@ -1,2 +1,3 @@
 tools/squeekboard-restyled usr/bin
-usr/bin/squeekboard /usr/bin
+usr/bin/squeekboard usr/bin
+usr/share/applications/sm.puri.Squeekboard.desktop usr/share/applications
