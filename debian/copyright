@@ -23,13 +23,11 @@ Copyright: 2019 Purism SPC
            2019 Squeekboard Contributors
 License: GPL-3+
 
-Files: data/keyboards/de.yaml
+Files: data/keyboards/de_wide.yaml
+       data/keyboards/de.yaml
+       data/keyboards/jp+kana_wide.yaml
+       data/keyboards/jp+kana.yaml
 Copyright: 2019 Mark Müller <markmueller86@gmail.com>
-License: GPL-3+
-
-Files: data/keyboards/el.yaml
-Copyright: 2019 Antonis Tsolomitis
-           2019 Purism SPC
 License: GPL-3+
 
 Files: data/keyboards/es.yaml
@@ -41,13 +39,13 @@ Files: data/keyboards/fi.yaml
 Copyright: 2019 uzanto <miguejim@mailbox.org>
 License: GPL-3+
 
+Files: data/keyboards/gr.yaml
+Copyright: 2019 Antonis Tsolomitis <atsol@aegean.gr>
+License: GPL-3+
+
 Files: data/keyboards/it.yaml
 Copyright: 2019 Antonio Pandolfo <ant.pandolfo@gmail.com>
            2019 Purism SPC
-License: GPL-3+
-
-Files: data/keyboards/ja+kana.yaml
-Copyright: 2019 Mark Müller <markmueller86@gmail.com>
 License: GPL-3+
 
 Files: data/keyboards/se.yaml
@@ -60,29 +58,18 @@ Copyright: 2019 Purism SPC
            2020 Arnaud Ferraris <arnaud.ferraris@gmail.com>
 License: GPL-3+
 
-Files: eek/eek-layout.h
-       eek/eek-layout.c
-       eek/eek-element.c
-       eek/eek-gtk-keyboard.c
-       eek/eek-gtk-keyboard.h
-       eek/eek.c
-       eek/eek-xml-layout.h
-       eek/eek-xml-layout.c
-       eek/eek-renderer.h
-       eek/eek-element.h
-       eek/eek-renderer.c
-       eekboard/eekboard-service.c
-       eekboard/eekboard-service.h
+Files: eek/eek.c
+       eek/eek-element.*
+       eek/eek-gtk-keyboard.*
+       eek/eek-renderer.*
 Copyright: 2010-2011 Daiki Ueno <ueno@unixuser.org>
            2010-2011 Red Hat, Inc.
            2018-2019 Purism SPC
            2019 Squeekboard Contributors
 License: GPL-3+
 
-Files: eek/eek-keyboard.c
-       eek/eek-types.h
-       eek/eek-types.c
-       eek/eek-keyboard.h
+Files: eek/eek-keyboard.*
+       eek/eek-types.*
        eek/eek.h
        src/server-main.c
        src/server-context-service.h
@@ -93,17 +80,10 @@ License: LGPL-2+
 
 Files: eek/layersurface.c
        src/wayland.c
-       src/key-emitter.c
        meson.build
        src/meson.build
-       po/meson.build
 Copyright: 2018-2019 Purism SPC
 License: GPL-3+
-
-Files: eekboard/keymap.c
-Copyright: 2000 Red Hat, Inc.
-           2019 Purism, SPC
-License: LGPL-2+
 
 Files: eekboard/eekboard-context-service.c
 Copyright: 2010-2011 Daiki Ueno <ueno@unixuser.org>
@@ -119,14 +99,26 @@ Copyright: 2010-2011 Daiki Ueno <ueno@unixuser.org>
            2010-2011 Red Hat, Inc.
 License: GPL-3+
 
-Files: po/POTFILES.skip
-       po/LINGUAS
-       po/ja.po
-       po/POTFILES.in
-Copyright: 2010-2011 Daiki Ueno <ueno@unixuser.org>
-License: LGPL-2+
-Comment:
- Only the po/ja.po file contains a license, but these are all grouped together.
+Files: protocols/input-method-unstable-v2.xml
+Copyright: 2012-2013 Intel Corporation
+           2015-2016 Jan Arne Petersen
+           2017-2018 Red Hat, Inc.
+           2018 Purism SPC
+License: MIT
+
+Files: protocols/text-input-unstable-v3.xml
+Copyright: 2012-2013 Intel Corporation
+           2015-2016 Jan Arne Petersen
+           2017-2018 Red Hat, Inc.
+           2018 Purism SPC
+License: X11
+
+Files: protocols/virtual-keyboard-unstable-v1.xml
+Copyright: 2008-2011  Kristian Høgsberg
+           2010-2013  Intel Corporation
+           2012-2013  Collabora, Ltd.
+           2018 Purism SPC
+License: MIT
 
 Files: protocols/wlr-layer-shell-unstable-v1.xml
 Copyright: 2017 Drew DeVault
@@ -199,3 +191,23 @@ License: X11
  RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF
  CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+License: MIT
+ Permission is hereby granted, free of charge, to any person obtaining a
+ copy of this software and associated documentation files (the "Software"),
+ to deal in the Software without restriction, including without limitation
+ the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ and/or sell copies of the Software, and to permit persons to whom the
+ Software is furnished to do so, subject to the following conditions:
+ .
+ The above copyright notice and this permission notice (including the next
+ paragraph) shall be included in all copies or substantial portions of the
+ Software.
+ .
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+ THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ DEALINGS IN THE SOFTWARE.
