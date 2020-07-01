@@ -51,6 +51,7 @@ foreach layout : [
     'us', 'us_wide',
     'de', 'de_wide',
     'dk',
+    'epo',
     'es',
     'fi',
     'fr',
