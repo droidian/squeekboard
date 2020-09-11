@@ -42,9 +42,6 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0, };
 
-#define EEKBOARD_CONTEXT_SERVICE_GET_PRIVATE(obj)                       \
-    (G_TYPE_INSTANCE_GET_PRIVATE ((obj), EEKBOARD_TYPE_CONTEXT_SERVICE, EekboardContextServicePrivate))
-
 struct _EekboardContextServicePrivate {
     LevelKeyboard *keyboard; // currently used keyboard
     GSettings *settings; // Owned reference
@@ -241,7 +238,8 @@ eekboard_context_service_class_init (EekboardContextServiceClass *klass)
 static void
 eekboard_context_service_init (EekboardContextService *self)
 {
-    self->priv = EEKBOARD_CONTEXT_SERVICE_GET_PRIVATE(self);
+    self->priv = eekboard_context_service_get_instance_private (self);
+
     const char *schema_name = "org.gnome.desktop.input-sources";
     GSettingsSchemaSource *ssrc = g_settings_schema_source_get_default();
     g_autoptr(GSettingsSchema) schema = NULL;
