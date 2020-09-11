@@ -107,8 +107,8 @@ pub mod c {
 
     impl Bounds {
         pub fn contains(&self, point: &Point) -> bool {
-            (point.x > self.x && point.x < self.x + self.width
-                && point.y > self.y && point.y < self.y + self.height)
+            point.x > self.x && point.x < self.x + self.width
+                && point.y > self.y && point.y < self.y + self.height
         }
     }
 
