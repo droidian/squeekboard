@@ -35,7 +35,6 @@ G_BEGIN_DECLS
 
 #define EEKBOARD_TYPE_CONTEXT_SERVICE (eekboard_context_service_get_type())
 
-typedef struct _EekboardContextServicePrivate EekboardContextServicePrivate;
 G_DECLARE_FINAL_TYPE(EekboardContextService, eekboard_context_service, EEKBOARD, CONTEXT_SERVICE, GObject)
 
 EekboardContextService *eekboard_context_service_new(struct squeek_layout_state *state);

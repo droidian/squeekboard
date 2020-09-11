@@ -55,11 +55,8 @@ static guint signals[LAST_SIGNAL] = { 0, };
  */
 struct _EekboardContextService {
     GObject parent;
-    EekboardContextServicePrivate *priv;
     struct squeek_layout_state *layout; // Unowned
-};
 
-struct _EekboardContextServicePrivate {
     LevelKeyboard *keyboard; // currently used keyboard
     GSettings *settings; // Owned reference
 
@@ -70,7 +67,7 @@ struct _EekboardContextServicePrivate {
     struct submission *submission; // unowned
 };
 
-G_DEFINE_TYPE_WITH_PRIVATE (EekboardContextService, eekboard_context_service, G_TYPE_OBJECT);
+G_DEFINE_TYPE (EekboardContextService, eekboard_context_service, G_TYPE_OBJECT);
 
 static void
 eekboard_context_service_set_property (GObject      *object,
@@ -96,7 +93,7 @@ eekboard_context_service_get_property (GObject    *object,
 
     switch (prop_id) {
     case PROP_KEYBOARD:
-        g_value_set_object (value, context->priv->keyboard);
+        g_value_set_object (value, context->keyboard);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -157,12 +154,12 @@ eekboard_context_service_use_layout(EekboardContextService *context, struct sque
     struct squeek_layout *layout = squeek_load_layout(layout_name, state->arrangement);
     LevelKeyboard *keyboard = level_keyboard_new(layout);
     // set as current
-    LevelKeyboard *previous_keyboard = context->priv->keyboard;
-    context->priv->keyboard = keyboard;
+    LevelKeyboard *previous_keyboard = context->keyboard;
+    context->keyboard = keyboard;
     // Update the keymap if necessary.
     // TODO: Update submission on change event
-    if (context->priv->submission) {
-        submission_set_keyboard(context->priv->submission, keyboard, timestamp);
+    if (context->submission) {
+        submission_set_keyboard(context->submission, keyboard, timestamp);
     }
 
     // Update UI
@@ -177,7 +174,7 @@ eekboard_context_service_use_layout(EekboardContextService *context, struct sque
 static void eekboard_context_service_update_settings_layout(EekboardContextService *context) {
     g_autofree gchar *keyboard_layout = NULL;
     g_autofree gchar *keyboard_type = NULL;
-    settings_get_layout(context->priv->settings,
+    settings_get_layout(context->settings,
                         &keyboard_type, &keyboard_layout);
 
     if (g_strcmp0(context->layout->layout_name, keyboard_layout) != 0 || context->layout->overlay_name) {
@@ -255,8 +252,6 @@ eekboard_context_service_class_init (EekboardContextServiceClass *klass)
 static void
 eekboard_context_service_init (EekboardContextService *self)
 {
-    self->priv = eekboard_context_service_get_instance_private (self);
-
     const char *schema_name = "org.gnome.desktop.input-sources";
     GSettingsSchemaSource *ssrc = g_settings_schema_source_get_default();
     g_autoptr(GSettingsSchema) schema = NULL;
@@ -270,8 +265,8 @@ eekboard_context_service_init (EekboardContextService *self)
     if (schema) {
         // Not referencing the found schema directly,
         // because it's not clear how...
-        self->priv->settings = g_settings_new (schema_name);
-        gulong conn_id = g_signal_connect(self->priv->settings, "change-event",
+        self->settings = g_settings_new (schema_name);
+        gulong conn_id = g_signal_connect(self->settings, "change-event",
                                           G_CALLBACK(settings_handle_layout_changed),
                                           self);
         if (conn_id == 0) {
@@ -307,7 +302,7 @@ eekboard_context_service_destroy (EekboardContextService *context)
 LevelKeyboard *
 eekboard_context_service_get_keyboard (EekboardContextService *context)
 {
-    return context->priv->keyboard;
+    return context->keyboard;
 }
 
 void eekboard_context_service_set_hint_purpose(EekboardContextService *context,
@@ -347,13 +342,13 @@ EekboardContextService *eekboard_context_service_new(struct squeek_layout_state 
 }
 
 void eekboard_context_service_set_submission(EekboardContextService *context, struct submission *submission) {
-    context->priv->submission = submission;
-    if (context->priv->submission) {
+    context->submission = submission;
+    if (context->submission) {
         uint32_t time = gdk_event_get_time(NULL);
-        submission_set_keyboard(context->priv->submission, context->priv->keyboard, time);
+        submission_set_keyboard(context->submission, context->keyboard, time);
     }
 }
 
 void eekboard_context_service_set_ui(EekboardContextService *context, ServerContextService *ui) {
-    context->priv->ui = ui;
+    context->ui = ui;
 }
