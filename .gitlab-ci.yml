@@ -36,7 +36,7 @@ build_meson:
     expire_in: 3h
   script:
     - apt-get -y build-dep .
-    - meson . _build/ -Ddepdatadir=/usr/share
+    - meson . _build/ -Ddepdatadir=/usr/share --werror
     - ninja -C _build install
 
 build_deb:
