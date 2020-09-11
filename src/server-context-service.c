@@ -55,30 +55,30 @@ G_DEFINE_TYPE(ServerContextService, server_context_service, G_TYPE_OBJECT);
 static void
 on_destroy (GtkWidget *widget, gpointer user_data)
 {
-    ServerContextService *context = user_data;
+    ServerContextService *self = user_data;
 
-    g_assert (widget == GTK_WIDGET(context->window));
+    g_assert (widget == GTK_WIDGET(self->window));
 
-    context->window = NULL;
-    context->widget = NULL;
+    self->window = NULL;
+    self->widget = NULL;
 
     //eekboard_context_service_destroy (EEKBOARD_CONTEXT_SERVICE (context));
 }
 
 static void
 on_notify_map (GObject    *object,
-               ServerContextService *context)
+               ServerContextService *self)
 {
-    g_object_set (context, "visible", TRUE, NULL);
+    (void)object;
+    g_object_set (self, "visible", TRUE, NULL);
 }
 
 
 static void
 on_notify_unmap (GObject    *object,
-                 ServerContextService *context)
+                 ServerContextService *self)
 {
-    (void)object;
-    g_object_set (context, "visible", FALSE, NULL);
+    g_object_set (self, "visible", FALSE, NULL);
 }
 
 static uint32_t
@@ -94,7 +94,7 @@ calculate_height(int32_t width)
 }
 
 static void
-on_surface_configure(PhoshLayerSurface *surface, ServerContextService *context)
+on_surface_configure(PhoshLayerSurface *surface, ServerContextService *self)
 {
     gint width;
     gint height;
@@ -116,8 +116,8 @@ on_surface_configure(PhoshLayerSurface *surface, ServerContextService *context)
     // as it's likely to create pointless loops
     // of request->reject->request_again->...
     if (desired_height != configured_height
-            && context->last_requested_height != desired_height) {
-        context->last_requested_height = desired_height;
+            && self->last_requested_height != desired_height) {
+        self->last_requested_height = desired_height;
         phosh_layer_surface_set_size(surface, 0,
                                      (gint)desired_height);
         phosh_layer_surface_set_exclusive_zone(surface, (gint)desired_height);
@@ -126,16 +126,16 @@ on_surface_configure(PhoshLayerSurface *surface, ServerContextService *context)
 }
 
 static void
-make_window (ServerContextService *context)
+make_window (ServerContextService *self)
 {
-    if (context->window)
+    if (self->window)
         g_error("Window already present");
 
     struct squeek_output_handle output = squeek_outputs_get_current(squeek_wayland->outputs);
-    squeek_uiman_set_output(context->manager, output);
-    uint32_t height = squeek_uiman_get_perceptual_height(context->manager);
+    squeek_uiman_set_output(self->manager, output);
+    uint32_t height = squeek_uiman_get_perceptual_height(self->manager);
 
-    context->window = g_object_new (
+    self->window = g_object_new (
         PHOSH_TYPE_LAYER_SURFACE,
         "layer-shell", squeek_wayland->layer_shell,
         "wl-output", output.output,
@@ -150,11 +150,11 @@ make_window (ServerContextService *context)
         NULL
     );
 
-    g_object_connect (context->window,
-                      "signal::destroy", G_CALLBACK(on_destroy), context,
-                      "signal::map", G_CALLBACK(on_notify_map), context,
-                      "signal::unmap", G_CALLBACK(on_notify_unmap), context,
-                      "signal::configured", G_CALLBACK(on_surface_configure), context,
+    g_object_connect (self->window,
+                      "signal::destroy", G_CALLBACK(on_destroy), self,
+                      "signal::map", G_CALLBACK(on_notify_map), self,
+                      "signal::unmap", G_CALLBACK(on_notify_unmap), self,
+                      "signal::configured", G_CALLBACK(on_surface_configure), self,
                       NULL);
 
     // The properties below are just to make hacking easier.
@@ -162,87 +162,87 @@ make_window (ServerContextService *context)
     // and there's no space in the protocol for others.
     // Those may still be useful in the future,
     // or for hacks with regular windows.
-    gtk_widget_set_can_focus (GTK_WIDGET(context->window), FALSE);
-    g_object_set (G_OBJECT(context->window), "accept_focus", FALSE, NULL);
-    gtk_window_set_title (GTK_WINDOW(context->window),
+    gtk_widget_set_can_focus (GTK_WIDGET(self->window), FALSE);
+    g_object_set (G_OBJECT(self->window), "accept_focus", FALSE, NULL);
+    gtk_window_set_title (GTK_WINDOW(self->window),
                           _("Squeekboard"));
-    gtk_window_set_icon_name (GTK_WINDOW(context->window), "squeekboard");
-    gtk_window_set_keep_above (GTK_WINDOW(context->window), TRUE);
+    gtk_window_set_icon_name (GTK_WINDOW(self->window), "squeekboard");
+    gtk_window_set_keep_above (GTK_WINDOW(self->window), TRUE);
 }
 
 static void
-destroy_window (ServerContextService *context)
+destroy_window (ServerContextService *self)
 {
-    gtk_widget_destroy (GTK_WIDGET (context->window));
-    context->window = NULL;
+    gtk_widget_destroy (GTK_WIDGET (self->window));
+    self->window = NULL;
 }
 
 static void
-make_widget (ServerContextService *context)
+make_widget (ServerContextService *self)
 {
-    if (context->widget) {
-        gtk_widget_destroy(context->widget);
-        context->widget = NULL;
+    if (self->widget) {
+        gtk_widget_destroy(self->widget);
+        self->widget = NULL;
     }
-    context->widget = eek_gtk_keyboard_new (context->state, context->submission, context->layout);
+    self->widget = eek_gtk_keyboard_new (self->state, self->submission, self->layout);
 
-    gtk_widget_set_has_tooltip (context->widget, TRUE);
-    gtk_container_add (GTK_CONTAINER(context->window), context->widget);
-    gtk_widget_show_all(context->widget);
+    gtk_widget_set_has_tooltip (self->widget, TRUE);
+    gtk_container_add (GTK_CONTAINER(self->window), self->widget);
+    gtk_widget_show_all(self->widget);
 }
 
 static gboolean
-on_hide (ServerContextService *context)
+on_hide (ServerContextService *self)
 {
-    gtk_widget_hide (GTK_WIDGET(context->window));
-    context->hiding = 0;
+    gtk_widget_hide (GTK_WIDGET(self->window));
+    self->hiding = 0;
 
     return G_SOURCE_REMOVE;
 }
 
 static void
-server_context_service_real_show_keyboard (ServerContextService *context)
+server_context_service_real_show_keyboard (ServerContextService *self)
 {
-    if (context->hiding) {
-	    g_source_remove (context->hiding);
-	    context->hiding = 0;
+    if (self->hiding) {
+	    g_source_remove (self->hiding);
+	    self->hiding = 0;
     }
 
-    if (!context->window)
-        make_window (context);
-    if (!context->widget)
-        make_widget (context);
+    if (!self->window)
+        make_window (self);
+    if (!self->widget)
+        make_widget (self);
 
-    context->visible = TRUE;
-    gtk_widget_show (GTK_WIDGET(context->window));
+    self->visible = TRUE;
+    gtk_widget_show (GTK_WIDGET(self->window));
 }
 
 static void
-server_context_service_real_hide_keyboard (ServerContextService *context)
+server_context_service_real_hide_keyboard (ServerContextService *self)
 {
-    if (!context->hiding)
-        context->hiding = g_timeout_add (200, (GSourceFunc) on_hide, context);
+    if (!self->hiding)
+        self->hiding = g_timeout_add (200, (GSourceFunc) on_hide, self);
 
-    context->visible = FALSE;
+    self->visible = FALSE;
 }
 
 void
-server_context_service_show_keyboard (ServerContextService *context)
+server_context_service_show_keyboard (ServerContextService *self)
 {
-    g_return_if_fail (SERVER_IS_CONTEXT_SERVICE(context));
+    g_return_if_fail (SERVER_IS_CONTEXT_SERVICE(self));
 
-    if (!context->visible) {
-        server_context_service_real_show_keyboard (context);
+    if (!self->visible) {
+        server_context_service_real_show_keyboard (self);
     }
 }
 
 void
-server_context_service_hide_keyboard (ServerContextService *context)
+server_context_service_hide_keyboard (ServerContextService *self)
 {
-    g_return_if_fail (SERVER_IS_CONTEXT_SERVICE(context));
+    g_return_if_fail (SERVER_IS_CONTEXT_SERVICE(self));
 
-    if (context->visible) {
-        server_context_service_real_hide_keyboard (context);
+    if (self->visible) {
+        server_context_service_real_hide_keyboard (self);
     }
 }
 
@@ -252,11 +252,11 @@ server_context_service_set_property (GObject      *object,
                                      const GValue *value,
                                      GParamSpec   *pspec)
 {
-    ServerContextService *context = SERVER_CONTEXT_SERVICE(object);
+    ServerContextService *self = SERVER_CONTEXT_SERVICE(object);
 
     switch (prop_id) {
     case PROP_VISIBLE:
-        context->visible = g_value_get_boolean (value);
+        self->visible = g_value_get_boolean (value);
         break;
 
     default:
@@ -271,10 +271,10 @@ server_context_service_get_property (GObject    *object,
                                        GValue     *value,
                                        GParamSpec *pspec)
 {
-    ServerContextService *context = SERVER_CONTEXT_SERVICE(object);
+    ServerContextService *self = SERVER_CONTEXT_SERVICE(object);
     switch (prop_id) {
     case PROP_VISIBLE:
-        g_value_set_boolean (value, context->visible);
+        g_value_set_boolean (value, self->visible);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -285,10 +285,10 @@ server_context_service_get_property (GObject    *object,
 static void
 server_context_service_dispose (GObject *object)
 {
-    ServerContextService *context = SERVER_CONTEXT_SERVICE(object);
+    ServerContextService *self = SERVER_CONTEXT_SERVICE(object);
 
-    destroy_window (context);
-    context->widget = NULL;
+    destroy_window (self);
+    self->widget = NULL;
 
     G_OBJECT_CLASS (server_context_service_parent_class)->dispose (object);
 }
@@ -317,16 +317,16 @@ server_context_service_class_init (ServerContextServiceClass *klass)
 }
 
 static void
-server_context_service_init (ServerContextService *state) {
-    (void)state;
+server_context_service_init (ServerContextService *self) {
+    (void)self;
 }
 
 ServerContextService *
-server_context_service_new (EekboardContextService *state, struct submission *submission, struct squeek_layout_state *layout, struct ui_manager *uiman)
+server_context_service_new (EekboardContextService *self, struct submission *submission, struct squeek_layout_state *layout, struct ui_manager *uiman)
 {
     ServerContextService *ui = g_object_new (SERVER_TYPE_CONTEXT_SERVICE, NULL);
     ui->submission = submission;
-    ui->state = state;
+    ui->state = self;
     ui->layout = layout;
     ui->manager = uiman;
     return ui;
