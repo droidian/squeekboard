@@ -214,7 +214,7 @@ eekboard_context_service_class_init (EekboardContextServiceClass *klass)
         g_signal_new (I_("destroyed"),
                       G_TYPE_FROM_CLASS(gobject_class),
                       G_SIGNAL_RUN_LAST,
-                      G_STRUCT_OFFSET(EekboardContextServiceClass, destroyed),
+                      0,
                       NULL,
                       NULL,
                       g_cclosure_marshal_VOID__VOID,

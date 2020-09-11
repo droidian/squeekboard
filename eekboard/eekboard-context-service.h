@@ -71,10 +71,6 @@ struct _EekboardContextServiceClass {
     /*< private >*/
     GObjectClass parent_class;
 
-    /*< public >*/
-    /* signals */
-    void         (*destroyed)          (EekboardContextService *self);
-
     /*< private >*/
     /* padding */
     gpointer pdummy[24];
