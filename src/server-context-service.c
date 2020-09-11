@@ -31,6 +31,7 @@
 enum {
     PROP_0,
     PROP_VISIBLE,
+    PROP_ENABLED,
     PROP_LAST
 };
 
@@ -44,6 +45,7 @@ struct _ServerContextService {
     struct ui_manager *manager; // unowned
 
     gboolean visible;
+    gboolean enabled;
     PhoshLayerSurface *window;
     GtkWidget *widget; // nullable
     guint hiding;
@@ -208,6 +210,9 @@ on_hide (ServerContextService *self)
 static void
 server_context_service_real_show_keyboard (ServerContextService *self)
 {
+    if (!self->enabled)
+        return;
+
     if (self->hiding) {
 	    g_source_remove (self->hiding);
 	    self->hiding = 0;
@@ -263,7 +268,9 @@ server_context_service_set_property (GObject      *object,
     case PROP_VISIBLE:
         self->visible = g_value_get_boolean (value);
         break;
-
+    case PROP_ENABLED:
+        server_context_service_set_enabled (self, g_value_get_boolean (value));
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
         break;
@@ -319,11 +326,43 @@ server_context_service_class_init (ServerContextServiceClass *klass)
     g_object_class_install_property (gobject_class,
                                      PROP_VISIBLE,
                                      pspec);
+
+    /**
+     * ServerContextServie:keyboard:
+     *
+     * Does the user want the keyboard to show up automatically?
+     */
+    pspec =
+        g_param_spec_boolean ("enabled",
+                              "Enabled",
+                              "Whether the keyboard is enabled",
+                              TRUE,
+                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    g_object_class_install_property (gobject_class,
+                                     PROP_ENABLED,
+                                     pspec);
 }
 
 static void
 server_context_service_init (ServerContextService *self) {
-    (void)self;
+    const char *schema_name = "org.gnome.desktop.a11y.applications";
+    GSettingsSchemaSource *ssrc = g_settings_schema_source_get_default();
+    g_autoptr(GSettingsSchema) schema = NULL;
+
+    self->enabled = TRUE;
+    if (!ssrc) {
+        g_warning("No gsettings schemas installed.");
+        return;
+    }
+    schema = g_settings_schema_source_lookup(ssrc, schema_name, TRUE);
+    if (schema) {
+        g_autoptr(GSettings) settings = g_settings_new (schema_name);
+        g_settings_bind (settings, "screen-keyboard-enabled",
+                         self, "enabled", G_SETTINGS_BIND_GET);
+    } else {
+        g_warning("Gsettings schema %s is not installed on the system. "
+                  "Enabling by default.", schema_name);
+    }
 }
 
 ServerContextService *
@@ -335,4 +374,19 @@ server_context_service_new (EekboardContextService *self, struct submission *sub
     ui->layout = layout;
     ui->manager = uiman;
     return ui;
+}
+
+void
+server_context_service_set_enabled (ServerContextService *self, gboolean enabled)
+{
+    g_return_if_fail (SERVER_IS_CONTEXT_SERVICE (self));
+
+    if (enabled == self->enabled)
+        return;
+
+    self->enabled = enabled;
+    if (self->enabled)
+        server_context_service_show_keyboard (self);
+    else
+        server_context_service_hide_keyboard (self);
 }

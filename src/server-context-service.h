@@ -33,6 +33,7 @@ ServerContextService *server_context_service_new(EekboardContextService *self, s
 enum squeek_arrangement_kind server_context_service_get_layout_type(ServerContextService *);
 void server_context_service_show_keyboard (ServerContextService *self);
 void server_context_service_hide_keyboard (ServerContextService *self);
+void server_context_service_set_enabled (ServerContextService *self, gboolean enabled);
 G_END_DECLS
 #endif  /* SERVER_CONTEXT_SERVICE_H */
 
