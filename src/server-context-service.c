@@ -34,8 +34,6 @@ enum {
     PROP_LAST
 };
 
-typedef struct _ServerContextServiceClass ServerContextServiceClass;
-
 struct _ServerContextService {
     GObject parent;
 
@@ -50,10 +48,6 @@ struct _ServerContextService {
     GtkWidget *widget; // nullable
     guint hiding;
     guint last_requested_height;
-};
-
-struct _ServerContextServiceClass {
-    GObjectClass parent_class;
 };
 
 G_DEFINE_TYPE(ServerContextService, server_context_service, G_TYPE_OBJECT);
