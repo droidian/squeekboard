@@ -19,6 +19,8 @@ add_project_arguments(
     '-Werror=missing-field-initializers',
     '-Werror=incompatible-pointer-types',
     '-Werror=int-conversion',
+    '-Wold-style-definition',
+    '-Wstrict-prototypes',
   ],
   language: 'c'
 )
