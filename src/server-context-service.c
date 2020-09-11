@@ -53,9 +53,9 @@ struct _ServerContextService {
 G_DEFINE_TYPE(ServerContextService, server_context_service, G_TYPE_OBJECT);
 
 static void
-on_destroy (GtkWidget *widget, gpointer user_data)
+on_destroy (ServerContextService *self, GtkWidget *widget)
 {
-    ServerContextService *self = user_data;
+    g_return_if_fail (SERVER_IS_CONTEXT_SERVICE (self));
 
     g_assert (widget == GTK_WIDGET(self->window));
 
@@ -66,18 +66,19 @@ on_destroy (GtkWidget *widget, gpointer user_data)
 }
 
 static void
-on_notify_map (GObject    *object,
-               ServerContextService *self)
+on_notify_map (ServerContextService *self, GtkWidget *widget)
 {
-    (void)object;
+    g_return_if_fail (SERVER_IS_CONTEXT_SERVICE (self));
+
     g_object_set (self, "visible", TRUE, NULL);
 }
 
 
 static void
-on_notify_unmap (GObject    *object,
-                 ServerContextService *self)
+on_notify_unmap (ServerContextService *self, GtkWidget *widget)
 {
+    g_return_if_fail (SERVER_IS_CONTEXT_SERVICE (self));
+
     g_object_set (self, "visible", FALSE, NULL);
 }
 
@@ -94,10 +95,14 @@ calculate_height(int32_t width)
 }
 
 static void
-on_surface_configure(PhoshLayerSurface *surface, ServerContextService *self)
+on_surface_configure(ServerContextService *self, PhoshLayerSurface *surface)
 {
     gint width;
     gint height;
+
+    g_return_if_fail (SERVER_IS_CONTEXT_SERVICE (self));
+    g_return_if_fail (PHOSH_IS_LAYER_SURFACE (surface));
+
     g_object_get(G_OBJECT(surface),
                  "configured-width", &width,
                  "configured-height", &height,
@@ -151,10 +156,10 @@ make_window (ServerContextService *self)
     );
 
     g_object_connect (self->window,
-                      "signal::destroy", G_CALLBACK(on_destroy), self,
-                      "signal::map", G_CALLBACK(on_notify_map), self,
-                      "signal::unmap", G_CALLBACK(on_notify_unmap), self,
-                      "signal::configured", G_CALLBACK(on_surface_configure), self,
+                      "swapped-signal::destroy", G_CALLBACK(on_destroy), self,
+                      "swapped-signal::map", G_CALLBACK(on_notify_map), self,
+                      "swapped-signal::unmap", G_CALLBACK(on_notify_unmap), self,
+                      "swapped-signal::configured", G_CALLBACK(on_surface_configure), self,
                       NULL);
 
     // The properties below are just to make hacking easier.
