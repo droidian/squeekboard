@@ -42,6 +42,23 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0, };
 
+/**
+ * EekboardContextService:
+ *
+ * Handles layout state, gsettings, and virtual-keyboard.
+ *
+ * TODO: Restrict to managing keyboard layouts, and maybe button repeats,
+ * and the virtual keyboard protocol.
+ *
+ * The #EekboardContextService structure contains only private data
+ * and should only be accessed using the provided API.
+ */
+struct _EekboardContextService {
+    GObject parent;
+    EekboardContextServicePrivate *priv;
+    struct squeek_layout_state *layout; // Unowned
+};
+
 struct _EekboardContextServicePrivate {
     LevelKeyboard *keyboard; // currently used keyboard
     GSettings *settings; // Owned reference

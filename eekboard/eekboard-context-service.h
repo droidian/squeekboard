@@ -34,47 +34,10 @@ G_BEGIN_DECLS
 #define EEKBOARD_CONTEXT_SERVICE_INTERFACE "org.fedorahosted.Eekboard.Context"
 
 #define EEKBOARD_TYPE_CONTEXT_SERVICE (eekboard_context_service_get_type())
-#define EEKBOARD_CONTEXT_SERVICE(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), EEKBOARD_TYPE_CONTEXT_SERVICE, EekboardContextService))
-#define EEKBOARD_CONTEXT_SERVICE_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), EEKBOARD_TYPE_CONTEXT_SERVICE, EekboardContextServiceClass))
-#define EEKBOARD_IS_CONTEXT_SERVICE(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), EEKBOARD_TYPE_CONTEXT_SERVICE))
-#define EEKBOARD_IS_CONTEXT_SERVICE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), EEKBOARD_TYPE_CONTEXT_SERVICE))
-#define EEKBOARD_CONTEXT_SERVICE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), EEKBOARD_TYPE_CONTEXT_SERVICE, EekboardContextServiceClass))
 
-
-typedef struct _EekboardContextServiceClass EekboardContextServiceClass;
 typedef struct _EekboardContextServicePrivate EekboardContextServicePrivate;
+G_DECLARE_FINAL_TYPE(EekboardContextService, eekboard_context_service, EEKBOARD, CONTEXT_SERVICE, GObject)
 
-/**
- * EekboardContextService:
- *
- * Handles layout state, gsettings, and virtual-keyboard.
- *
- * TODO: Restrict to managing keyboard layouts, and maybe button repeats,
- * and the virtual keyboard protocol.
- *
- * The #EekboardContextService structure contains only private data
- * and should only be accessed using the provided API.
- */
-struct _EekboardContextService {
-    GObject parent;
-    EekboardContextServicePrivate *priv;
-    struct squeek_layout_state *layout; // Unowned
-};
-
-/**
- * EekboardContextServiceClass:
- */
-struct _EekboardContextServiceClass {
-    /*< private >*/
-    GObjectClass parent_class;
-
-    /*< private >*/
-    /* padding */
-    gpointer pdummy[24];
-};
-
-GType         eekboard_context_service_get_type
-                                              (void) G_GNUC_CONST;
 EekboardContextService *eekboard_context_service_new(struct squeek_layout_state *state);
 void eekboard_context_service_set_submission(EekboardContextService *context, struct submission *submission);
 void eekboard_context_service_set_ui(EekboardContextService *context, ServerContextService *ui);
