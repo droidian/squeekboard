@@ -21,6 +21,7 @@ add_project_arguments(
     '-Werror=int-conversion',
     '-Wformat-security',
     '-Winit-self',
+    '-Wmaybe-uninitialized',
     '-Wold-style-definition',
     '-Wstrict-prototypes',
     '-Wunused-function',
