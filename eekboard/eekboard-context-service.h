@@ -63,9 +63,6 @@ struct _EekboardContextService {
 
 /**
  * EekboardContextServiceClass:
- * @create_keyboard: virtual function for create a keyboard from string
- * @enabled: class handler for #EekboardContextService::enabled signal
- * @disabled: class handler for #EekboardContextService::disabled signal
  */
 struct _EekboardContextServiceClass {
     /*< private >*/
