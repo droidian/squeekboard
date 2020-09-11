@@ -23,6 +23,7 @@ add_project_arguments(
     '-Winit-self',
     '-Wmaybe-uninitialized',
     '-Wold-style-definition',
+    '-Wredundant-decls',
     '-Wstrict-prototypes',
     '-Wunused-function',
   ],
