@@ -21,6 +21,7 @@ add_project_arguments(
     '-Werror=int-conversion',
     '-Wold-style-definition',
     '-Wstrict-prototypes',
+    '-Wunused-function',
   ],
   language: 'c'
 )
