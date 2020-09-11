@@ -21,6 +21,7 @@
 #include "config.h"
 
 #define _XOPEN_SOURCE 500
+#include <errno.h>
 #include <fcntl.h>
 #include <string.h>
 #include <sys/mman.h>
@@ -68,7 +69,8 @@ level_keyboard_new (struct squeek_layout *layout)
 
     g_autofree char *path = strdup("/eek_keymap-XXXXXX");
     char *r = &path[strlen(path) - 6];
-    getrandom(r, 6, GRND_NONBLOCK);
+    if (getrandom(r, 6, GRND_NONBLOCK) < 0)
+        g_error("Failed to get random numbers: %s", strerror(errno));
     for (unsigned i = 0; i < 6; i++) {
         r[i] = (r[i] & 0b1111111) | 0b1000000; // A-z
         r[i] = r[i] > 'z' ? '?' : r[i]; // The randomizer doesn't need to be good...
