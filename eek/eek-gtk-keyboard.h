@@ -47,7 +47,6 @@ struct _EekGtkKeyboardClass
     gpointer pdummy[24];
 };
 
-GType      eek_gtk_keyboard_get_type  (void) G_GNUC_CONST;
 GtkWidget *eek_gtk_keyboard_new       (EekboardContextService *eekservice, struct submission *submission, struct squeek_layout_state *layout);
 void       eek_gtk_keyboard_emit_feedback (EekGtkKeyboard *self);
 
