@@ -19,6 +19,14 @@ add_project_arguments(
     '-Werror=missing-field-initializers',
     '-Werror=incompatible-pointer-types',
     '-Werror=int-conversion',
+    '-Wformat-nonliteral',
+    '-Wformat-security',
+    '-Winit-self',
+    '-Wmaybe-uninitialized',
+    '-Wold-style-definition',
+    '-Wredundant-decls',
+    '-Wstrict-prototypes',
+    '-Wunused-function',
   ],
   language: 'c'
 )

@@ -25,22 +25,14 @@
 G_BEGIN_DECLS
 
 #define SERVER_TYPE_CONTEXT_SERVICE (server_context_service_get_type())
-#define SERVER_CONTEXT_SERVICE(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), SERVER_TYPE_CONTEXT_SERVICE, ServerContextService))
-#define SERVER_CONTEXT_SERVICE_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), SERVER_TYPE_CONTEXT_SERVICE, ServerContextServiceClass))
-#define SERVER_IS_CONTEXT_SERVICE(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), SERVER_TYPE_CONTEXT_SERVICE))
-#define SERVER_IS_CONTEXT_SERVICE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), SERVER_TYPE_CONTEXT_SERVICE))
-#define SERVER_CONTEXT_SERVICE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), SERVER_TYPE_CONTEXT_SERVICE, ServerContextServiceClass))
 
 /** Manages the lifecycle of the window displaying layouts. */
-typedef struct _ServerContextService ServerContextService;
+G_DECLARE_FINAL_TYPE (ServerContextService, server_context_service, SERVER, CONTEXT_SERVICE, GObject)
 
-GType         server_context_service_get_type
-                                              (void) G_GNUC_CONST;
-
-ServerContextService *server_context_service_new(EekboardContextService *state, struct submission *submission, struct squeek_layout_state *layout, struct ui_manager *uiman);
+ServerContextService *server_context_service_new(EekboardContextService *self, struct submission *submission, struct squeek_layout_state *layout, struct ui_manager *uiman);
 enum squeek_arrangement_kind server_context_service_get_layout_type(ServerContextService *);
-void server_context_service_show_keyboard (ServerContextService *context);
-void server_context_service_hide_keyboard (ServerContextService *context);
+void server_context_service_show_keyboard (ServerContextService *self);
+void server_context_service_hide_keyboard (ServerContextService *self);
 G_END_DECLS
 #endif  /* SERVER_CONTEXT_SERVICE_H */
 

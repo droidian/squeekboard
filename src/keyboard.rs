@@ -192,7 +192,7 @@ pub fn generate_keymap(
         key <BackSpace> {{ [ BackSpace ] }};"
     )?;
     
-    for (name, state) in keystates.iter() {
+    for (_name, state) in keystates.iter() {
         if let Action::Submit { text: _, keys } = &state.action {
             for keysym in keys.iter() {
                 write!(

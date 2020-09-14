@@ -9,7 +9,7 @@ struct squeek_output_handle {
     struct squeek_outputs *outputs;
 };
 
-struct squeek_outputs *squeek_outputs_new();
+struct squeek_outputs *squeek_outputs_new(void);
 void squeek_outputs_free(struct squeek_outputs*);
 void squeek_outputs_register(struct squeek_outputs*, struct wl_output *output);
 struct squeek_output_handle squeek_outputs_get_current(struct squeek_outputs*);
