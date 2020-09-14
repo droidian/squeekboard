@@ -63,6 +63,7 @@ foreach layout : [
     'pl', 'pl_wide',
     'ru',
     'se',
+    'ua',
     'terminal',
     
     'emoji',
