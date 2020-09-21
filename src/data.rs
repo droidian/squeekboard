@@ -737,8 +737,7 @@ fn create_button<H: logging::Handler>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    
-    use std::error::Error as ErrorTrait;
+
     use ::logging::ProblemPanic;
 
     const THIS_FILE: &str = file!();
@@ -786,7 +785,8 @@ mod tests {
             Err(e) => {
                 let mut handled = false;
                 if let Error::Yaml(ye) = &e {
-                    handled = ye.description() == "missing field `views`";
+                    handled = ye.to_string()
+                        .starts_with("missing field `views`");
                 };
                 if !handled {
                     println!("Unexpected error {:?}", e);
@@ -804,7 +804,7 @@ mod tests {
             Err(e) => {
                 let mut handled = false;
                 if let Error::Yaml(ye) = &e {
-                    handled = ye.description()
+                    handled = ye.to_string()
                         .starts_with("unknown field `bad_field`");
                 };
                 if !handled {
