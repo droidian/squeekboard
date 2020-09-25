@@ -459,14 +459,14 @@ impl Layout {
                                 &mut warning_handler,
                             ))
                         });
-                    layout::Row {
-                        buttons: add_offsets(
+                    layout::Row::new(
+                        add_offsets(
                             buttons,
                             |button| button.size.width,
                         ).collect()
-                    }
+                    )
                 });
-                let rows = add_offsets(rows, |row| row.get_height())
+                let rows = add_offsets(rows, |row| row.get_size().height)
                     .collect();
                 (
                     name.clone(),
@@ -484,8 +484,8 @@ impl Layout {
                 name,
                 (
                     layout::c::Point {
-                        x: (total_size.width - view.get_width()) / 2.0,
-                        y: (total_size.height - view.get_height()) / 2.0,
+                        x: (total_size.width - view.get_size().width) / 2.0,
+                        y: (total_size.height - view.get_size().height) / 2.0,
                     },
                     view,
                 ),
@@ -824,7 +824,7 @@ mod tests {
         assert_eq!(
             out.views["base"].1
                 .get_rows()[0].1
-                .buttons[0].1
+                .get_buttons()[0].1
                 .label,
             ::layout::Label::Text(CString::new("test").unwrap())
         );
@@ -839,7 +839,7 @@ mod tests {
         assert_eq!(
             out.views["base"].1
                 .get_rows()[0].1
-                .buttons[0].1
+                .get_buttons()[0].1
                 .label,
             ::layout::Label::Text(CString::new("test").unwrap())
         );
@@ -855,7 +855,7 @@ mod tests {
         assert_eq!(
             out.views["base"].1
                 .get_rows()[0].1
-                .buttons[0].1
+                .get_buttons()[0].1
                 .state.borrow()
                 .keycodes.len(),
             2
