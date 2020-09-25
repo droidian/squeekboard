@@ -13,16 +13,16 @@ The overarching principle of *squeekboard* is to empower users.
 Software is primarily meant to solve problems of its users. Often in the quest to make software better, a hard distinction is made between the developer, who becomes the creator, and the user, who takes the role of the consumer, without direct influence on the software they use.
 This project aims to give users the power to make the software work for them by blurring the lines between users and developers.
 
-Nonwithstanding its current state, *squeekboard* must be structured in a way that provides users a gradual way to gain more experience and power to adjust it. It must be easy, in order of importance:
+Notwithstanding its current state, *squeekboard* must be structured in a way that provides users a gradual way to gain more experience and power to adjust it. It must be easy, in order of importance:
 
 - to use the software,
 - to modify its resources,
-- to change its behaviour,
+- to change its behavior,
 - to contribute upstream.
 
 To give an idea of what it means in practice, those are some examples of what has been important for *squeekboard* so far:
 
-- being quick and useable,
+- being quick and usable,
 - allowing local overrides of resources and config,
 - storing resources and config as editable, standard files,
 - having complete, up to date documentation of interfaces,
@@ -33,7 +33,7 @@ To give an idea of what it means in practice, those are some examples of what ha
 - having code that is [simple and obvious](https://www.python.org/dev/peps/pep-0020/),
 - having an easy process of testing and accepting contributions.
 
-You may notice that they are ordered roughly from "user-focused" to "maintainer-focused". While good properties are desired, sometimes they conflict, and maintainers should give additional weight to those benefitting the user compared to those benefitting regular contributors.
+You may notice that they are ordered roughly from "user-focused" to "maintainer-focused". While good properties are desired, sometimes they conflict, and maintainers should give additional weight to those benefiting the user compared to those benefiting regular contributors.
 
 Sending patches
 ---------------
@@ -43,7 +43,7 @@ By submitting a change to this project, you agree to license it under the [GPL l
 Development environment
 -----------------------
 
-*Squeekboard* is regularly built and tested on [the develpment environment](https://developer.puri.sm/Librem5/Development_Environment.html).
+*Squeekboard* is regularly built and tested on [the development environment](https://developer.puri.sm/Librem5/Development_Environment.html).
 
 Recent Fedora releases are likely to be tested as well.
 
@@ -162,7 +162,7 @@ Maintenance
 
 Squeekboard uses Rust & Cargo for some of its dependencies.
 
-Use the `cargo.sh` script for maintaining the Cargo part of the build. The script takes the usual Cargo commands, after the first 2 positionsl arguments: source directory, and output artifact. So, `cargo test` becomes:
+Use the `cargo.sh` script for maintaining the Cargo part of the build. The script takes the usual Cargo commands, after the first 2 positional arguments: source directory, and output artifact. So, `cargo test` becomes:
 
 ```
 cd build_dir
