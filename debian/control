@@ -41,6 +41,7 @@ Depends:
  gnome-themes-extra-data,
  ${shlibs:Depends},
  ${misc:Depends},
+Conflicts: phosh-osk-stub
 Description: On-screen keyboard for Wayland
  Virtual keyboard supporting Wayland, built primarily for the Librem 5 phone.
 
