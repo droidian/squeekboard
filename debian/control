@@ -24,7 +24,7 @@ Build-Depends:
  librust-serde-derive-1-dev (>= 1.0),
  librust-serde-yaml-0.8-dev (>= 0.8),
  librust-thread-local-dev,
- librust-xkbcommon-0.4+wayland-dev (>= 0.4),
+ librust-xkbcommon-dev (>= 0.4),
  libwayland-dev (>= 1.16),
  rustc,
  wayland-protocols (>= 1.14),
