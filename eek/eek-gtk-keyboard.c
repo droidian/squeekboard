@@ -25,10 +25,6 @@
 
 #include "config.h"
 
-#ifdef HAVE_LIBCANBERRA
-#include <canberra-gtk.h>
-#endif
-
 #include <math.h>
 #include <string.h>
 
@@ -41,6 +37,10 @@
 #include "src/layout.h"
 #include "src/submission.h"
 
+#define LIBFEEDBACK_USE_UNSTABLE_API
+#include <libfeedback.h>
+
+#define SQUEEKBOARD_APP_ID "sm.puri.squeekboard"
 
 typedef struct _EekGtkKeyboardPrivate
 {
@@ -52,6 +52,7 @@ typedef struct _EekGtkKeyboardPrivate
     LevelKeyboard *keyboard; // unowned reference; it's kept in server-context
 
     GdkEventSequence *sequence; // unowned reference
+    LfbEvent *event;
 } EekGtkKeyboardPrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE (EekGtkKeyboard, eek_gtk_keyboard, GTK_TYPE_DRAWING_AREA)
@@ -137,6 +138,19 @@ eek_gtk_keyboard_real_size_allocate (GtkWidget     *self,
 
     GTK_WIDGET_CLASS (eek_gtk_keyboard_parent_class)->
         size_allocate (self, allocation);
+}
+
+static void
+on_event_triggered (LfbEvent      *event,
+                    GAsyncResult  *res,
+                    gpointer      unused)
+{
+    g_autoptr (GError) err = NULL;
+
+    if (!lfb_event_trigger_feedback_finish (event, res, &err)) {
+        g_warning ("Failed to trigger feedback for '%s': %s",
+                   lfb_event_get_event (event), err->message);
+    }
 }
 
 static void depress(EekGtkKeyboard *self,
@@ -303,6 +317,11 @@ eek_gtk_keyboard_dispose (GObject *object)
         priv->keyboard = NULL;
     }
 
+    if (priv->event) {
+        g_clear_object (&priv->event);
+        lfb_uninit ();
+    }
+
     G_OBJECT_CLASS (eek_gtk_keyboard_parent_class)->dispose (object);
 }
 
@@ -334,7 +353,13 @@ eek_gtk_keyboard_class_init (EekGtkKeyboardClass *klass)
 static void
 eek_gtk_keyboard_init (EekGtkKeyboard *self)
 {
-    (void)self;
+    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (EEK_GTK_KEYBOARD (self));
+    g_autoptr(GError) err = NULL;
+
+    if (lfb_init(SQUEEKBOARD_APP_ID, &err))
+        priv->event = lfb_event_new ("button-pressed");
+    else
+        g_warning ("Failed to init libfeedback: %s", err->message);
 }
 
 static void
@@ -379,4 +404,25 @@ eek_gtk_keyboard_new (EekboardContextService *eekservice,
     gtk_box_pack_start(box, GTK_WIDGET(ret), TRUE, TRUE, 0);
     return GTK_WIDGET(box);*/
     return GTK_WIDGET(ret);
+}
+
+/**
+ * eek_gtk_keyboard_emit_feedback:
+ *
+ * Emit button press haptic feedback via libfeedack.
+ */
+void
+eek_gtk_keyboard_emit_feedback (EekGtkKeyboard *self)
+{
+    EekGtkKeyboardPrivate *priv;
+
+    g_return_if_fail (EEK_IS_GTK_KEYBOARD (self));
+
+    priv = eek_gtk_keyboard_get_instance_private (EEK_GTK_KEYBOARD (self));
+    if (priv->event) {
+        lfb_event_trigger_feedback_async (priv->event,
+                                          NULL,
+                                          (GAsyncReadyCallback)on_event_triggered,
+                                          NULL);
+    }
 }

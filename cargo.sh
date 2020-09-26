@@ -13,5 +13,10 @@ CARGO_TARGET_DIR="$(pwd)"
 export CARGO_TARGET_DIR
 
 cd "$SOURCE_DIR"
-cargo "$@"
+
+# the 'run" command takes arguments at the end,
+# so --manifest-path must not be last
+CMD="$1"
+shift
+cargo "$CMD" --manifest-path "$CARGO_TARGET_DIR"/Cargo.toml "$@"
 

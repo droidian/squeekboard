@@ -6,3 +6,7 @@ option('depdatadir',
 option('tests',
        type: 'boolean', value: true,
        description: 'Whether to compile unit tests')
+
+option('legacy',
+       type: 'boolean', value: false,
+       description: 'Build with Deban Buster versions of dependencies')

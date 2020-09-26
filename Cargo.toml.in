@@ -1,0 +1,40 @@
+[package]
+name = "rs"
+version = "0.1.0"
+
+[lib]
+name = "rs"
+path = "@path@/src/lib.rs"
+crate-type = ["staticlib", "rlib"]
+
+# Cargo can't do autodiscovery if Cargo.toml is not in the root.
+[[bin]]
+name = "test_layout"
+path = "@path@/src/bin/test_layout.rs"
+
+[[example]]
+name = "test_layout"
+path = "@path@/examples/test_layout.rs"
+
+[features]
+gio_v0_5 = []
+gtk_v0_5 = []
+
+# Dependencies which don't change based on build flags
+[dependencies.cairo-sys-rs]
+version = ""
+
+[dependencies.glib-sys]
+version = ""
+features = ["v2_44"]
+
+[dependencies.gtk-sys]
+version = ""
+features = ["v3_22"]
+
+[dependencies]
+maplit = "1.0.*"
+serde = { version = "1.0.*", features = ["derive"] }
+serde_yaml = "0.8.*"
+xkbcommon = { version = "0.4.*", features = ["wayland"] }
+# Here is inserted the Cargo.deps file

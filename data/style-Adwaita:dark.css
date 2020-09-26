@@ -40,6 +40,10 @@ sq_button.action {
     font-size: 0.75em;
 }
 
+sq_button.small {
+    font-size: 0.5em;
+}
+
 #Return {
     background: #1c71d8;
     border-color: #1a5fb4;

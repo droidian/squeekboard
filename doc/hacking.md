@@ -175,10 +175,11 @@ All Cargo dependencies must be selected in the version available in PureOS, and 
 
 Dependencies must be specified in `Cargo.toml` with 2 numbers: "major.minor". Since bugfix version number is meant to not affect the interface, this allows for safe updates.
 
-`Cargo.lock` is used for remembering the revisions of all Rust dependencies. It should be updated often, preferably with each bugfix revision, and in a commit on its own:
+`Cargo.lock` is used for remembering the revisions of all Rust dependencies. It must correspond to the default dependency configuration: without flags to use older or newer versions of dependencies. It should be updated often, preferably with each bugfix revision, and in a commit on its own:
 
 ```
 cd build_dir
+ninja build src/Cargo.toml
 sh /source_path/cargo.sh update
 ninja test
 ```

@@ -11,9 +11,11 @@ use std::iter::FromIterator;
 // and what a convenience layout. "_wide" is not a layout,
 // neither is "number"
 const KEYBOARDS: &[(*const str, *const str)] = &[
-    // layouts
+    // layouts: us must be left as first, as it is the,
+    // fallback layout. The others should be alphabetical.
     ("us", include_str!("../data/keyboards/us.yaml")),
     ("us_wide", include_str!("../data/keyboards/us_wide.yaml")),
+    ("br", include_str!("../data/keyboards/br.yaml")),
     ("de", include_str!("../data/keyboards/de.yaml")),
     ("de_wide", include_str!("../data/keyboards/de_wide.yaml")),
     ("dk", include_str!("../data/keyboards/dk.yaml")),

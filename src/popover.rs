@@ -11,11 +11,15 @@ use ::logging;
 use ::manager;
 use ::resources;
 
+// Traits
 use gio::ActionMapExt;
 use gio::SettingsExt;
+#[cfg(feature = "gio_v0_5")]
 use gio::SimpleActionExt;
 use glib::translate::FromGlibPtrNone;
 use glib::variant::ToVariant;
+#[cfg(not(feature = "gtk_v0_5"))]
+use gtk::BuilderExtManual;
 use gtk::PopoverExt;
 use gtk::WidgetExt;
 use std::io::Write;

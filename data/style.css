@@ -43,6 +43,10 @@ sq_button.action {
     font-size: 0.75em;
 }
 
+sq_button.small {
+    font-size: 0.5em;
+}
+
 #Return {
     background: @theme_selected_bg_color; /* #1c71d8; */
     border-color: @borders; /*#1a5fb4;*/

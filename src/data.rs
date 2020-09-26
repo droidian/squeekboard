@@ -741,10 +741,19 @@ mod tests {
     use std::error::Error as ErrorTrait;
     use ::logging::ProblemPanic;
 
+    const THIS_FILE: &str = file!();
+
+    fn path_from_root(file: &'static str) -> PathBuf {
+        PathBuf::from(THIS_FILE)
+            .parent().unwrap()
+            .parent().unwrap()
+            .join(file)
+    }
+
     #[test]
     fn test_parse_path() {
         assert_eq!(
-            Layout::from_file(PathBuf::from("tests/layout.yaml")).unwrap(),
+            Layout::from_file(path_from_root("tests/layout.yaml")).unwrap(),
             Layout {
                 margins: Margins { top: 0f64, bottom: 0f64, side: 0f64 },
                 views: hashmap!(
@@ -771,7 +780,7 @@ mod tests {
     /// Check if the default protection works
     #[test]
     fn test_empty_views() {
-        let out = Layout::from_file(PathBuf::from("tests/layout2.yaml"));
+        let out = Layout::from_file(path_from_root("tests/layout2.yaml"));
         match out {
             Ok(_) => assert!(false, "Data mistakenly accepted"),
             Err(e) => {
@@ -789,7 +798,7 @@ mod tests {
 
     #[test]
     fn test_extra_field() {
-        let out = Layout::from_file(PathBuf::from("tests/layout3.yaml"));
+        let out = Layout::from_file(path_from_root("tests/layout3.yaml"));
         match out {
             Ok(_) => assert!(false, "Data mistakenly accepted"),
             Err(e) => {
@@ -808,7 +817,7 @@ mod tests {
     
     #[test]
     fn test_layout_punctuation() {
-        let out = Layout::from_file(PathBuf::from("tests/layout_key1.yaml"))
+        let out = Layout::from_file(path_from_root("tests/layout_key1.yaml"))
             .unwrap()
             .build(ProblemPanic).0
             .unwrap();
@@ -823,7 +832,7 @@ mod tests {
 
     #[test]
     fn test_layout_unicode() {
-        let out = Layout::from_file(PathBuf::from("tests/layout_key2.yaml"))
+        let out = Layout::from_file(path_from_root("tests/layout_key2.yaml"))
             .unwrap()
             .build(ProblemPanic).0
             .unwrap();
@@ -839,7 +848,7 @@ mod tests {
     /// Test multiple codepoints
     #[test]
     fn test_layout_unicode_multi() {
-        let out = Layout::from_file(PathBuf::from("tests/layout_key3.yaml"))
+        let out = Layout::from_file(path_from_root("tests/layout_key3.yaml"))
             .unwrap()
             .build(ProblemPanic).0
             .unwrap();
@@ -916,7 +925,7 @@ mod tests {
 
     #[test]
     fn test_layout_margins() {
-        let out = Layout::from_file(PathBuf::from("tests/layout_margins.yaml"))
+        let out = Layout::from_file(path_from_root("tests/layout_margins.yaml"))
             .unwrap()
             .build(ProblemPanic).0
             .unwrap();

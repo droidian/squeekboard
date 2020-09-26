@@ -87,6 +87,18 @@ on_notify_unmap (GObject    *object,
     g_object_set (context, "visible", FALSE, NULL);
 }
 
+static uint32_t
+calculate_height(int32_t width)
+{
+    uint32_t height = 180;
+    if (width < 360 && width > 0) {
+        height = ((unsigned)width * 7 / 12); // to match 360×210
+    } else if (width < 540) {
+        height = 180 + (540 - (unsigned)width) * 30 / 180; // smooth transition
+    }
+    return height;
+}
+
 static void
 on_surface_configure(PhoshLayerSurface *surface, ServerContextService *context)
 {
@@ -97,7 +109,12 @@ on_surface_configure(PhoshLayerSurface *surface, ServerContextService *context)
                  "configured-height", &height,
                  NULL);
 
-    guint desired_height = squeek_uiman_get_perceptual_height(context->manager);
+    // When the geometry event comes after surface.configure,
+    // this entire height calculation does nothing.
+    // guint desired_height = squeek_uiman_get_perceptual_height(context->manager);
+    // Temporarily use old method, until the size manager is complete.
+    guint desired_height = calculate_height(width);
+
     guint configured_height = (guint)height;
     // if height was already requested once but a different one was given
     // (for the same set of surrounding properties),

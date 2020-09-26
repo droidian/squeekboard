@@ -1,7 +1,7 @@
 project(
     'squeekboard',
     'c', 'rust',
-    version: '1.8.0',
+    version: '1.9.3',
     license: 'GPLv3',
     meson_version: '>=0.51.0',
     default_options: [
@@ -60,6 +60,32 @@ summary = [
         ''
 ]
 message('\n'.join(summary))
+
+# Rust deps are changing, depending on compile flags. Cargo can't handle it alone.
+cargo_toml_in = files('Cargo.toml.in')
+path_data = configuration_data()
+path_data.set('path', meson.source_root())
+cargo_toml_base = configure_file(
+    input: 'Cargo.toml.in',
+    output: 'Cargo.toml.base',
+    configuration: path_data,
+)
+
+
+cargo_deps = files('Cargo.deps')
+
+if get_option('legacy') == true
+    cargo_build_flags += ['--features', 'gtk_v0_5,gio_v0_5']
+    cargo_deps = files('Cargo.deps.legacy')
+endif
+    
+cat = find_program('cat')
+cargo_toml = custom_target(
+    'Cargo.toml',
+    output: 'Cargo.toml',
+    command: [cat, cargo_toml_base, cargo_deps],
+    capture: true,
+)
 
 dep_cargo = find_program('cargo')
 cargo_script = find_program('cargo.sh')

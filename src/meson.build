@@ -36,8 +36,10 @@ cc = meson.get_compiler('c')
 deps = [
 #  dependency('glib-2.0', version: '>=2.26.0'),
   dependency('gio-2.0', version: '>=2.26.0'),
+  dependency('gio-unix-2.0'),
   dependency('gnome-desktop-3.0', version: '>=3.0'),
   dependency('gtk+-3.0', version: '>=3.0'),
+  dependency('libfeedback-0.0'),
   dependency('wayland-client', version: '>=1.14'),
   dependency('xkbcommon'),
   cc.find_library('m'),
@@ -54,7 +56,8 @@ rslibs = custom_target(
     output: ['librs.a'],
     install: false,
     console: true,
-    command: [cargo_build] + cargo_build_flags + ['@OUTPUT@', '--lib']
+    command: [cargo_build] + ['@OUTPUT@', '--lib'] + cargo_build_flags,
+    depends: cargo_toml,
 )
 
 build_rstests = custom_target(
@@ -68,17 +71,17 @@ build_rstests = custom_target(
     output: ['src'],
     install: false,
     console: true,
-    command: [cargo_script, 'test', '--no-run'],
-    depends: rslibs, # no point building tests if the code itself fails
+    command: [cargo_script, 'test', '--no-run'] + cargo_build_flags,
+    depends: [rslibs, cargo_toml], # no point building tests if the code itself fails
 )
 
 test(
     'rstest',
     cargo_script,
-    args: ['test'],
+    args: ['test'] + cargo_build_flags,
     # this is a whole Carg-based test suite, let it run for a while
     timeout: 900,
-    depends: build_rstests,
+    depends: [build_rstests, cargo_toml],
 )
 
 libsqueekboard = static_library('libsqueekboard',

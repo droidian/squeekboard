@@ -52,6 +52,14 @@ pub mod c {
     #[derive(Copy, Clone)]
     pub struct EekGtkKeyboard(pub *const gtk_sys::GtkWidget);
 
+    #[no_mangle]
+    extern "C" {
+        #[allow(improper_ctypes)]
+        pub fn eek_gtk_keyboard_emit_feedback(
+            keyboard: EekGtkKeyboard,
+        );
+    }
+
     /// Defined in eek-types.h
     #[repr(C)]
     #[derive(Clone, Debug, PartialEq)]
@@ -341,6 +349,9 @@ pub mod c {
                 );
                 // maybe TODO: draw on the display buffer here
                 drawing::queue_redraw(ui_keyboard);
+                unsafe {
+                    eek_gtk_keyboard_emit_feedback(ui_keyboard);
+                }
             };
         }
 
@@ -404,6 +415,9 @@ pub mod c {
                         &state,
                     );
                     // maybe TODO: draw on the display buffer here
+                    unsafe {
+                        eek_gtk_keyboard_emit_feedback(ui_keyboard);
+                    }
                 }
             } else {
                 for wrapped_key in pressed {
