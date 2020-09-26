@@ -1,4 +1,26 @@
-squeekboard (1.9.2-1) unstable; urgency=medium
+squeekboard (1.9.3-1) experimental; urgency=medium
+
+  * Upload to experimental
+  * Update upstream source from tag 'v1.9.3'
+    Update to upstream version '1.9.3'
+    with Debian dir 7a3f8b82779759ba288b75755ba54500250b0ff4
+  * d/control: Use librust-xkbcommon-dev
+    This one avoids the empty feature package.
+  * Ship sm.puri.OSK0.desktop.
+    This is needed to fulfill phosh's session dependencies
+  * Conflict with phosh-osk-stub.
+    They're not useful at the same time and we'll drop phosh-osk-stub from
+    Debian once squeekboard is in.
+  * Drop pathes no longer required due to upstream changes
+    - 0001-Cargo.toml-update-to-Debian-dependencies-versions.patch
+    - 0002-popover.rs-fix-build-with-gtk-rs-0.7.0.patch
+  * d/gbp.conf: Don't use patch numbers.
+    Ordering is defined via the series file and patch numbers just
+    cause manual work.
+
+ -- Guido Günther <agx@sigxcpu.org>  Sat, 26 Sep 2020 13:01:18 +0200
+
+squeekboard (1.9.2-1) UNRELEASED; urgency=medium
 
   * Initial Debian release (Closes: #956960)
 
