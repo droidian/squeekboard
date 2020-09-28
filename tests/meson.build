@@ -69,11 +69,17 @@ foreach layout : [
     
     'emoji',
 ]
+    extra = []
+    if layout == 'emoji'
+        extra += ['allow_missing_return']
+    endif
+
     test(
         'test_layout_' + layout,
         cargo_script,
         args: ['run'] + cargo_build_flags
-            + [ '--example', 'test_layout', '--', layout],
+            + ['--example', 'test_layout', '--', layout]
+            + extra,
         workdir: meson.build_root(),
     )
 endforeach

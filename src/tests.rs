@@ -26,17 +26,45 @@ impl CountAndPrint {
     }
 }
 
-pub fn check_builtin_layout(name: &str) {
-    check_layout(Layout::from_resource(name).expect("Invalid layout data"))
+pub fn check_builtin_layout(name: &str, missing_return: bool) {
+    check_layout(
+        Layout::from_resource(name).expect("Invalid layout data"),
+        missing_return,
+    )
 }
 
 pub fn check_layout_file(path: &str) {
-    check_layout(Layout::from_file(path.into()).expect("Invalid layout file"))
+    check_layout(
+        Layout::from_file(path.into()).expect("Invalid layout file"),
+        false,
+    )
 }
 
-fn check_layout(layout: Layout) {
+fn check_sym_presence(
+    state: &xkb::State,
+    sym_name: &str,
+    handler: &mut dyn logging::Handler,
+) {
+    let sym = xkb::keysym_from_name(sym_name, xkb::KEYSYM_NO_FLAGS);
+    if sym == xkb::KEY_NoSymbol {
+        panic!(format!("Entered invalid keysym: {}", sym_name));
+    }
+    let map = state.get_keymap();
+    let range = map.min_keycode()..=map.max_keycode();
+    let found = range.flat_map(|code| state.key_get_syms(code))
+        .find(|s| **s == sym)
+        .is_some();
+    if !found {
+        handler.handle(
+            logging::Level::Surprise,
+            &format!("There's no way to input the keysym {} on this layout", sym_name),
+        )
+    }
+}
+
+fn check_layout(layout: Layout, allow_missing_return: bool) {
     let handler = CountAndPrint::new();
-    let (layout, handler) = layout.build(handler);
+    let (layout, mut handler) = layout.build(handler);
 
     if handler.0 > 0 {
         println!("{} problems while parsing layout", handler.0)
@@ -58,7 +86,16 @@ fn check_layout(layout: Layout) {
     ).expect("Failed to create keymap");
 
     let state = xkb::State::new(&keymap);
-    
+
+    check_sym_presence(&state, "BackSpace", &mut handler);
+    let mut printer = logging::Print;
+    check_sym_presence(
+        &state,
+        "Return",
+        if allow_missing_return { &mut printer }
+        else { &mut handler },
+    );
+
     // "Press" each button with keysyms
     for (_pos, view) in layout.views.values() {
         for (_y, row) in &view.get_rows() {
