@@ -91,7 +91,7 @@ fn sorted<'a, I: Iterator<Item=&'a str>>(
 /// HACK: starting from 9, because 8 results in keycode 0,
 /// which the compositor likes to discard
 pub fn generate_keycodes<'a, C: IntoIterator<Item=&'a str>>(
-    key_names: C
+    key_names: C,
 ) -> HashMap<String, u32> {
     let special_keysyms = ["BackSpace", "Return"].iter().map(|&s| s);
     HashMap::from_iter(
