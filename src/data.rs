@@ -382,7 +382,7 @@ impl Layout {
                 )
             )}).collect();
 
-        let keymap: HashMap<String, u32> = generate_keycodes(
+        let symbolmap: HashMap<String, u32> = generate_keycodes(
             button_actions.iter()
                 .filter_map(|(_name, action)| {
                     match action {
@@ -399,20 +399,20 @@ impl Layout {
         let button_states = button_actions.into_iter().map(|(name, action)| {
             let keycodes = match &action {
                 ::action::Action::Submit { text: _, keys } => {
-                    keys.iter().map(|named_keycode| {
-                        *keymap.get(named_keycode.0.as_str())
+                    keys.iter().map(|named_keysym| {
+                        *symbolmap.get(named_keysym.0.as_str())
                             .expect(
                                 format!(
-                                    "keycode {} in key {} missing from keymap",
-                                    named_keycode.0,
+                                    "keysym {} in key {} missing from symbol map",
+                                    named_keysym.0,
                                     name
                                 ).as_str()
                             )
                     }).collect()
                 },
                 action::Action::Erase => vec![
-                    *keymap.get("BackSpace")
-                        .expect(&format!("BackSpace missing from keymap")),
+                    *symbolmap.get("BackSpace")
+                        .expect(&format!("BackSpace missing from symbol map")),
                 ],
                 _ => Vec::new(),
             };
@@ -430,8 +430,7 @@ impl Layout {
             button_states
         );
 
-        // TODO: generate from symbols
-        let keymap_str = match generate_keymap(&button_states) {
+        let keymap_str = match generate_keymap(symbolmap) {
             Err(e) => { return (Err(e), warning_handler) },
             Ok(v) => v,
         };
