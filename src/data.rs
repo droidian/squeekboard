@@ -722,19 +722,20 @@ fn create_button<H: logging::Handler>(
 }
 
 fn extract_symbol_names<'a>(actions: &'a [(&str, action::Action)])
-    -> impl Iterator<Item=&'a str>
+    -> impl Iterator<Item=String> + 'a
 {
     actions.iter()
         .filter_map(|(_name, act)| {
             match act {
                 action::Action::Submit {
                     text: _, keys,
-                } => Some(keys),
+                } => Some(keys.clone()),
+                action::Action::Erase => Some(vec!(action::KeySym("BackSpace".into()))),
                 _ => None,
             }
         })
         .flatten()
-        .map(|named_keysym| named_keysym.0.as_str())
+        .map(|named_keysym| named_keysym.0)
 }
 
 #[cfg(test)]
@@ -986,7 +987,7 @@ mod tests {
         )];
         assert_eq!(
             extract_symbol_names(&actions[..]).collect::<Vec<_>>(),
-            Vec::<&str>::new(), //"BackSpace"], // TODO: centralize handling of BackSpace
+            vec!["BackSpace"],
         );
     }
 

@@ -79,10 +79,10 @@ impl KeyState {
 }
 
 /// Sorts an iterator by converting it to a Vector and back
-fn sorted<'a, I: Iterator<Item=&'a str>>(
+fn sorted<'a, I: Iterator<Item=String>>(
     iter: I
-) -> impl Iterator<Item=&'a str> {
-    let mut v: Vec<&'a str> = iter.collect();
+) -> impl Iterator<Item=String> {
+    let mut v: Vec<String> = iter.collect();
     v.sort();
     v.into_iter()
 }
@@ -90,14 +90,13 @@ fn sorted<'a, I: Iterator<Item=&'a str>>(
 /// Generates a mapping where each key gets a keycode, starting from ~~8~~
 /// HACK: starting from 9, because 8 results in keycode 0,
 /// which the compositor likes to discard
-pub fn generate_keycodes<'a, C: IntoIterator<Item=&'a str>>(
+pub fn generate_keycodes<'a, C: IntoIterator<Item=String>>(
     key_names: C,
 ) -> HashMap<String, u32> {
-    let special_keysyms = ["BackSpace", "Return"].iter().map(|&s| s);
     HashMap::from_iter(
-        // sort to remove a source of indeterminism in keycode assignment
-        sorted(key_names.into_iter().chain(special_keysyms))
-            .map(|name| String::from(name))
+        // Sort to remove a source of indeterminism in keycode assignment.
+        sorted(key_names.into_iter())
+            .map(|name| name)
             .zip(9..)
     )
 }
