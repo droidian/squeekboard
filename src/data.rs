@@ -18,7 +18,7 @@ use xkbcommon::xkb;
 use ::action;
 use ::keyboard::{
     KeyState, PressType,
-    generate_keymap, generate_keycodes, FormattingError
+    generate_keymaps, generate_keycodes, KeyCode, FormattingError
 };
 use ::layout;
 use ::layout::ArrangementKind;
@@ -382,7 +382,7 @@ impl Layout {
                 )
             )}).collect();
 
-        let symbolmap: HashMap<String, u32> = generate_keycodes(
+        let symbolmap: HashMap<String, KeyCode> = generate_keycodes(
             extract_symbol_names(&button_actions)
         );
 
@@ -391,7 +391,7 @@ impl Layout {
                 let keycodes = match &action {
                     ::action::Action::Submit { text: _, keys } => {
                         keys.iter().map(|named_keysym| {
-                            *symbolmap.get(named_keysym.0.as_str())
+                            symbolmap.get(named_keysym.0.as_str())
                                 .expect(
                                     format!(
                                         "keysym {} in key {} missing from symbol map",
@@ -399,11 +399,13 @@ impl Layout {
                                         name
                                     ).as_str()
                                 )
+                                .clone()
                         }).collect()
                     },
                     action::Action::Erase => vec![
-                        *symbolmap.get("BackSpace")
-                            .expect(&format!("BackSpace missing from symbol map")),
+                        symbolmap.get("BackSpace")
+                            .expect(&format!("BackSpace missing from symbol map"))
+                            .clone(),
                     ],
                     _ => Vec::new(),
                 };
@@ -418,7 +420,7 @@ impl Layout {
             })
         );
 
-        let keymap_str = match generate_keymap(symbolmap) {
+        let keymaps = match generate_keymaps(symbolmap) {
             Err(e) => { return (Err(e), warning_handler) },
             Ok(v) => v,
         };
@@ -482,10 +484,10 @@ impl Layout {
         (
             Ok(::layout::LayoutData {
                 views: views,
-                keymap_str: {
+                keymaps: keymaps.into_iter().map(|keymap_str|
                     CString::new(keymap_str)
                         .expect("Invalid keymap string generated")
-                },
+                ).collect(),
                 // FIXME: use a dedicated field
                 margins: layout::Margins {
                     top: self.margins.top,
@@ -876,7 +878,7 @@ mod tests {
         assert_eq!(
             out.views["base"].1
                 .get_rows()[0].1
-                .buttons[0].1
+                .get_buttons()[0].1
                 .state.borrow()
                 .keycodes.len(),
             1

@@ -28,19 +28,12 @@
 #include <sys/random.h> // TODO: this is Linux-specific
 #include <xkbcommon/xkbcommon.h>
 
+
 #include "eek-keyboard.h"
 
-
-static void eek_key_map_deinit(struct keymap *self) {
-    if (self->fd < 0) {
-        g_error("Deinit called multiple times on KeyMap");
-    } else {
-        close(self->fd);
-    }
-    self->fd = -1;
-}
-
-static struct keymap eek_key_map_from_str(const char *keymap_str) {
+/// External linkage for Rust.
+/// The corresponding deinit is implemented in vkeyboard::KeyMap::drop
+struct keymap squeek_key_map_from_str(const char *keymap_str) {
     struct xkb_context *context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
     if (!context) {
         g_error("No context created");
@@ -91,7 +84,6 @@ static struct keymap eek_key_map_from_str(const char *keymap_str) {
 }
 
 void level_keyboard_free(LevelKeyboard *self) {
-    eek_key_map_deinit(&self->keymap);
     squeek_layout_free(self->layout);
     g_free(self);
 }
@@ -104,7 +96,5 @@ level_keyboard_new (struct squeek_layout *layout)
         g_error("Failed to create a keyboard");
     }
     keyboard->layout = layout;
-    const gchar *keymap_str = squeek_layout_get_keymap(keyboard->layout);
-    keyboard->keymap = eek_key_map_from_str(keymap_str);
     return keyboard;
 }

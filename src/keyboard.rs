@@ -5,10 +5,13 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
 use std::io;
+use std::mem;
+use std::ptr;
 use std::rc::Rc;
 use std::string::FromUtf8Error;
 
 use ::action::Action;
+use ::util;
 
 // Traits
 use std::io::Write;
@@ -20,7 +23,12 @@ pub enum PressType {
     Pressed = 1,
 }
 
-pub type KeyCode = u32;
+/// The extended, unambiguous layout-keycode
+#[derive(Debug, Clone)]
+pub struct KeyCode {
+    pub code: u32,
+    pub keymap_idx: usize,
+}
 
 bitflags!{
     /// Map to `virtual_keyboard.modifiers` modifiers values
@@ -92,12 +100,15 @@ fn sorted<'a, I: Iterator<Item=String>>(
 /// which the compositor likes to discard
 pub fn generate_keycodes<'a, C: IntoIterator<Item=String>>(
     key_names: C,
-) -> HashMap<String, u32> {
+) -> HashMap<String, KeyCode> {
     HashMap::from_iter(
         // Sort to remove a source of indeterminism in keycode assignment.
         sorted(key_names.into_iter())
-            .map(|name| name)
-            .zip(9..)
+            .zip(util::cycle_count(9..255))
+            .map(|(name, (code, keymap_idx))| (
+                String::from(name),
+                KeyCode { code, keymap_idx },
+            ))
     )
 }
 
@@ -122,10 +133,50 @@ impl From<io::Error> for FormattingError {
     }
 }
 
+/// Index is the key code, String is the occupant.
+/// Starts all empty.
+/// https://gitlab.freedesktop.org/xorg/xserver/-/issues/260
+type SingleKeyMap = [Option<String>; 256];
+
+fn single_key_map_new() -> SingleKeyMap {
+    // Why can't we just initialize arrays without tricks -_- ?
+    unsafe {
+        // Inspired by
+        // https://www.reddit.com/r/rust/comments/5n7bh1/how_to_create_an_array_of_a_type_with_clone_but/
+        let mut array: SingleKeyMap = mem::MaybeUninit::uninit().assume_init();
+        for element in array.iter_mut() {
+            ptr::write(element, None);
+        }
+        array
+    }
+}
+
+pub fn generate_keymaps(symbolmap: HashMap::<String, KeyCode>)
+    -> Result<Vec<String>, FormattingError>
+{
+    let mut bins: Vec<SingleKeyMap> = Vec::new();
+    
+    for (name, KeyCode { code, keymap_idx }) in symbolmap.into_iter() {
+        if keymap_idx >= bins.len() {
+            bins.resize_with(
+                keymap_idx + 1,
+                || single_key_map_new(),
+            );
+        }
+        bins[keymap_idx][code as usize] = Some(name);
+    }
+
+    let mut out = Vec::new();
+    for bin in bins {
+        out.push(generate_keymap(&bin)?);
+    }
+    Ok(out)
+}
+
 /// Generates a de-facto single level keymap.
-/// Key codes must not repeat and should remain between 9 and 255.
-pub fn generate_keymap(
-    symbolmap: HashMap::<String, KeyCode>,
+/// Key codes must not repeat and must remain between 9 and 255.
+fn generate_keymap(
+    symbolmap: &SingleKeyMap,
 ) -> Result<String, FormattingError> {
     let mut buf: Vec<u8> = Vec::new();
     writeln!(
@@ -134,14 +185,21 @@ pub fn generate_keymap(
 
     xkb_keycodes \"squeekboard\" {{
         minimum = 8;
-        maximum = 999;"
+        maximum = 255;"
     )?;
+
+    let pairs: Vec<(&String, usize)> = symbolmap.iter()
+        // Attach a key code to each cell.
+        .enumerate()
+        // Get rid of empty keycodes.
+        .filter_map(|(code, name)| name.as_ref().map(|n| (n, code)))
+        .collect();
     
     // Xorg can only consume up to 255 keys, so this may not work in Xwayland.
     // Two possible solutions:
     // - use levels to cram multiple characters into one key
     // - swap layouts on key presses
-    for keycode in symbolmap.values() {
+    for (_name, keycode) in &pairs {
         write!(
             buf,
             "
@@ -160,7 +218,7 @@ pub fn generate_keymap(
 "
     )?;
     
-    for (name, keycode) in symbolmap.iter() {
+    for (name, keycode) in pairs {
         write!(
             buf,
             "
@@ -218,13 +276,14 @@ mod tests {
     use xkbcommon::xkb;
 
     #[test]
-    fn test_keymap_multi() {
-        let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
+    fn test_keymap_single_resolve() {
+        let mut key_map = single_key_map_new();
+        key_map[9] = Some("a".into());
+        key_map[10] = Some("c".into());
 
-        let keymap_str = generate_keymap(hashmap!{
-            "a".into() => 9,
-            "c".into() => 10,
-        }).unwrap();
+        let keymap_str = generate_keymap(&key_map).unwrap();
+
+        let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
 
         let keymap = xkb::Keymap::new_from_string(
             &context,
@@ -237,5 +296,37 @@ mod tests {
 
         assert_eq!(state.key_get_one_sym(9), xkb::KEY_a);
         assert_eq!(state.key_get_one_sym(10), xkb::KEY_c);
+    }
+
+    #[test]
+    fn test_keymap_second_resolve() {
+        let keymaps = generate_keymaps(hashmap!(
+            "a".into() => KeyCode { keymap_idx: 1, code: 9 },
+        )).unwrap();
+
+        let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
+
+        let keymap = xkb::Keymap::new_from_string(
+            &context,
+            keymaps[1].clone(), // this index is part of the test
+            xkb::KEYMAP_FORMAT_TEXT_V1,
+            xkb::KEYMAP_COMPILE_NO_FLAGS,
+        ).expect("Failed to create keymap");
+
+        let state = xkb::State::new(&keymap);
+
+        assert_eq!(state.key_get_one_sym(9), xkb::KEY_a);
+    }
+
+    #[test]
+    fn test_symbolmap_overflow() {
+        // The 257th key (U1101) is interesting.
+        // Use Unicode encoding for being able to use in xkb keymaps.
+        let keynames = (0..258).map(|num| format!("U{:04X}", 0x1000 + num));
+        let keycodes = generate_keycodes(keynames);
+        
+        // test now
+        let code = keycodes.get("U1101").expect("Did not find the tested keysym");
+        assert_eq!(code.keymap_idx, 1);
     }
 }

@@ -23,8 +23,9 @@ use ::action::Modifier;
 use ::imservice;
 use ::imservice::IMService;
 use ::keyboard::{ KeyCode, KeyStateId, Modifiers, PressType };
-use ::layout::c::LevelKeyboard;
+use ::layout;
 use ::util::vec_remove;
+use ::vkeyboard;
 use ::vkeyboard::VirtualKeyboard;
 
 // traits
@@ -68,6 +69,8 @@ pub mod c {
                 modifiers_active: Vec::new(),
                 virtual_keyboard: VirtualKeyboard(vk),
                 pressed: Vec::new(),
+                keymap_fds: Vec::new(),
+                keymap_idx: None,
             }
         ))
     }
@@ -91,16 +94,17 @@ pub mod c {
 
     #[no_mangle]
     pub extern "C"
-    fn submission_set_keyboard(
+    fn submission_use_layout(
         submission: *mut Submission,
-        keyboard: LevelKeyboard,
+        layout: *const layout::Layout,
         time: u32,
     ) {
         if submission.is_null() {
             panic!("Null submission pointer");
         }
         let submission: &mut Submission = unsafe { &mut *submission };
-        submission.update_keymap(keyboard, Timestamp(time));
+        let layout = unsafe { &*layout };
+        submission.use_layout(layout, Timestamp(time));
     }
 }
 
@@ -119,6 +123,8 @@ pub struct Submission {
     virtual_keyboard: VirtualKeyboard,
     modifiers_active: Vec<(KeyStateId, Modifier)>,
     pressed: Vec<(KeyStateId, SubmittedAction)>,
+    keymap_fds: Vec<vkeyboard::c::KeyMap>,
+    keymap_idx: Option<usize>,
 }
 
 pub enum SubmitData<'a> {
@@ -177,11 +183,34 @@ impl Submission {
         let submit_action = match was_committed_as_text {
             true => SubmittedAction::IMService,
             false => {
-                self.virtual_keyboard.switch(
-                    keycodes,
-                    PressType::Pressed,
-                    time,
-                );
+                let keycodes_count = keycodes.len();
+                for keycode in keycodes.iter() {
+                    self.select_keymap(keycode.keymap_idx, time);
+                    let keycode = keycode.code;
+                    match keycodes_count {
+                        // Pressing a key made out of a single keycode is simple:
+                        // press on press, release on release.
+                        1 => self.virtual_keyboard.switch(
+                            keycode,
+                            PressType::Pressed,
+                            time,
+                        ),
+                        // A key made of multiple keycodes
+                        // has to submit them one after the other.
+                        _ => {
+                            self.virtual_keyboard.switch(
+                                keycode.clone(),
+                                PressType::Pressed,
+                                time,
+                            );
+                            self.virtual_keyboard.switch(
+                                keycode.clone(),
+                                PressType::Released,
+                                time,
+                            );
+                        },
+                    };
+                }
                 SubmittedAction::VirtualKeyboard(keycodes.clone())
             },
         };
@@ -199,11 +228,21 @@ impl Submission {
                 // no matter if the imservice got activated,
                 // keys must be released
                 SubmittedAction::VirtualKeyboard(keycodes) => {
-                    self.virtual_keyboard.switch(
-                        &keycodes,
-                        PressType::Released,
-                        time,
-                    )
+                    let keycodes_count = keycodes.len();
+                    match keycodes_count {
+                        1 => {
+                            let keycode = &keycodes[0];
+                            self.select_keymap(keycode.keymap_idx, time);
+                            self.virtual_keyboard.switch(
+                                keycode.code,
+                                PressType::Released,
+                                time,
+                            );
+                        },
+                        // Design choice here: submit multiple all at press time
+                        // and do nothing at release time.
+                        _ => {},
+                    };
                 },
             }
         };
@@ -274,6 +313,7 @@ impl Submission {
         }
     }
 
+
     /// Changes keymap and clears pressed keys and modifiers.
     ///
     /// It's not obvious if clearing is the right thing to do, 
@@ -283,9 +323,28 @@ impl Submission {
     /// Alternatively, modifiers could be restored on the new keymap.
     /// That approach might be difficult
     /// due to modifiers meaning different things in different keymaps.
-    pub fn update_keymap(&mut self, keyboard: LevelKeyboard, time: Timestamp) {
-        self.clear_all_modifiers();
-        self.release_all_virtual_keys(time);
-        self.virtual_keyboard.update_keymap(keyboard);
+    fn select_keymap(&mut self, idx: usize, time: Timestamp) {
+        if self.keymap_idx != Some(idx) {
+            self.keymap_idx = Some(idx);
+            self.clear_all_modifiers();
+            self.release_all_virtual_keys(time);
+            let keymap = &self.keymap_fds[idx];
+            self.virtual_keyboard.update_keymap(keymap);
+        }
+    }
+    
+    pub fn use_layout(&mut self, layout: &layout::Layout, time: Timestamp) {
+        self.keymap_fds = layout.keymaps.iter()
+            .map(|keymap_str| vkeyboard::c::KeyMap::from_cstr(
+                keymap_str.as_c_str()
+            ))
+            .collect();
+        self.keymap_idx = None;
+
+        // This can probably be eliminated,
+        // because key presses can trigger an update anyway.
+        // However, self.keymap_idx needs to become Option<>
+        // in order to force update on new layouts.
+        self.select_keymap(0, time);
     }
 }

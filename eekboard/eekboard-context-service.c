@@ -159,7 +159,7 @@ eekboard_context_service_use_layout(EekboardContextService *context, struct sque
     // Update the keymap if necessary.
     // TODO: Update submission on change event
     if (context->submission) {
-        submission_set_keyboard(context->submission, keyboard, timestamp);
+        submission_use_layout(context->submission, keyboard->layout, timestamp);
     }
 
     // Update UI
@@ -345,7 +345,7 @@ void eekboard_context_service_set_submission(EekboardContextService *context, st
     context->submission = submission;
     if (context->submission) {
         uint32_t time = gdk_event_get_time(NULL);
-        submission_set_keyboard(context->submission, context->keyboard, time);
+        submission_use_layout(context->submission, context->keyboard->layout, time);
     }
 }
 
