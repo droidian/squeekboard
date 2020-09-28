@@ -41,7 +41,7 @@ impl VirtualKeyboard {
     // TODO: error out if keymap not set
     pub fn switch(
         &self,
-        keycodes: &Vec<KeyCode>,
+        keycodes: &[KeyCode],
         action: PressType,
         timestamp: Timestamp,
     ) {
