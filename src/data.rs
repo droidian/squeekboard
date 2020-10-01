@@ -386,38 +386,36 @@ impl Layout {
             extract_symbol_names(&button_actions)
         );
 
-        let button_states = button_actions.into_iter().map(|(name, action)| {
-            let keycodes = match &action {
-                ::action::Action::Submit { text: _, keys } => {
-                    keys.iter().map(|named_keysym| {
-                        *symbolmap.get(named_keysym.0.as_str())
-                            .expect(
-                                format!(
-                                    "keysym {} in key {} missing from symbol map",
-                                    named_keysym.0,
-                                    name
-                                ).as_str()
-                            )
-                    }).collect()
-                },
-                action::Action::Erase => vec![
-                    *symbolmap.get("BackSpace")
-                        .expect(&format!("BackSpace missing from symbol map")),
-                ],
-                _ => Vec::new(),
-            };
-            (
-                name.into(),
-                KeyState {
-                    pressed: PressType::Released,
-                    keycodes,
-                    action,
-                }
-            )
-        });
-
         let button_states = HashMap::<String, KeyState>::from_iter(
-            button_states
+            button_actions.into_iter().map(|(name, action)| {
+                let keycodes = match &action {
+                    ::action::Action::Submit { text: _, keys } => {
+                        keys.iter().map(|named_keysym| {
+                            *symbolmap.get(named_keysym.0.as_str())
+                                .expect(
+                                    format!(
+                                        "keysym {} in key {} missing from symbol map",
+                                        named_keysym.0,
+                                        name
+                                    ).as_str()
+                                )
+                        }).collect()
+                    },
+                    action::Action::Erase => vec![
+                        *symbolmap.get("BackSpace")
+                            .expect(&format!("BackSpace missing from symbol map")),
+                    ],
+                    _ => Vec::new(),
+                };
+                (
+                    name.into(),
+                    KeyState {
+                        pressed: PressType::Released,
+                        keycodes,
+                        action,
+                    }
+                )
+            })
         );
 
         let keymap_str = match generate_keymap(symbolmap) {
