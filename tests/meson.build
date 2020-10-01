@@ -50,12 +50,12 @@ endforeach
 foreach layout : [
     'us', 'us_wide',
     'br',
+    'be',
     'de', 'de_wide',
     'dk',
     'es',
     'fi',
     'fr',
-    'be',
     'gr',
     'it',
     'jp+kana','jp+kana_wide',
