@@ -3,6 +3,7 @@
 use gio;
 use gtk;
 use std::ffi::CString;
+use std::cmp::Ordering;
 use ::layout::c::{ Bounds, EekGtkKeyboard };
 use ::locale;
 use ::locale::{ OwnedTranslation, Translation, compare_current_locale };
@@ -334,8 +335,13 @@ pub fn show(
         .zip(all_layouts.clone().into_iter())
         .collect();
 
-    human_names.sort_unstable_by(|(tr_a, _), (tr_b, _)| {
-        compare_current_locale(&tr_a.0, &tr_b.0)
+    human_names.sort_unstable_by(|(tr_a, layout_a), (tr_b, layout_b)| {
+        // Sort first by layout then name
+        match (layout_a, layout_b) {
+            (LayoutId::Local(_), LayoutId::System { .. }) => Ordering::Greater,
+            (LayoutId::System { .. }, LayoutId::Local(_)) => Ordering::Less,
+            _ => compare_current_locale(&tr_a.0, &tr_b.0)
+        }
     });
 
     // GVariant doesn't natively support `enum`s,
