@@ -360,6 +360,10 @@ eek_gtk_keyboard_init (EekGtkKeyboard *self)
         priv->event = lfb_event_new ("button-pressed");
     else
         g_warning ("Failed to init libfeedback: %s", err->message);
+
+    GtkIconTheme *theme = gtk_icon_theme_get_default ();
+
+    gtk_icon_theme_add_resource_path (theme, "/sm/puri/squeekboard/icons");
 }
 
 static void

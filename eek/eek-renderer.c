@@ -265,10 +265,6 @@ renderer_init (EekRenderer *self)
     self->allocation_height = 0.0;
     self->scale_factor = 1;
 
-    GtkIconTheme *theme = gtk_icon_theme_get_default ();
-
-    gtk_icon_theme_add_resource_path (theme, "/sm/puri/squeekboard/icons");
-
     self->css_provider = squeek_load_style();
 }
 
