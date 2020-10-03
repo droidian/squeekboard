@@ -143,7 +143,11 @@ fn single_key_map_new() -> SingleKeyMap {
     unsafe {
         // Inspired by
         // https://www.reddit.com/r/rust/comments/5n7bh1/how_to_create_an_array_of_a_type_with_clone_but/
+        #[cfg(feature = "rustc_less_1_36")]
+        let mut array: SingleKeyMap = mem::uninitialized();
+        #[cfg(not(feature = "rustc_less_1_36"))]
         let mut array: SingleKeyMap = mem::MaybeUninit::uninit().assume_init();
+
         for element in array.iter_mut() {
             ptr::write(element, None);
         }

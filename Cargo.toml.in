@@ -19,6 +19,7 @@ path = "@path@/examples/test_layout.rs"
 [features]
 gio_v0_5 = []
 gtk_v0_5 = []
+rustc_less_1_36 = []
 
 # Dependencies which don't change based on build flags
 [dependencies.cairo-sys-rs]
