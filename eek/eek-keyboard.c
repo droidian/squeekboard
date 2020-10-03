@@ -64,8 +64,8 @@ level_keyboard_new (struct squeek_layout *layout)
     xkb_context_unref(context);
     keyboard->keymap = keymap;
 
-    keymap_str = xkb_keymap_get_as_string(keymap, XKB_KEYMAP_FORMAT_TEXT_V1);
-    keyboard->keymap_len = strlen(keymap_str) + 1;
+    char * xkb_keymap_str = xkb_keymap_get_as_string(keymap, XKB_KEYMAP_FORMAT_TEXT_V1);
+    keyboard->keymap_len = strlen(xkb_keymap_str) + 1;
 
     g_autofree char *path = strdup("/eek_keymap-XXXXXX");
     char *r = &path[strlen(path) - 6];
@@ -89,7 +89,8 @@ level_keyboard_new (struct squeek_layout *layout)
     if ((void*)ptr == (void*)-1) {
         g_error("Failed to set up mmap");
     }
-    strncpy(ptr, keymap_str, keyboard->keymap_len);
+    strncpy(ptr, xkb_keymap_str, keyboard->keymap_len);
+    free(xkb_keymap_str);
     munmap(ptr, keyboard->keymap_len);
     return keyboard;
 }
