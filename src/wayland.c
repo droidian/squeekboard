@@ -17,7 +17,7 @@ eek_virtual_keyboard_v1_key(struct zwp_virtual_keyboard_v1 *zwp_virtual_keyboard
 void eek_virtual_keyboard_update_keymap(struct zwp_virtual_keyboard_v1 *zwp_virtual_keyboard_v1, const LevelKeyboard *keyboard) {
     zwp_virtual_keyboard_v1_keymap(zwp_virtual_keyboard_v1,
         WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1,
-        keyboard->keymap_fd, keyboard->keymap_len);
+        keyboard->keymap.fd, keyboard->keymap.fd_len);
 }
 
 void
