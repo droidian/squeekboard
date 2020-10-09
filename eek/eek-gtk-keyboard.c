@@ -104,10 +104,10 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
     return FALSE;
 }
 
-// Units of pixel size
+// Units of virtual pixels size
 static enum squeek_arrangement_kind get_type(uint32_t width, uint32_t height) {
     (void)height;
-    if (width < 1080) {
+    if (width < 540) {
         return ARRANGEMENT_KIND_BASE;
     }
     return ARRANGEMENT_KIND_WIDE;
@@ -119,11 +119,10 @@ eek_gtk_keyboard_real_size_allocate (GtkWidget     *self,
 {
     EekGtkKeyboardPrivate *priv =
         eek_gtk_keyboard_get_instance_private (EEK_GTK_KEYBOARD (self));
-    uint32_t scale = (uint32_t)gtk_widget_get_scale_factor(self);
     // check if the change would switch types
     enum squeek_arrangement_kind new_type = get_type(
-                (uint32_t)(allocation->width - allocation->x) * scale,
-                (uint32_t)(allocation->height - allocation->y) * scale);
+                (uint32_t)(allocation->width - allocation->x),
+                (uint32_t)(allocation->height - allocation->y));
     if (priv->layout->arrangement != new_type) {
         priv->layout->arrangement = new_type;
         uint32_t time = gdk_event_get_time(NULL);
