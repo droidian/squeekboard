@@ -38,6 +38,7 @@ const KEYBOARDS: &[(*const str, *const str)] = &[
     ("ua", include_str!("../data/keyboards/ua.yaml")),
     // layout+overlay
     ("terminal", include_str!("../data/keyboards/terminal.yaml")),
+    ("terminal_wide", include_str!("../data/keyboards/terminal_wide.yaml")),
     // Overlays
     ("emoji", include_str!("../data/keyboards/emoji.yaml")),
 ];
