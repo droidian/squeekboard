@@ -14,6 +14,7 @@ sources = [
   config_h,
   'dbus.c',
   'imservice.c',
+  'popover.c',
   'server-context-service.c',
   'wayland.c',
   '../eek/eek.c',

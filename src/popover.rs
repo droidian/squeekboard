@@ -26,6 +26,15 @@ use gtk::WidgetExt;
 use std::io::Write;
 use ::logging::Warn;
 
+mod c {
+    use std::os::raw::c_char;
+
+    #[no_mangle]
+    extern "C" {
+        pub fn popover_open_settings_panel(panel: *const c_char);
+    }
+}
+
 mod variants {
     use glib;
     use glib::Variant;
@@ -128,6 +137,12 @@ fn make_menu_builder(inputs: Vec<(&str, OwnedTranslation)>) -> gtk::Builder {
     writeln!(
         xml,
         "
+    </section>
+    <section>
+        <item>
+            <attribute name=\"label\" translatable=\"yes\">Keyboard Settings</attribute>
+            <attribute name=\"action\">settings</attribute>
+        </item>
     </section>
   </menu>
 </interface>"
@@ -420,8 +435,14 @@ pub fn show(
             menu_inner.popdown();
         });
 
+        let settings_action = gio::SimpleAction::new("settings", None);
+        settings_action.connect_activate(move |_, _| {
+            unsafe { c::popover_open_settings_panel(CString::new("region").unwrap().as_ptr()) };
+        });
+
         let action_group = gio::SimpleActionGroup::new();
         action_group.add_action(&layout_action);
+        action_group.add_action(&settings_action);
 
         menu.insert_action_group("popup", Some(&action_group));
     };
