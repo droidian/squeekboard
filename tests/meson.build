@@ -50,12 +50,12 @@ endforeach
 foreach layout : [
     'us', 'us_wide',
     'br',
-    'be',
+    'be', 'be_wide',
     'de', 'de_wide',
     'dk',
     'es',
     'fi',
-    'fr',
+    'fr', 'fr_wide',
     'gr',
     'it',
     'jp+kana','jp+kana_wide',
@@ -65,8 +65,8 @@ foreach layout : [
     'ru',
     'se',
     'ua',
-    'terminal',
-    
+    'terminal', 'terminal_wide',
+
     'emoji',
 ]
     test(

@@ -18,11 +18,13 @@ const KEYBOARDS: &[(*const str, *const str)] = &[
     ("br", include_str!("../data/keyboards/br.yaml")),
     ("de", include_str!("../data/keyboards/de.yaml")),
     ("be", include_str!("../data/keyboards/be.yaml")),
+    ("be_wide", include_str!("../data/keyboards/be_wide.yaml")),
     ("de_wide", include_str!("../data/keyboards/de_wide.yaml")),
     ("dk", include_str!("../data/keyboards/dk.yaml")),
     ("es", include_str!("../data/keyboards/es.yaml")),
     ("fi", include_str!("../data/keyboards/fi.yaml")),
     ("fr", include_str!("../data/keyboards/fr.yaml")),
+    ("fr_wide", include_str!("../data/keyboards/fr_wide.yaml")),
     ("gr", include_str!("../data/keyboards/gr.yaml")),
     ("it", include_str!("../data/keyboards/it.yaml")),
     ("jp+kana", include_str!("../data/keyboards/jp+kana.yaml")),
@@ -36,6 +38,7 @@ const KEYBOARDS: &[(*const str, *const str)] = &[
     ("ua", include_str!("../data/keyboards/ua.yaml")),
     // layout+overlay
     ("terminal", include_str!("../data/keyboards/terminal.yaml")),
+    ("terminal_wide", include_str!("../data/keyboards/terminal_wide.yaml")),
     // Overlays
     ("emoji", include_str!("../data/keyboards/emoji.yaml")),
 ];
