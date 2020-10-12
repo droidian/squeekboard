@@ -9,7 +9,6 @@ use std::rc::Rc;
 use std::string::FromUtf8Error;
 
 use ::action::Action;
-use ::logging;
 
 // Traits
 use std::io::Write;
@@ -92,7 +91,7 @@ fn sorted<'a, I: Iterator<Item=&'a str>>(
 /// HACK: starting from 9, because 8 results in keycode 0,
 /// which the compositor likes to discard
 pub fn generate_keycodes<'a, C: IntoIterator<Item=&'a str>>(
-    key_names: C
+    key_names: C,
 ) -> HashMap<String, u32> {
     let special_keysyms = ["BackSpace", "Return"].iter().map(|&s| s);
     HashMap::from_iter(
@@ -125,11 +124,9 @@ impl From<io::Error> for FormattingError {
 }
 
 /// Generates a de-facto single level keymap.
-// TODO: don't rely on keys and their order,
-// but rather on what keysyms and keycodes are in use.
-// Iterating actions makes it hard to deduplicate keysyms.
+/// Key codes must not repeat and should remain between 9 and 255.
 pub fn generate_keymap(
-    keystates: &HashMap::<String, KeyState>
+    symbolmap: HashMap::<String, KeyCode>,
 ) -> Result<String, FormattingError> {
     let mut buf: Vec<u8> = Vec::new();
     writeln!(
@@ -138,88 +135,75 @@ pub fn generate_keymap(
 
     xkb_keycodes \"squeekboard\" {{
         minimum = 8;
-        maximum = 255;"
+        maximum = 999;"
     )?;
     
-    for (name, state) in keystates.iter() {
-        match &state.action {
-            Action::Submit { text: _, keys } => {
-                if let 0 = keys.len() {
-                    log_print!(
-                        logging::Level::Warning,
-                        "Key {} has no keysyms", name,
-                    );
-                };
-                for (named_keysym, keycode) in keys.iter().zip(&state.keycodes) {
-                    write!(
-                        buf,
-                        "
-        <{}> = {};",
-                        named_keysym.0,
-                        keycode,
-                    )?;
-                }
-            },
-            Action::Erase => {
-                let mut keycodes = state.keycodes.iter();
-                write!(
-                    buf,
-                    "
-        <BackSpace> = {};",
-                    keycodes.next().expect("Erase key has no keycode"),
-                )?;
-                if let Some(_) = keycodes.next() {
-                    log_print!(
-                        logging::Level::Bug,
-                        "Erase key has multiple keycodes",
-                    );
-                }
-            },
-            _ => {},
-        }
+    // Xorg can only consume up to 255 keys, so this may not work in Xwayland.
+    // Two possible solutions:
+    // - use levels to cram multiple characters into one key
+    // - swap layouts on key presses
+    for keycode in symbolmap.values() {
+        write!(
+            buf,
+            "
+        <I{}> = {0};",
+            keycode,
+        )?;
     }
-    
+
     writeln!(
         buf,
         "
+        indicator 1 = \"Caps Lock\"; // Xwayland won't accept without it.
     }};
     
     xkb_symbols \"squeekboard\" {{
-
-        name[Group1] = \"Letters\";
-        name[Group2] = \"Numbers/Symbols\";
-        
-        key <BackSpace> {{ [ BackSpace ] }};"
+"
     )?;
     
-    for (_name, state) in keystates.iter() {
-        if let Action::Submit { text: _, keys } = &state.action {
-            for keysym in keys.iter() {
-                write!(
-                    buf,
-                    "
-        key <{}> {{ [ {0} ] }};",
-                    keysym.0,
-                )?;
-            }
-        }
+    for (name, keycode) in symbolmap.iter() {
+        write!(
+            buf,
+            "
+key <I{}> {{ [ {} ] }};",
+            keycode,
+            name,
+        )?;
     }
+
     writeln!(
         buf,
         "
     }};
 
     xkb_types \"squeekboard\" {{
+        virtual_modifiers Squeekboard; // No modifiers! Needed for Xorg for some reason.
+    
+        // Those names are needed for Xwayland.
+        type \"ONE_LEVEL\" {{
+            modifiers= none;
+            level_name[Level1]= \"Any\";
+        }};
+        type \"TWO_LEVEL\" {{
+            level_name[Level1]= \"Base\";
+        }};
+        type \"ALPHABETIC\" {{
+            level_name[Level1]= \"Base\";
+        }};
+        type \"KEYPAD\" {{
+            level_name[Level1]= \"Base\";
+        }};
+        type \"SHIFT+ALT\" {{
+            level_name[Level1]= \"Base\";
+        }};
 
-	type \"TWO_LEVEL\" {{
-            modifiers = Shift;
-            map[Shift] = Level2;
-            level_name[Level1] = \"Base\";
-            level_name[Level2] = \"Shift\";
-	}};
     }};
 
     xkb_compatibility \"squeekboard\" {{
+        // Needed for Xwayland again.
+        interpret Any+AnyOf(all) {{
+            action= SetMods(modifiers=modMapMods,clearLocks);
+        }};
     }};
 }};"
     )?;
@@ -234,21 +218,13 @@ mod tests {
     
     use xkbcommon::xkb;
 
-    use ::action::KeySym;
-
     #[test]
     fn test_keymap_multi() {
         let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
 
-        let keymap_str = generate_keymap(&hashmap!{
-            "ac".into() => KeyState {
-                action: Action::Submit {
-                    text: None,
-                    keys: vec!(KeySym("a".into()), KeySym("c".into())),
-                },
-                keycodes: vec!(9, 10),
-                pressed: PressType::Released,
-            },
+        let keymap_str = generate_keymap(hashmap!{
+            "a".into() => 9,
+            "c".into() => 10,
         }).unwrap();
 
         let keymap = xkb::Keymap::new_from_string(
