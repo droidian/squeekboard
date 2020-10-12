@@ -85,13 +85,20 @@ on_notify_unmap (ServerContextService *self, GtkWidget *widget)
 }
 
 static uint32_t
-calculate_height(int32_t width)
+calculate_height(int32_t width, GdkRectangle *geometry)
 {
-    uint32_t height = 180;
-    if (width < 360 && width > 0) {
-        height = ((unsigned)width * 7 / 12); // to match 360×210
-    } else if (width < 540) {
-        height = 180 + (540 - (unsigned)width) * 30 / 180; // smooth transition
+    uint32_t height;
+    if (geometry->width > geometry->height) {
+        // 1:5 ratio works fine on lanscape mode, and makes sure there's
+        // room left for the app window
+        height = width / 5;
+    } else {
+        if (width < 540 && width > 0) {
+            height = ((unsigned)width * 7 / 12); // to match 360×210
+        } else {
+            // Here we switch to wide layout, less height needed
+            height = ((unsigned)width * 7 / 22);
+        }
     }
     return height;
 }
@@ -99,6 +106,10 @@ calculate_height(int32_t width)
 static void
 on_surface_configure(ServerContextService *self, PhoshLayerSurface *surface)
 {
+    GdkDisplay *display = NULL;
+    GdkWindow *window = NULL;
+    GdkMonitor *monitor = NULL;
+    GdkRectangle geometry;
     gint width;
     gint height;
 
@@ -110,11 +121,24 @@ on_surface_configure(ServerContextService *self, PhoshLayerSurface *surface)
                  "configured-height", &height,
                  NULL);
 
-    // When the geometry event comes after surface.configure,
-    // this entire height calculation does nothing.
-    // guint desired_height = squeek_uiman_get_perceptual_height(context->manager);
-    // Temporarily use old method, until the size manager is complete.
-    guint desired_height = calculate_height(width);
+    // In order to improve height calculation, we need the monitor geometry so
+    // we can use different algorithms for portrait and landscape mode.
+    // Note: this is a temporary fix until the size manager is complete.
+    display = gdk_display_get_default ();
+    if (display)
+        window = gtk_widget_get_window (GTK_WIDGET (surface));
+    if (window)
+        monitor = gdk_display_get_monitor_at_window (display, window);
+    if (monitor)
+        gdk_monitor_get_geometry (monitor, &geometry);
+    else
+        geometry.width = geometry.height = 0;
+
+     // When the geometry event comes after surface.configure,
+     // this entire height calculation does nothing.
+     // guint desired_height = squeek_uiman_get_perceptual_height(context->manager);
+     // Temporarily use old method, until the size manager is complete.
+    guint desired_height = calculate_height(width, &geometry);
 
     guint configured_height = (guint)height;
     // if height was already requested once but a different one was given
