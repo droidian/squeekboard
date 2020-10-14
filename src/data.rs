@@ -875,7 +875,7 @@ mod tests {
         assert_eq!(
             out.views["base"].1
                 .get_rows()[0].1
-                .buttons[0].1
+                .get_buttons()[0].1
                 .state.borrow()
                 .keycodes.len(),
             1
