@@ -1,0 +1,18 @@
+be Belgjic
+br Brasilian
+de Todesc
+dk Danês
+es Spgnûl
+fi Finlandês
+fr Francês
+it+fur Furlan
+gr Grêc
+it Talian
+jp+kana Gjaponês (Kana)
+no Norvegjês
+pl Polac
+ru Rus
+se Svedês
+terminal Terminâl
+ua Ucrain
+us American (USA)
