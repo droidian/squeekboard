@@ -203,6 +203,23 @@ pub fn vec_remove<T, F: FnMut(&T) -> bool>(v: &mut Vec<T>, pred: F) -> Option<T>
     idx.map(|idx| v.remove(idx))
 }
 
+/// Repeats all the items of the iterator forever,
+/// but returns the cycle number alongside.
+/// Inefficient due to all the vectors, but doesn't have to be fast.
+pub fn cycle_count<T, I: Clone + Iterator<Item=T>>(iter: I)
+    -> impl Iterator<Item=(T, usize)>
+{
+    let numbered_copies = vec![iter].into_iter()
+        .cycle()
+        .enumerate();
+    numbered_copies.flat_map(|(idx, cycle)|
+        // Pair each element from the cycle with a copy of the index.
+        cycle.zip(
+            vec![idx].into_iter().cycle() // Repeat the index forever.
+        )
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -216,5 +233,13 @@ mod tests {
         s.insert(Pointer(first.clone()));
         assert_eq!(s.insert(Pointer(Rc::new(2u32))), true);
         assert_eq!(s.remove(&Pointer(first)), true);
+    }
+
+    #[test]
+    fn check_count() {
+        assert_eq!(
+            cycle_count(5..8).take(7).collect::<Vec<_>>(),
+            vec![(5, 0), (6, 0), (7, 0), (5, 1), (6, 1), (7, 1), (5, 2)]
+        );
     }
 }

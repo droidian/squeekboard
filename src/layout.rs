@@ -236,13 +236,6 @@ pub mod c {
             height: allocation_height,
         })
     }
-    
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_layout_get_keymap(layout: *const Layout) -> *const c_char {
-        let layout = unsafe { &*layout };
-        layout.keymap_str.as_ptr()
-    }
 
     #[no_mangle]
     pub extern "C"
@@ -686,8 +679,8 @@ pub struct Layout {
     pub views: HashMap<String, (c::Point, View)>,
 
     // Non-UI stuff
-    /// xkb keymap applicable to the contained keys. Unchangeable
-    pub keymap_str: CString,
+    /// xkb keymaps applicable to the contained keys. Unchangeable
+    pub keymaps: Vec<CString>,
     // Changeable state
     // a Vec would be enough, but who cares, this will be small & fast enough
     // TODO: turn those into per-input point *_buttons to track dragging.
@@ -703,7 +696,7 @@ pub struct Layout {
 pub struct LayoutData {
     /// Point is the offset within layout
     pub views: HashMap<String, (c::Point, View)>,
-    pub keymap_str: CString,
+    pub keymaps: Vec<CString>,
     pub margins: Margins,
 }
 
@@ -726,7 +719,7 @@ impl Layout {
             kind,
             current_view: "base".to_owned(),
             views: data.views,
-            keymap_str: data.keymap_str,
+            keymaps: data.keymaps,
             pressed_keys: HashSet::new(),
             margins: data.margins,
         }
@@ -1200,7 +1193,7 @@ mod test {
         ]);
         let layout = Layout {
             current_view: String::new(),
-            keymap_str: CString::new("").unwrap(),
+            keymaps: Vec::new(),
             kind: ArrangementKind::Base,
             pressed_keys: HashSet::new(),
             // Lots of bottom margin

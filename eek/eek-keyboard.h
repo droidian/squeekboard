@@ -41,7 +41,7 @@ struct keymap {
 /// Keyboard state holder
 struct _LevelKeyboard {
     struct squeek_layout *layout; // owned
-    struct keymap keymap; // owned
+// FIXME: This no longer needs to exist, keymap was folded into layout.
 };
 typedef struct _LevelKeyboard LevelKeyboard;
 
