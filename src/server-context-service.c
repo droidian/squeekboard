@@ -404,13 +404,8 @@ void
 server_context_service_set_enabled (ServerContextService *self, gboolean enabled)
 {
     g_return_if_fail (SERVER_IS_CONTEXT_SERVICE (self));
-
-    if (enabled == self->enabled)
-        return;
-
     self->enabled = enabled;
-    if (self->enabled)
-        server_context_service_show_keyboard (self);
-    else
+    if (!self->enabled) {
         server_context_service_hide_keyboard (self);
+    }
 }
