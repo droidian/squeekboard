@@ -125,14 +125,17 @@ on_surface_configure(ServerContextService *self, PhoshLayerSurface *surface)
     // we can use different algorithms for portrait and landscape mode.
     // Note: this is a temporary fix until the size manager is complete.
     display = gdk_display_get_default ();
-    if (display)
+    if (display) {
         window = gtk_widget_get_window (GTK_WIDGET (surface));
-    if (window)
+    }
+    if (window) {
         monitor = gdk_display_get_monitor_at_window (display, window);
-    if (monitor)
+    }
+    if (monitor) {
         gdk_monitor_get_geometry (monitor, &geometry);
-    else
+    } else {
         geometry.width = geometry.height = 0;
+    }
 
      // When the geometry event comes after surface.configure,
      // this entire height calculation does nothing.
@@ -159,8 +162,9 @@ on_surface_configure(ServerContextService *self, PhoshLayerSurface *surface)
 static void
 make_window (ServerContextService *self)
 {
-    if (self->window)
+    if (self->window) {
         g_error("Window already present");
+    }
 
     struct squeek_output_handle output = squeek_outputs_get_current(squeek_wayland->outputs);
     squeek_uiman_set_output(self->manager, output);
@@ -234,19 +238,21 @@ on_hide (ServerContextService *self)
 static void
 server_context_service_real_show_keyboard (ServerContextService *self)
 {
-    if (!self->enabled)
+    if (!self->enabled) {
         return;
+    }
 
     if (self->hiding) {
 	    g_source_remove (self->hiding);
 	    self->hiding = 0;
     }
 
-    if (!self->window)
+    if (!self->window) {
         make_window (self);
-    if (!self->widget)
+    }
+    if (!self->widget) {
         make_widget (self);
-
+    }
     self->visible = TRUE;
     gtk_widget_show (GTK_WIDGET(self->window));
 }
@@ -254,9 +260,9 @@ server_context_service_real_show_keyboard (ServerContextService *self)
 static void
 server_context_service_real_hide_keyboard (ServerContextService *self)
 {
-    if (!self->hiding)
+    if (!self->hiding) {
         self->hiding = g_timeout_add (200, (GSourceFunc) on_hide, self);
-
+    }
     self->visible = FALSE;
 }
 

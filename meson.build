@@ -20,6 +20,7 @@ add_project_arguments(
     '-Werror=incompatible-pointer-types',
     '-Werror=int-conversion',
     '-Werror=redundant-decls',
+    '-Werror=parentheses',
     '-Wformat-nonliteral',
     '-Wformat-security',
     '-Winit-self',

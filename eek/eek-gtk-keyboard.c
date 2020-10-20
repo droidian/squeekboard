@@ -129,11 +129,12 @@ eek_gtk_keyboard_real_size_allocate (GtkWidget     *self,
         eekboard_context_service_use_layout(priv->eekboard_context, priv->layout, time);
     }
 
-    if (priv->renderer)
+    if (priv->renderer) {
         eek_renderer_set_allocation_size (priv->renderer,
                                           priv->keyboard->layout,
                                           allocation->width,
                                           allocation->height);
+    }
 
     GTK_WIDGET_CLASS (eek_gtk_keyboard_parent_class)->
         size_allocate (self, allocation);
@@ -355,10 +356,11 @@ eek_gtk_keyboard_init (EekGtkKeyboard *self)
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (EEK_GTK_KEYBOARD (self));
     g_autoptr(GError) err = NULL;
 
-    if (lfb_init(SQUEEKBOARD_APP_ID, &err))
+    if (lfb_init(SQUEEKBOARD_APP_ID, &err)) {
         priv->event = lfb_event_new ("button-pressed");
-    else
+    } else {
         g_warning ("Failed to init libfeedback: %s", err->message);
+    }
 
     GtkIconTheme *theme = gtk_icon_theme_get_default ();
 
