@@ -42,8 +42,9 @@ struct keymap squeek_key_map_from_str(const char *keymap_str) {
     struct xkb_keymap *keymap = xkb_keymap_new_from_string(context, keymap_str,
         XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_COMPILE_NO_FLAGS);
 
-    if (!keymap)
+    if (!keymap) {
         g_error("Bad keymap:\n%s", keymap_str);
+    }
 
     xkb_context_unref(context);
 
@@ -52,8 +53,9 @@ struct keymap squeek_key_map_from_str(const char *keymap_str) {
 
     g_autofree char *path = strdup("/eek_keymap-XXXXXX");
     char *r = &path[strlen(path) - 6];
-    if (getrandom(r, 6, GRND_NONBLOCK) < 0)
+    if (getrandom(r, 6, GRND_NONBLOCK) < 0) {
         g_error("Failed to get random numbers: %s", strerror(errno));
+    }
     for (unsigned i = 0; i < 6; i++) {
         r[i] = (r[i] & 0b1111111) | 0b1000000; // A-z
         r[i] = r[i] > 'z' ? '?' : r[i]; // The randomizer doesn't need to be good...

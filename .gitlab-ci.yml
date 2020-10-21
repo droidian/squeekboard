@@ -136,7 +136,10 @@ test:
     - build_meson
   script:
     - apt-get -y build-dep .
+    - apt-get -y install clang-tidy
     - ninja -C _build test
+    - cd _build
+    - clang-tidy --checks=-clang-diagnostic-missing-braces,readability-braces-around-statements, --warnings-as-errors=readability-braces-around-statements -extra-arg=-Wno-unknown-warning-option ../src/*.c ../eek/*.c ../eekboard/*.c
 
 check_release:
   <<: *tags
