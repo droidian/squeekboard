@@ -1,7 +1,7 @@
 project(
     'squeekboard',
     'c', 'rust',
-    version: '1.9.3',
+    version: '1.10.0',
     license: 'GPLv3',
     meson_version: '>=0.51.0',
     default_options: [
@@ -19,6 +19,16 @@ add_project_arguments(
     '-Werror=missing-field-initializers',
     '-Werror=incompatible-pointer-types',
     '-Werror=int-conversion',
+    '-Werror=redundant-decls',
+    '-Werror=parentheses',
+    '-Wformat-nonliteral',
+    '-Wformat-security',
+    '-Winit-self',
+    '-Wmaybe-uninitialized',
+    '-Wold-style-definition',
+    '-Wredundant-decls',
+    '-Wstrict-prototypes',
+    '-Wunused-function',
   ],
   language: 'c'
 )
@@ -75,7 +85,7 @@ cargo_toml_base = configure_file(
 cargo_deps = files('Cargo.deps')
 
 if get_option('legacy') == true
-    cargo_build_flags += ['--features', 'gtk_v0_5,gio_v0_5']
+    cargo_build_flags += ['--features', 'gtk_v0_5,gio_v0_5,rustc_less_1_36']
     cargo_deps = files('Cargo.deps.legacy')
 endif
     

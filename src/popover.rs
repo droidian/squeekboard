@@ -3,6 +3,7 @@
 use gio;
 use gtk;
 use std::ffi::CString;
+use std::cmp::Ordering;
 use ::layout::c::{ Bounds, EekGtkKeyboard };
 use ::locale;
 use ::locale::{ OwnedTranslation, Translation, compare_current_locale };
@@ -24,6 +25,15 @@ use gtk::PopoverExt;
 use gtk::WidgetExt;
 use std::io::Write;
 use ::logging::Warn;
+
+mod c {
+    use std::os::raw::c_char;
+
+    #[no_mangle]
+    extern "C" {
+        pub fn popover_open_settings_panel(panel: *const c_char);
+    }
+}
 
 mod variants {
     use glib;
@@ -127,6 +137,12 @@ fn make_menu_builder(inputs: Vec<(&str, OwnedTranslation)>) -> gtk::Builder {
     writeln!(
         xml,
         "
+    </section>
+    <section>
+        <item>
+            <attribute name=\"label\" translatable=\"yes\">Keyboard Settings</attribute>
+            <attribute name=\"action\">settings</attribute>
+        </item>
     </section>
   </menu>
 </interface>"
@@ -334,8 +350,13 @@ pub fn show(
         .zip(all_layouts.clone().into_iter())
         .collect();
 
-    human_names.sort_unstable_by(|(tr_a, _), (tr_b, _)| {
-        compare_current_locale(&tr_a.0, &tr_b.0)
+    human_names.sort_unstable_by(|(tr_a, layout_a), (tr_b, layout_b)| {
+        // Sort first by layout then name
+        match (layout_a, layout_b) {
+            (LayoutId::Local(_), LayoutId::System { .. }) => Ordering::Greater,
+            (LayoutId::System { .. }, LayoutId::Local(_)) => Ordering::Less,
+            _ => compare_current_locale(&tr_a.0, &tr_b.0)
+        }
     });
 
     // GVariant doesn't natively support `enum`s,
@@ -414,8 +435,14 @@ pub fn show(
             menu_inner.popdown();
         });
 
+        let settings_action = gio::SimpleAction::new("settings", None);
+        settings_action.connect_activate(move |_, _| {
+            unsafe { c::popover_open_settings_panel(CString::new("region").unwrap().as_ptr()) };
+        });
+
         let action_group = gio::SimpleActionGroup::new();
         action_group.add_action(&layout_action);
+        action_group.add_action(&settings_action);
 
         menu.insert_action_group("popup", Some(&action_group));
     };

@@ -50,11 +50,13 @@ endforeach
 foreach layout : [
     'us', 'us_wide',
     'br',
+    'be', 'be_wide',
     'de', 'de_wide',
     'dk',
     'es',
     'fi',
-    'fr',
+    'fr', 'fr_wide',
+    'it+fur',
     'gr',
     'it',
     'jp+kana','jp+kana_wide',
@@ -63,15 +65,22 @@ foreach layout : [
     'pl', 'pl_wide',
     'ru',
     'se',
-    'terminal',
-    
+    'ua',
+    'terminal', 'terminal_wide',
+
     'emoji',
 ]
+    extra = []
+    if layout == 'emoji'
+        extra += ['allow_missing_return']
+    endif
+
     test(
         'test_layout_' + layout,
         cargo_script,
         args: ['run'] + cargo_build_flags
-            + [ '--example', 'test_layout', '--', layout],
+            + ['--example', 'test_layout', '--', layout]
+            + extra,
         workdir: meson.build_root(),
     )
 endforeach

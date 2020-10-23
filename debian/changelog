@@ -1,3 +1,77 @@
+squeekboard (1.10.0) amber-phone; urgency=medium
+
+  [ Dorota Czaplejewicz ]
+  * virtual_keyboard: Fix desynced modifiers state
+  * rust: Fix deprecation warnings
+  * docs: Tutorial syntax cleanups
+  * docs: Reorganize tutorial
+  * build: Error on repeating declarations
+  * keymap: Generate from symbol map, not layout
+  * data: Restore testability of action->keysym conversion
+  * syntax: Let older rustc understand symbolmap's lifetime
+  * debian: Insert a "breaks" for librem5-base < 24
+  * keymap: Keep keymap fd management in one place
+  * vkeyboard: Use a generic slice instead of a vector
+  * tests: Check for missing return in builtin layouts except emoji
+  * keymap: Concentrate special handling of BackSpace, which is implicit in Erase action
+  * keymaps: Use multiple key maps, each within the limit of what Xorg can accept.
+  * build: Avoid MaybeUninit on older Debian
+  * tests: Fix bad field access
+  * cargo: Update dependencies
+
+  [ Guido Günther ]
+  * eekboard-context-service: Return early if schema is unavailable
+  * treewide: Use new style function definitions
+  * build: Enable '-Wold-style-definition' '-Wstrict-prototypes'
+  * build: Enable '-Wunused-function'
+  * eekboard-context-service: Drop EEKBOARD_CONTEXT_SERVICE_GET_PRIVATE
+  * keyboard: Fix warning
+  * layout: Fix warning
+  * gitlab-ci: Enable --Werror
+  * eek-keyboard: Don't ignore return value
+  * build: Enable -Winit-self
+  * build: Enable -Wformat-security
+  * build: Enable -Wmaybe-uninitialized
+  * treewide: Drop redundant declarations
+  * build: Enable -Wredundant-declarations
+  * ServerContextService: Drop GObject boilerplate
+  * build: Enable '-Wformat-nonliteral'
+  * eekboad-context-service: Drop signal class handler
+  * eekboard-context-service: Drop docstrings for inexistent functions
+  * eekboard-context-service: Drop the GObject boilerplate
+  * eekboard-context-service: Drop private struct
+  * server-context-service: Consistenty name self argument 'self'
+  * server-context-service: swap signal arguments
+  * server-context-service: Don't show keyboard when disabled (Closes: #222)
+
+  [ Nazarii Kretovych ]
+  * Add Ukrainian keyboard layout.
+
+  [ Benjamin Schaaf ]
+  * Fix spelling mistakes in doc/hacking.md
+  * Expand the development documentation in the readme
+  * Expand key press detection to the edges of the view's bounding box
+  * Sort layouts by type before sorting by name
+  * Fix leak in level_keyboard_new
+  * Fix leak endlessly adding a resource path to the default theme
+  * Add settings option to popover
+
+  [ Al ]
+  * proposal for belgian layout (copy of fr)
+  * alphabetical order for src/resources.rs tests/meson.build
+
+  [ Arnaud Ferraris ]
+  * eek-gtk-keyboard: use virtual resolution to check arrangement kind
+  * server-context-service: optimize height calculation
+  * keyboards: add wide French layout
+  * keyboards: add wide Belgian layout
+  * keyboards: add wide terminal layout
+
+  [ Fabio Tomat ]
+  * Revert "Add friulian keyboard"
+
+ -- Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>  Mon, 19 Oct 2020 14:07:01 +0000
+
 squeekboard (1.9.3) amber-phone; urgency=medium
 
   [ Björn Tantau ]

@@ -5,11 +5,13 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
 use std::io;
+use std::mem;
+use std::ptr;
 use std::rc::Rc;
 use std::string::FromUtf8Error;
 
 use ::action::Action;
-use ::logging;
+use ::util;
 
 // Traits
 use std::io::Write;
@@ -21,7 +23,12 @@ pub enum PressType {
     Pressed = 1,
 }
 
-pub type KeyCode = u32;
+/// The extended, unambiguous layout-keycode
+#[derive(Debug, Clone)]
+pub struct KeyCode {
+    pub code: u32,
+    pub keymap_idx: usize,
+}
 
 bitflags!{
     /// Map to `virtual_keyboard.modifiers` modifiers values
@@ -43,7 +50,7 @@ bitflags!{
 
 /// When the submitted actions of keys need to be tracked,
 /// they need a stable, comparable ID
-#[derive(PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct KeyStateId(*const KeyState);
 
 #[derive(Debug, Clone)]
@@ -80,10 +87,10 @@ impl KeyState {
 }
 
 /// Sorts an iterator by converting it to a Vector and back
-fn sorted<'a, I: Iterator<Item=&'a str>>(
+fn sorted<'a, I: Iterator<Item=String>>(
     iter: I
-) -> impl Iterator<Item=&'a str> {
-    let mut v: Vec<&'a str> = iter.collect();
+) -> impl Iterator<Item=String> {
+    let mut v: Vec<String> = iter.collect();
     v.sort();
     v.into_iter()
 }
@@ -91,15 +98,17 @@ fn sorted<'a, I: Iterator<Item=&'a str>>(
 /// Generates a mapping where each key gets a keycode, starting from ~~8~~
 /// HACK: starting from 9, because 8 results in keycode 0,
 /// which the compositor likes to discard
-pub fn generate_keycodes<'a, C: IntoIterator<Item=&'a str>>(
-    key_names: C
-) -> HashMap<String, u32> {
-    let special_keysyms = ["BackSpace", "Return"].iter().map(|&s| s);
+pub fn generate_keycodes<'a, C: IntoIterator<Item=String>>(
+    key_names: C,
+) -> HashMap<String, KeyCode> {
     HashMap::from_iter(
-        // sort to remove a source of indeterminism in keycode assignment
-        sorted(key_names.into_iter().chain(special_keysyms))
-            .map(|name| String::from(name))
-            .zip(9..)
+        // Sort to remove a source of indeterminism in keycode assignment.
+        sorted(key_names.into_iter())
+            .zip(util::cycle_count(9..255))
+            .map(|(name, (code, keymap_idx))| (
+                String::from(name),
+                KeyCode { code, keymap_idx },
+            ))
     )
 }
 
@@ -124,12 +133,54 @@ impl From<io::Error> for FormattingError {
     }
 }
 
+/// Index is the key code, String is the occupant.
+/// Starts all empty.
+/// https://gitlab.freedesktop.org/xorg/xserver/-/issues/260
+type SingleKeyMap = [Option<String>; 256];
+
+fn single_key_map_new() -> SingleKeyMap {
+    // Why can't we just initialize arrays without tricks -_- ?
+    unsafe {
+        // Inspired by
+        // https://www.reddit.com/r/rust/comments/5n7bh1/how_to_create_an_array_of_a_type_with_clone_but/
+        #[cfg(feature = "rustc_less_1_36")]
+        let mut array: SingleKeyMap = mem::uninitialized();
+        #[cfg(not(feature = "rustc_less_1_36"))]
+        let mut array: SingleKeyMap = mem::MaybeUninit::uninit().assume_init();
+
+        for element in array.iter_mut() {
+            ptr::write(element, None);
+        }
+        array
+    }
+}
+
+pub fn generate_keymaps(symbolmap: HashMap::<String, KeyCode>)
+    -> Result<Vec<String>, FormattingError>
+{
+    let mut bins: Vec<SingleKeyMap> = Vec::new();
+    
+    for (name, KeyCode { code, keymap_idx }) in symbolmap.into_iter() {
+        if keymap_idx >= bins.len() {
+            bins.resize_with(
+                keymap_idx + 1,
+                || single_key_map_new(),
+            );
+        }
+        bins[keymap_idx][code as usize] = Some(name);
+    }
+
+    let mut out = Vec::new();
+    for bin in bins {
+        out.push(generate_keymap(&bin)?);
+    }
+    Ok(out)
+}
+
 /// Generates a de-facto single level keymap.
-// TODO: don't rely on keys and their order,
-// but rather on what keysyms and keycodes are in use.
-// Iterating actions makes it hard to deduplicate keysyms.
-pub fn generate_keymap(
-    keystates: &HashMap::<String, KeyState>
+/// Key codes must not repeat and must remain between 9 and 255.
+fn generate_keymap(
+    symbolmap: &SingleKeyMap,
 ) -> Result<String, FormattingError> {
     let mut buf: Vec<u8> = Vec::new();
     writeln!(
@@ -140,86 +191,80 @@ pub fn generate_keymap(
         minimum = 8;
         maximum = 255;"
     )?;
+
+    let pairs: Vec<(&String, usize)> = symbolmap.iter()
+        // Attach a key code to each cell.
+        .enumerate()
+        // Get rid of empty keycodes.
+        .filter_map(|(code, name)| name.as_ref().map(|n| (n, code)))
+        .collect();
     
-    for (name, state) in keystates.iter() {
-        match &state.action {
-            Action::Submit { text: _, keys } => {
-                if let 0 = keys.len() {
-                    log_print!(
-                        logging::Level::Warning,
-                        "Key {} has no keysyms", name,
-                    );
-                };
-                for (named_keysym, keycode) in keys.iter().zip(&state.keycodes) {
-                    write!(
-                        buf,
-                        "
-        <{}> = {};",
-                        named_keysym.0,
-                        keycode,
-                    )?;
-                }
-            },
-            Action::Erase => {
-                let mut keycodes = state.keycodes.iter();
-                write!(
-                    buf,
-                    "
-        <BackSpace> = {};",
-                    keycodes.next().expect("Erase key has no keycode"),
-                )?;
-                if let Some(_) = keycodes.next() {
-                    log_print!(
-                        logging::Level::Bug,
-                        "Erase key has multiple keycodes",
-                    );
-                }
-            },
-            _ => {},
-        }
+    // Xorg can only consume up to 255 keys, so this may not work in Xwayland.
+    // Two possible solutions:
+    // - use levels to cram multiple characters into one key
+    // - swap layouts on key presses
+    for (_name, keycode) in &pairs {
+        write!(
+            buf,
+            "
+        <I{}> = {0};",
+            keycode,
+        )?;
     }
-    
+
     writeln!(
         buf,
         "
+        indicator 1 = \"Caps Lock\"; // Xwayland won't accept without it.
     }};
     
     xkb_symbols \"squeekboard\" {{
-
-        name[Group1] = \"Letters\";
-        name[Group2] = \"Numbers/Symbols\";
-        
-        key <BackSpace> {{ [ BackSpace ] }};"
+"
     )?;
     
-    for (name, state) in keystates.iter() {
-        if let Action::Submit { text: _, keys } = &state.action {
-            for keysym in keys.iter() {
-                write!(
-                    buf,
-                    "
-        key <{}> {{ [ {0} ] }};",
-                    keysym.0,
-                )?;
-            }
-        }
+    for (name, keycode) in pairs {
+        write!(
+            buf,
+            "
+key <I{}> {{ [ {} ] }};",
+            keycode,
+            name,
+        )?;
     }
+
     writeln!(
         buf,
         "
     }};
 
     xkb_types \"squeekboard\" {{
+        virtual_modifiers Squeekboard; // No modifiers! Needed for Xorg for some reason.
+    
+        // Those names are needed for Xwayland.
+        type \"ONE_LEVEL\" {{
+            modifiers= none;
+            level_name[Level1]= \"Any\";
+        }};
+        type \"TWO_LEVEL\" {{
+            level_name[Level1]= \"Base\";
+        }};
+        type \"ALPHABETIC\" {{
+            level_name[Level1]= \"Base\";
+        }};
+        type \"KEYPAD\" {{
+            level_name[Level1]= \"Base\";
+        }};
+        type \"SHIFT+ALT\" {{
+            level_name[Level1]= \"Base\";
+        }};
 
-	type \"TWO_LEVEL\" {{
-            modifiers = Shift;
-            map[Shift] = Level2;
-            level_name[Level1] = \"Base\";
-            level_name[Level2] = \"Shift\";
-	}};
     }};
 
     xkb_compatibility \"squeekboard\" {{
+        // Needed for Xwayland again.
+        interpret Any+AnyOf(all) {{
+            action= SetMods(modifiers=modMapMods,clearLocks);
+        }};
     }};
 }};"
     )?;
@@ -234,22 +279,15 @@ mod tests {
     
     use xkbcommon::xkb;
 
-    use ::action::KeySym;
-
     #[test]
-    fn test_keymap_multi() {
-        let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
+    fn test_keymap_single_resolve() {
+        let mut key_map = single_key_map_new();
+        key_map[9] = Some("a".into());
+        key_map[10] = Some("c".into());
 
-        let keymap_str = generate_keymap(&hashmap!{
-            "ac".into() => KeyState {
-                action: Action::Submit {
-                    text: None,
-                    keys: vec!(KeySym("a".into()), KeySym("c".into())),
-                },
-                keycodes: vec!(9, 10),
-                pressed: PressType::Released,
-            },
-        }).unwrap();
+        let keymap_str = generate_keymap(&key_map).unwrap();
+
+        let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
 
         let keymap = xkb::Keymap::new_from_string(
             &context,
@@ -262,5 +300,37 @@ mod tests {
 
         assert_eq!(state.key_get_one_sym(9), xkb::KEY_a);
         assert_eq!(state.key_get_one_sym(10), xkb::KEY_c);
+    }
+
+    #[test]
+    fn test_keymap_second_resolve() {
+        let keymaps = generate_keymaps(hashmap!(
+            "a".into() => KeyCode { keymap_idx: 1, code: 9 },
+        )).unwrap();
+
+        let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
+
+        let keymap = xkb::Keymap::new_from_string(
+            &context,
+            keymaps[1].clone(), // this index is part of the test
+            xkb::KEYMAP_FORMAT_TEXT_V1,
+            xkb::KEYMAP_COMPILE_NO_FLAGS,
+        ).expect("Failed to create keymap");
+
+        let state = xkb::State::new(&keymap);
+
+        assert_eq!(state.key_get_one_sym(9), xkb::KEY_a);
+    }
+
+    #[test]
+    fn test_symbolmap_overflow() {
+        // The 257th key (U1101) is interesting.
+        // Use Unicode encoding for being able to use in xkb keymaps.
+        let keynames = (0..258).map(|num| format!("U{:04X}", 0x1000 + num));
+        let keycodes = generate_keycodes(keynames);
+        
+        // test now
+        let code = keycodes.get("U1101").expect("Did not find the tested keysym");
+        assert_eq!(code.keymap_idx, 1);
     }
 }

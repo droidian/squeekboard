@@ -31,21 +31,15 @@ pub enum Error {
 
 impl ::std::fmt::Display for Error {
     fn fmt(&self, out: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        use ::std::error::Error;
-        out.write_str(self.description())
-    }
-}
-
-impl ::std::error::Error for Error {
-    fn description(&self) -> &str {
-        match self {
+        out.write_str(match self {
             &Error::NotWellFormed => "Language tag is not well-formed.",
             // this is exception: here we do want exhaustive match so we don't publish version with
             // missing descriptions by mistake.
             &Error::__NonExhaustive => panic!("Placeholder error must not be instantiated!"),
-        }
+        })
     }
 }
+
 
 /// Convenience Result alias.
 type Result<T> = ::std::result::Result<T, Error>;

@@ -38,6 +38,8 @@ Depends:
  gnome-themes-extra-data,
  ${shlibs:Depends},
  ${misc:Depends},
+Breaks:
+ librem5-base (<< 24),
 Description: On-screen keyboard for Wayland
  Virtual keyboard supporting Wayland, built primarily for the Librem 5 phone.
 

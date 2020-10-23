@@ -38,8 +38,6 @@ struct _EekElementClass
     GObjectClass parent_class;
 };
 
-GType        eek_element_get_type              (void) G_GNUC_CONST;
-
 void         eek_element_set_name              (EekElement  *element,
                                                 const gchar *name);
 

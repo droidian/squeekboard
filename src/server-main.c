@@ -213,12 +213,13 @@ main (int argc, char **argv)
     // dbus is not strictly necessary for the useful operation
     // if text-input is used, as it can bring the keyboard in and out
     GBusType bus_type;
-    if (opt_system)
+    if (opt_system) {
         bus_type = G_BUS_TYPE_SYSTEM;
-    else if (opt_address)
+    } else if (opt_address) {
         bus_type = G_BUS_TYPE_NONE;
-    else
+    } else {
         bus_type = G_BUS_TYPE_SESSION;
+    }
 
     GDBusConnection *connection = NULL;
     GError *error = NULL;
