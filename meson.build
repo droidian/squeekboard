@@ -1,7 +1,7 @@
 project(
     'squeekboard',
     'c', 'rust',
-    version: '1.9.3',
+    version: '1.10.0',
     license: 'GPLv3',
     meson_version: '>=0.51.0',
     default_options: [
