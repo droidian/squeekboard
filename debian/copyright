@@ -23,6 +23,13 @@ Copyright: 2019 Purism SPC
            2019 Squeekboard Contributors
 License: GPL-3+
 
+Files: data/keyboards/be_wide.yaml
+       data/keyboards/be.yaml
+Copyright: 2019 Purism SPC
+           2020 Arnaud Ferraris <arnaud.ferraris@gmail.com>
+           2020 Al <alex.lleroux1@gmail.com>
+License: GPL-3+
+
 Files: data/keyboards/de_wide.yaml
        data/keyboards/de.yaml
        data/keyboards/jp+kana_wide.yaml
@@ -48,12 +55,21 @@ Copyright: 2019 Antonio Pandolfo <ant.pandolfo@gmail.com>
            2019 Purism SPC
 License: GPL-3+
 
+Files: data/keyboards/it+fur.yaml
+       data/langs/fur-IT.txt
+Copyright: 2019 Purism SPC
+           2020 Fabio Tomat <f.t.public@gmail.com>
+License: GPL-3+
+
 Files: data/keyboards/se.yaml
 Copyright: 2019 Andreas Rönnquist <andreas@ronnquist.net>
            2019 Purism SPC
 License: GPL-3+
 
-Files: debian/*
+Files: data/keyboards/fr.yaml
+       data/keyboards/fr_wide.yaml
+       data/keyboards/terminal_wide.yaml
+       debian/*
 Copyright: 2019 Purism SPC
            2020 Arnaud Ferraris <arnaud.ferraris@gmail.com>
 License: GPL-3+
@@ -81,7 +97,6 @@ License: LGPL-2+
 Files: eek/layersurface.c
        src/wayland.c
        meson.build
-       src/meson.build
 Copyright: 2018-2019 Purism SPC
 License: GPL-3+
 
