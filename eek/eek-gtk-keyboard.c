@@ -104,10 +104,10 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
     return FALSE;
 }
 
-// Units of pixel size
+// Units of virtual pixels size
 static enum squeek_arrangement_kind get_type(uint32_t width, uint32_t height) {
     (void)height;
-    if (width < 1080) {
+    if (width < 540) {
         return ARRANGEMENT_KIND_BASE;
     }
     return ARRANGEMENT_KIND_WIDE;
@@ -119,22 +119,22 @@ eek_gtk_keyboard_real_size_allocate (GtkWidget     *self,
 {
     EekGtkKeyboardPrivate *priv =
         eek_gtk_keyboard_get_instance_private (EEK_GTK_KEYBOARD (self));
-    uint32_t scale = (uint32_t)gtk_widget_get_scale_factor(self);
     // check if the change would switch types
     enum squeek_arrangement_kind new_type = get_type(
-                (uint32_t)(allocation->width - allocation->x) * scale,
-                (uint32_t)(allocation->height - allocation->y) * scale);
+                (uint32_t)(allocation->width - allocation->x),
+                (uint32_t)(allocation->height - allocation->y));
     if (priv->layout->arrangement != new_type) {
         priv->layout->arrangement = new_type;
-
-        eekboard_context_service_use_layout(priv->eekboard_context, priv->layout);
+        uint32_t time = gdk_event_get_time(NULL);
+        eekboard_context_service_use_layout(priv->eekboard_context, priv->layout, time);
     }
 
-    if (priv->renderer)
+    if (priv->renderer) {
         eek_renderer_set_allocation_size (priv->renderer,
                                           priv->keyboard->layout,
                                           allocation->width,
                                           allocation->height);
+    }
 
     GTK_WIDGET_CLASS (eek_gtk_keyboard_parent_class)->
         size_allocate (self, allocation);
@@ -356,10 +356,15 @@ eek_gtk_keyboard_init (EekGtkKeyboard *self)
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (EEK_GTK_KEYBOARD (self));
     g_autoptr(GError) err = NULL;
 
-    if (lfb_init(SQUEEKBOARD_APP_ID, &err))
+    if (lfb_init(SQUEEKBOARD_APP_ID, &err)) {
         priv->event = lfb_event_new ("button-pressed");
-    else
+    } else {
         g_warning ("Failed to init libfeedback: %s", err->message);
+    }
+
+    GtkIconTheme *theme = gtk_icon_theme_get_default ();
+
+    gtk_icon_theme_add_resource_path (theme, "/sm/puri/squeekboard/icons");
 }
 
 static void

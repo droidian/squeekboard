@@ -30,27 +30,40 @@ Building
 
 ### Dependencies
 
-See `.gitlab-ci.yml`.
+See `.gitlab-ci.yml` or run `apt-get build-dep .`
 
 ### Build from git repo
 
-```
+```bash
 $ git clone https://source.puri.sm/Librem5/squeekboard.git
 $ cd squeekboard
-$ mkdir ../build
-$ meson ../build/
-$ cd ../build
-$ ninja test
-$ ninja install
+$ mkdir _build
+$ meson _build/
+$ cd _build
+$ ninja
 ```
+
+To run tests use `ninja test`. To install squeekboard run `ninja install`.
 
 Running
 -------
 
-```
+```bash
 $ phoc # if no compatible Wayland compositor is running yet
 $ cd ../build/
 $ src/squeekboard
+```
+
+Squeekboard honors the gnome "screen-keyboard-enabled" setting. Either enable this through gnome-settings under accessibility or run:
+
+```bash
+$ gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true
+```
+
+To make the keyboard show you can use either an application that does so automatically, like a text editor or `python3 ./tests/entry.py`, or you can manually trigger it with:
+
+```bash
+busctl call --user sm.puri.OSK0 /sm/puri/OSK0 sm.puri.OSK0 SetVisible b true
 ```
 
 Developing

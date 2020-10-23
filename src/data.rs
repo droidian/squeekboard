@@ -18,7 +18,7 @@ use xkbcommon::xkb;
 use ::action;
 use ::keyboard::{
     KeyState, PressType,
-    generate_keymap, generate_keycodes, FormattingError
+    generate_keymaps, generate_keycodes, KeyCode, FormattingError
 };
 use ::layout;
 use ::layout::ArrangementKind;
@@ -382,56 +382,45 @@ impl Layout {
                 )
             )}).collect();
 
-        let keymap: HashMap<String, u32> = generate_keycodes(
-            button_actions.iter()
-                .filter_map(|(_name, action)| {
-                    match action {
-                        ::action::Action::Submit {
-                            text: _, keys,
-                        } => Some(keys),
-                        _ => None,
-                    }
-                })
-                .flatten()
-                .map(|named_keysym| named_keysym.0.as_str())
+        let symbolmap: HashMap<String, KeyCode> = generate_keycodes(
+            extract_symbol_names(&button_actions)
         );
-
-        let button_states = button_actions.into_iter().map(|(name, action)| {
-            let keycodes = match &action {
-                ::action::Action::Submit { text: _, keys } => {
-                    keys.iter().map(|named_keycode| {
-                        *keymap.get(named_keycode.0.as_str())
-                            .expect(
-                                format!(
-                                    "keycode {} in key {} missing from keymap",
-                                    named_keycode.0,
-                                    name
-                                ).as_str()
-                            )
-                    }).collect()
-                },
-                action::Action::Erase => vec![
-                    *keymap.get("BackSpace")
-                        .expect(&format!("BackSpace missing from keymap")),
-                ],
-                _ => Vec::new(),
-            };
-            (
-                name.into(),
-                KeyState {
-                    pressed: PressType::Released,
-                    keycodes,
-                    action,
-                }
-            )
-        });
 
         let button_states = HashMap::<String, KeyState>::from_iter(
-            button_states
+            button_actions.into_iter().map(|(name, action)| {
+                let keycodes = match &action {
+                    ::action::Action::Submit { text: _, keys } => {
+                        keys.iter().map(|named_keysym| {
+                            symbolmap.get(named_keysym.0.as_str())
+                                .expect(
+                                    format!(
+                                        "keysym {} in key {} missing from symbol map",
+                                        named_keysym.0,
+                                        name
+                                    ).as_str()
+                                )
+                                .clone()
+                        }).collect()
+                    },
+                    action::Action::Erase => vec![
+                        symbolmap.get("BackSpace")
+                            .expect(&format!("BackSpace missing from symbol map"))
+                            .clone(),
+                    ],
+                    _ => Vec::new(),
+                };
+                (
+                    name.into(),
+                    KeyState {
+                        pressed: PressType::Released,
+                        keycodes,
+                        action,
+                    }
+                )
+            })
         );
 
-        // TODO: generate from symbols
-        let keymap_str = match generate_keymap(&button_states) {
+        let keymaps = match generate_keymaps(symbolmap) {
             Err(e) => { return (Err(e), warning_handler) },
             Ok(v) => v,
         };
@@ -459,14 +448,14 @@ impl Layout {
                                 &mut warning_handler,
                             ))
                         });
-                    layout::Row {
-                        buttons: add_offsets(
+                    layout::Row::new(
+                        add_offsets(
                             buttons,
                             |button| button.size.width,
                         ).collect()
-                    }
+                    )
                 });
-                let rows = add_offsets(rows, |row| row.get_height())
+                let rows = add_offsets(rows, |row| row.get_size().height)
                     .collect();
                 (
                     name.clone(),
@@ -484,8 +473,8 @@ impl Layout {
                 name,
                 (
                     layout::c::Point {
-                        x: (total_size.width - view.get_width()) / 2.0,
-                        y: (total_size.height - view.get_height()) / 2.0,
+                        x: (total_size.width - view.get_size().width) / 2.0,
+                        y: (total_size.height - view.get_size().height) / 2.0,
                     },
                     view,
                 ),
@@ -495,10 +484,10 @@ impl Layout {
         (
             Ok(::layout::LayoutData {
                 views: views,
-                keymap_str: {
+                keymaps: keymaps.into_iter().map(|keymap_str|
                     CString::new(keymap_str)
                         .expect("Invalid keymap string generated")
-                },
+                ).collect(),
                 // FIXME: use a dedicated field
                 margins: layout::Margins {
                     top: self.margins.top,
@@ -734,11 +723,27 @@ fn create_button<H: logging::Handler>(
     }
 }
 
+fn extract_symbol_names<'a>(actions: &'a [(&str, action::Action)])
+    -> impl Iterator<Item=String> + 'a
+{
+    actions.iter()
+        .filter_map(|(_name, act)| {
+            match act {
+                action::Action::Submit {
+                    text: _, keys,
+                } => Some(keys.clone()),
+                action::Action::Erase => Some(vec!(action::KeySym("BackSpace".into()))),
+                _ => None,
+            }
+        })
+        .flatten()
+        .map(|named_keysym| named_keysym.0)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    
-    use std::error::Error as ErrorTrait;
+
     use ::logging::ProblemPanic;
 
     const THIS_FILE: &str = file!();
@@ -786,7 +791,8 @@ mod tests {
             Err(e) => {
                 let mut handled = false;
                 if let Error::Yaml(ye) = &e {
-                    handled = ye.description() == "missing field `views`";
+                    handled = ye.to_string()
+                        .starts_with("missing field `views`");
                 };
                 if !handled {
                     println!("Unexpected error {:?}", e);
@@ -804,7 +810,7 @@ mod tests {
             Err(e) => {
                 let mut handled = false;
                 if let Error::Yaml(ye) = &e {
-                    handled = ye.description()
+                    handled = ye.to_string()
                         .starts_with("unknown field `bad_field`");
                 };
                 if !handled {
@@ -824,7 +830,7 @@ mod tests {
         assert_eq!(
             out.views["base"].1
                 .get_rows()[0].1
-                .buttons[0].1
+                .get_buttons()[0].1
                 .label,
             ::layout::Label::Text(CString::new("test").unwrap())
         );
@@ -839,7 +845,7 @@ mod tests {
         assert_eq!(
             out.views["base"].1
                 .get_rows()[0].1
-                .buttons[0].1
+                .get_buttons()[0].1
                 .label,
             ::layout::Label::Text(CString::new("test").unwrap())
         );
@@ -855,10 +861,27 @@ mod tests {
         assert_eq!(
             out.views["base"].1
                 .get_rows()[0].1
-                .buttons[0].1
+                .get_buttons()[0].1
                 .state.borrow()
                 .keycodes.len(),
             2
+        );
+    }
+
+    /// Test if erase yields a useable keycode
+    #[test]
+    fn test_layout_erase() {
+        let out = Layout::from_file(path_from_root("tests/layout_erase.yaml"))
+            .unwrap()
+            .build(ProblemPanic).0
+            .unwrap();
+        assert_eq!(
+            out.views["base"].1
+                .get_rows()[0].1
+                .get_buttons()[0].1
+                .state.borrow()
+                .keycodes.len(),
+            1
         );
     }
 
@@ -939,4 +962,35 @@ mod tests {
             }
         );
     }
+
+    #[test]
+    fn test_extract_symbols() {
+        let actions = [(
+            "ac",
+            action::Action::Submit {
+                text: None,
+                keys: vec![
+                    action::KeySym("a".into()),
+                    action::KeySym("c".into()),
+                ],
+            },
+        )];
+        assert_eq!(
+            extract_symbol_names(&actions[..]).collect::<Vec<_>>(),
+            vec!["a", "c"],
+        );
+    }
+
+    #[test]
+    fn test_extract_symbols_erase() {
+        let actions = [(
+            "Erase",
+            action::Action::Erase,
+        )];
+        assert_eq!(
+            extract_symbol_names(&actions[..]).collect::<Vec<_>>(),
+            vec!["BackSpace"],
+        );
+    }
+
 }

@@ -241,7 +241,7 @@ static GType new_type(char *name) {
     );
 }
 
-static GType view_type() {
+static GType view_type(void) {
     static GType type = 0;
     if (!type) {
         type = new_type("sq_view");
@@ -249,7 +249,7 @@ static GType view_type() {
     return type;
 }
 
-static GType button_type() {
+static GType button_type(void) {
     static GType type = 0;
     if (!type) {
         type = new_type("sq_button");
@@ -264,10 +264,6 @@ renderer_init (EekRenderer *self)
     self->allocation_width = 0.0;
     self->allocation_height = 0.0;
     self->scale_factor = 1;
-
-    GtkIconTheme *theme = gtk_icon_theme_get_default ();
-
-    gtk_icon_theme_add_resource_path (theme, "/sm/puri/squeekboard/icons");
 
     self->css_provider = squeek_load_style();
 }

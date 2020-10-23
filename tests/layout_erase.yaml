@@ -1,0 +1,10 @@
+---
+# Erase only
+views:
+    base:
+        - "BackSpace"
+outlines:
+    default: { width: 0, height: 0 }
+buttons:
+    BackSpace:
+        action: erase
