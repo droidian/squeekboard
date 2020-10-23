@@ -1,3 +1,16 @@
+squeekboard (1.10.0-1) unstable; urgency=medium
+
+  * New upstream release 1.10.0
+  * d/control: build-depend on libfeedbackd-dev and set team maintainership
+  * d/control: fix dependency name
+  * d/copyright: add missing entries
+  * d/copyright: add entries for new keyboard files and remove duplicate
+    `src/meson.build` appeared in 2 different paragraphs, remove the
+    duplicate entry.
+  * d/gbp.conf: fix debian version number
+
+ -- Arnaud Ferraris <arnaud.ferraris@gmail.com>  Fri, 23 Oct 2020 13:18:43 +0200
+
 squeekboard (1.9.3-1) experimental; urgency=medium
 
   * Upload to experimental
