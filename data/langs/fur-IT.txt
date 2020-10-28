@@ -2,7 +2,7 @@ be Belgjic
 br Brasilian
 de Todesc
 dk Danês
-es Spgnûl
+es Spagnûl
 fi Finlandês
 fr Francês
 it+fur Furlan
