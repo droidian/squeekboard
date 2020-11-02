@@ -48,7 +48,7 @@ endforeach
 # due to the way Cargo builds executables
 # and the need to call it manually
 foreach layout : [
-    'us', 'us_wide',
+    'us', 'us+colemak', 'us_wide',
     'br',
     'be', 'be_wide',
     'de', 'de_wide',

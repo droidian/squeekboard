@@ -14,6 +14,7 @@ const KEYBOARDS: &[(*const str, *const str)] = &[
     // layouts: us must be left as first, as it is the,
     // fallback layout. The others should be alphabetical.
     ("us", include_str!("../data/keyboards/us.yaml")),
+    ("us+colemak", include_str!("../data/keyboards/us+colemak.yaml")),
     ("us_wide", include_str!("../data/keyboards/us_wide.yaml")),
     ("br", include_str!("../data/keyboards/br.yaml")),
     ("de", include_str!("../data/keyboards/de.yaml")),
