@@ -1,9 +1,9 @@
-squeekboard (1.10.0-2) UNRELEASED; urgency=medium
+squeekboard (1.10.0-2) unstable; urgency=medium
 
-  [ Arnaud Ferraris ]
+  * Team upload.
   * d/rules: set RUSTFLAGS to avoid an FTBFS on mips64el (Closes: #974036)
 
- -- Henry-Nicolas Tourneur <debian@nilux.be>  Tue, 10 Nov 2020 14:44:33 +0000
+ -- Henry-Nicolas Tourneur <debian@nilux.be>  Tue, 10 Nov 2020 18:40:50 +0000
 
 squeekboard (1.10.0-1) unstable; urgency=medium
 
