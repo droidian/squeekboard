@@ -2,6 +2,8 @@
 
 export CARGO_HOME = $(CURDIR)/debian/cargo
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+# the below avoids an FTBFS on mips64el with a GOT > 64kb
+export RUSTFLAGS = -Ctarget-feature=+xgot
 
 %:
 	dh $@ --builddirectory=_build --buildsystem=meson
