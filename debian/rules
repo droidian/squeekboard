@@ -3,7 +3,10 @@
 export CARGO_HOME = $(CURDIR)/debian/cargo
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 # the below avoids an FTBFS on mips64el with a GOT > 64kb
-export RUSTFLAGS = -Ctarget-feature=+xgot
+DEB_HOST_ARCH := $(shell dpkg-architecture -qDEB_HOST_ARCH)
+ifeq ($(DEB_HOST_ARCH),mips64el)
+ export RUSTFLAGS = -Ctarget-feature=+xgot
+endif
 
 distrel := $(shell lsb_release --codename --short)
 ifneq (,$(filter $(distrel),buster amber))
