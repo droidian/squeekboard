@@ -1,3 +1,15 @@
+squeekboard (1.11.0) amber-phone; urgency=medium
+
+  [ Dorota Czaplejewicz ]
+  * UI: Delay hiding only when leaving a text field
+  * ui: Cancel hiding delay when activity requested again
+  * Update dependencies
+
+  [ Fabio Tomat ]
+  * Update fur-IT.txt fix typo for Spanish
+
+ -- Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>  Sat, 14 Nov 2020 06:46:28 +0000
+
 squeekboard (1.10.0) amber-phone; urgency=medium
 
   [ Dorota Czaplejewicz ]
