@@ -27,7 +27,7 @@ views:
         - "~ ` ´  · © ® ÷ × ¶"
         - "€ £ $ ¥ ^ ° * { } |"
         - "show_numbers   \\ / § π τ [ ]  BackSpace"
-        - "show_letters preferences         space        , . Return"
+        - "show_letters preferences         space        ; . Return"
     eschars:
         - "ä è é ö ü Ä È É Ö Ü"
         - "à â ê î ô À Â È Î Ô"
