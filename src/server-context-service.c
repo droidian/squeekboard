@@ -233,11 +233,6 @@ server_context_service_real_show_keyboard (ServerContextService *self)
         return;
     }
 
-    if (self->hiding) {
-	    g_source_remove (self->hiding);
-	    self->hiding = 0;
-    }
-
     if (!self->window) {
         make_window (self);
     }
@@ -268,6 +263,11 @@ void
 server_context_service_show_keyboard (ServerContextService *self)
 {
     g_return_if_fail (SERVER_IS_CONTEXT_SERVICE(self));
+
+    if (self->hiding) {
+        g_source_remove (self->hiding);
+        self->hiding = 0;
+    }
 
     if (!self->visible) {
         server_context_service_real_show_keyboard (self);
