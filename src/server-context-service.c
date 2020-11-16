@@ -226,25 +226,11 @@ make_widget (ServerContextService *self)
     gtk_widget_show_all(self->widget);
 }
 
-static gboolean
-on_hide (ServerContextService *self)
-{
-    gtk_widget_hide (GTK_WIDGET(self->window));
-    self->hiding = 0;
-
-    return G_SOURCE_REMOVE;
-}
-
 static void
 server_context_service_real_show_keyboard (ServerContextService *self)
 {
     if (!self->enabled) {
         return;
-    }
-
-    if (self->hiding) {
-	    g_source_remove (self->hiding);
-	    self->hiding = 0;
     }
 
     if (!self->window) {
@@ -260,16 +246,28 @@ server_context_service_real_show_keyboard (ServerContextService *self)
 static void
 server_context_service_real_hide_keyboard (ServerContextService *self)
 {
-    if (!self->hiding) {
-        self->hiding = g_timeout_add (200, (GSourceFunc) on_hide, self);
-    }
+    gtk_widget_hide (GTK_WIDGET(self->window));
     self->visible = FALSE;
+}
+
+static gboolean
+on_hide (ServerContextService *self)
+{
+    server_context_service_real_hide_keyboard(self);
+    self->hiding = 0;
+
+    return G_SOURCE_REMOVE;
 }
 
 void
 server_context_service_show_keyboard (ServerContextService *self)
 {
     g_return_if_fail (SERVER_IS_CONTEXT_SERVICE(self));
+
+    if (self->hiding) {
+        g_source_remove (self->hiding);
+        self->hiding = 0;
+    }
 
     if (!self->visible) {
         server_context_service_real_show_keyboard (self);
@@ -283,6 +281,22 @@ server_context_service_hide_keyboard (ServerContextService *self)
 
     if (self->visible) {
         server_context_service_real_hide_keyboard (self);
+    }
+}
+
+/// Meant for use by the input-method handler:
+/// the visible keyboard is no longer needed.
+/// The implementation will delay it slightly,
+/// because the release may be due to switching from one text field to another.
+/// In this case, the user doesn't really need the keyboard surface
+/// to disappear completely.
+void
+server_context_service_keyboard_release_visibility (ServerContextService *self)
+{
+    g_return_if_fail (SERVER_IS_CONTEXT_SERVICE(self));
+
+    if (!self->hiding && self->visible) {
+        self->hiding = g_timeout_add (200, (GSourceFunc) on_hide, self);
     }
 }
 
