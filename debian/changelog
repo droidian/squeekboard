@@ -1,3 +1,9 @@
+squeekboard (1.11.0-1) unstable; urgency=medium
+
+  * New upstream release 1.11.0
+
+ -- Arnaud Ferraris <arnaud.ferraris@gmail.com>  Mon, 16 Nov 2020 11:17:23 +0100
+
 squeekboard (1.10.0-2) unstable; urgency=medium
 
   * Team upload.
