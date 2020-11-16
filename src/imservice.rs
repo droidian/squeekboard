@@ -42,7 +42,7 @@ pub mod c {
         pub fn eek_input_method_commit(im: *mut InputMethod, serial: u32);
         fn eekboard_context_service_set_hint_purpose(state: *const StateManager, hint: u32, purpose: u32);
         fn server_context_service_show_keyboard(imservice: *const UIManager);
-        fn server_context_service_hide_keyboard(imservice: *const UIManager);
+        fn server_context_service_keyboard_release_visibility(imservice: *const UIManager);
     }
     
     // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
@@ -165,7 +165,7 @@ pub mod c {
                 }
             } else {
                 if let Some(ui) = imservice.ui_manager {
-                    unsafe { server_context_service_hide_keyboard(ui); }
+                    unsafe { server_context_service_keyboard_release_visibility(ui); }
                 }
             }
         }
@@ -185,7 +185,7 @@ pub mod c {
         imservice.current.active = false;
 
         if let Some(ui) = imservice.ui_manager {
-            unsafe { server_context_service_hide_keyboard(ui); }
+            unsafe { server_context_service_keyboard_release_visibility(ui); }
         }
     }    
 
