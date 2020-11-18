@@ -46,6 +46,7 @@ struct _ServerContextService {
 
     gboolean visible;
     gboolean enabled;
+    gboolean im_active;
     PhoshLayerSurface *window;
     GtkWidget *widget; // nullable
     guint hiding;
@@ -229,10 +230,6 @@ make_widget (ServerContextService *self)
 static void
 server_context_service_real_show_keyboard (ServerContextService *self)
 {
-    if (!self->enabled) {
-        return;
-    }
-
     if (!self->window) {
         make_window (self);
     }
@@ -421,11 +418,26 @@ server_context_service_new (EekboardContextService *self, struct submission *sub
 }
 
 void
+server_context_service_update_visible (ServerContextService *self, gboolean delay) {
+    if (self->enabled && self->im_active) {
+        server_context_service_show_keyboard(self);
+    } else if (delay) {
+        server_context_service_keyboard_release_visibility(self);
+    } else {
+        server_context_service_hide_keyboard(self);
+    }
+}
+
+void
 server_context_service_set_enabled (ServerContextService *self, gboolean enabled)
 {
     g_return_if_fail (SERVER_IS_CONTEXT_SERVICE (self));
     self->enabled = enabled;
-    if (!self->enabled) {
-        server_context_service_hide_keyboard (self);
-    }
+    server_context_service_update_visible(self, FALSE);
+}
+
+void
+server_context_service_set_im_active(ServerContextService *self, uint32_t active) {
+    self->im_active = active;
+    server_context_service_update_visible(self, TRUE);
 }

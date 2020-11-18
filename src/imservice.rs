@@ -42,7 +42,7 @@ pub mod c {
         pub fn eek_input_method_delete_surrounding_text(im: *mut InputMethod, before: u32, after: u32);
         pub fn eek_input_method_commit(im: *mut InputMethod, serial: u32);
         fn eekboard_context_service_set_hint_purpose(state: *const StateManager, hint: u32, purpose: u32);
-        pub fn server_context_service_show_keyboard(imservice: *const UIManager);
+        pub fn server_context_service_set_im_active(imservice: *const UIManager, active: u32);
         pub fn server_context_service_keyboard_release_visibility(imservice: *const UIManager);
     }
     
@@ -383,13 +383,12 @@ impl IMService {
     }
 
     fn apply_active_to_ui(&self) {
-        if self.is_active() {
-            if let Some(ui) = self.ui_manager {
-                unsafe { c::server_context_service_show_keyboard(ui); }
-            }
-        } else {
-            if let Some(ui) = self.ui_manager {
-                unsafe { c::server_context_service_keyboard_release_visibility(ui); }
+        if let Some(ui) = self.ui_manager {
+            unsafe {
+                c::server_context_service_set_im_active(
+                    ui,
+                    self.is_active() as u32,
+                );
             }
         }
     }
