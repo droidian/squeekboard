@@ -43,10 +43,9 @@ struct _ServerContextService {
     struct submission *submission; // unowned
     struct squeek_layout_state *layout;
     struct ui_manager *manager; // unowned
+    struct vis_manager *vis_manager; // owned
 
     gboolean visible;
-    gboolean enabled;
-    gboolean im_active;
     PhoshLayerSurface *window;
     GtkWidget *widget; // nullable
     guint hiding;
@@ -288,13 +287,20 @@ server_context_service_hide_keyboard (ServerContextService *self)
 /// In this case, the user doesn't really need the keyboard surface
 /// to disappear completely.
 void
-server_context_service_keyboard_release_visibility (ServerContextService *self)
+server_context_service_release_visibility (ServerContextService *self)
 {
     g_return_if_fail (SERVER_IS_CONTEXT_SERVICE(self));
 
     if (!self->hiding && self->visible) {
         self->hiding = g_timeout_add (200, (GSourceFunc) on_hide, self);
     }
+}
+
+static void
+server_context_service_set_physical_keyboard_present (ServerContextService *self, gboolean physical_keyboard_present)
+{
+    g_return_if_fail (SERVER_IS_CONTEXT_SERVICE (self));
+    squeek_visman_set_keyboard_present(self->vis_manager, physical_keyboard_present);
 }
 
 static void
@@ -310,7 +316,7 @@ server_context_service_set_property (GObject      *object,
         self->visible = g_value_get_boolean (value);
         break;
     case PROP_ENABLED:
-        server_context_service_set_enabled (self, g_value_get_boolean (value));
+        server_context_service_set_physical_keyboard_present (self, !g_value_get_boolean (value));
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -385,12 +391,14 @@ server_context_service_class_init (ServerContextServiceClass *klass)
 }
 
 static void
-server_context_service_init (ServerContextService *self) {
+server_context_service_init (ServerContextService *self) {}
+
+static void
+init (ServerContextService *self) {
     const char *schema_name = "org.gnome.desktop.a11y.applications";
     GSettingsSchemaSource *ssrc = g_settings_schema_source_get_default();
     g_autoptr(GSettingsSchema) schema = NULL;
 
-    self->enabled = TRUE;
     if (!ssrc) {
         g_warning("No gsettings schemas installed.");
         return;
@@ -407,37 +415,24 @@ server_context_service_init (ServerContextService *self) {
 }
 
 ServerContextService *
-server_context_service_new (EekboardContextService *self, struct submission *submission, struct squeek_layout_state *layout, struct ui_manager *uiman)
+server_context_service_new (EekboardContextService *self, struct submission *submission, struct squeek_layout_state *layout, struct ui_manager *uiman, struct vis_manager *visman)
 {
     ServerContextService *ui = g_object_new (SERVER_TYPE_CONTEXT_SERVICE, NULL);
     ui->submission = submission;
     ui->state = self;
     ui->layout = layout;
     ui->manager = uiman;
+    ui->vis_manager = visman;
+    init(ui);
     return ui;
 }
 
 void
-server_context_service_update_visible (ServerContextService *self, gboolean delay) {
-    if (self->enabled && self->im_active) {
+server_context_service_update_visible (ServerContextService *self, gboolean visible) {
+    if (visible) {
         server_context_service_show_keyboard(self);
-    } else if (delay) {
-        server_context_service_keyboard_release_visibility(self);
     } else {
         server_context_service_hide_keyboard(self);
     }
 }
 
-void
-server_context_service_set_enabled (ServerContextService *self, gboolean enabled)
-{
-    g_return_if_fail (SERVER_IS_CONTEXT_SERVICE (self));
-    self->enabled = enabled;
-    server_context_service_update_visible(self, FALSE);
-}
-
-void
-server_context_service_set_im_active(ServerContextService *self, uint32_t active) {
-    self->im_active = active;
-    server_context_service_update_visible(self, TRUE);
-}
