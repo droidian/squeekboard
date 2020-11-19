@@ -6,6 +6,7 @@
 use std::boxed::Box;
 use std::ffi::CString;
 use std::fmt;
+use std::mem;
 use std::num::Wrapping;
 use std::string::String;
 
@@ -41,8 +42,8 @@ pub mod c {
         pub fn eek_input_method_delete_surrounding_text(im: *mut InputMethod, before: u32, after: u32);
         pub fn eek_input_method_commit(im: *mut InputMethod, serial: u32);
         fn eekboard_context_service_set_hint_purpose(state: *const StateManager, hint: u32, purpose: u32);
-        fn server_context_service_show_keyboard(imservice: *const UIManager);
-        fn server_context_service_keyboard_release_visibility(imservice: *const UIManager);
+        pub fn server_context_service_show_keyboard(imservice: *const UIManager);
+        pub fn server_context_service_keyboard_release_visibility(imservice: *const UIManager);
     }
     
     // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
@@ -152,20 +153,14 @@ pub mod c {
         };
 
         if active_changed {
+            imservice.apply_active_to_ui();
             if imservice.current.active {
-                if let Some(ui) = imservice.ui_manager {
-                    unsafe { server_context_service_show_keyboard(ui); }
-                }
                 unsafe {
                     eekboard_context_service_set_hint_purpose(
                         imservice.state_manager,
                         imservice.current.content_hint.bits(),
                         imservice.current.content_purpose.clone() as u32,
                     );
-                }
-            } else {
-                if let Some(ui) = imservice.ui_manager {
-                    unsafe { server_context_service_keyboard_release_visibility(ui); }
                 }
             }
         }
@@ -340,7 +335,7 @@ pub struct IMService {
     /// Unowned reference. Be careful, it's shared with C at large
     state_manager: *const c::StateManager,
     /// Unowned reference. Be careful, it's shared with C at large
-    pub ui_manager: Option<*const c::UIManager>,
+    ui_manager: Option<*const c::UIManager>,
 
     pending: IMProtocolState,
     current: IMProtocolState, // turn current into an idiomatic representation?
@@ -377,7 +372,28 @@ impl IMService {
         }
         imservice
     }
-    
+
+    pub fn set_ui_manager(&mut self, mut ui_manager: Option<*const c::UIManager>) {
+        mem::swap(&mut self.ui_manager, &mut ui_manager);
+        // Now ui_manager is what was previously self.ui_manager.
+        // If there wasn't any, we need to consider if UI was requested.
+        if let None = ui_manager {
+            self.apply_active_to_ui();
+        }
+    }
+
+    fn apply_active_to_ui(&self) {
+        if self.is_active() {
+            if let Some(ui) = self.ui_manager {
+                unsafe { c::server_context_service_show_keyboard(ui); }
+            }
+        } else {
+            if let Some(ui) = self.ui_manager {
+                unsafe { c::server_context_service_keyboard_release_visibility(ui); }
+            }
+        }
+    }
+
     pub fn commit_string(&self, text: &CString) -> Result<(), SubmitError> {
         match self.current.active {
             true => {
