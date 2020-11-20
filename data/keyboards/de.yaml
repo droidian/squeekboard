@@ -21,13 +21,13 @@ views:
     numbers:
         - "1 2 3 4 5 6 7 8 9 0"
         - "@ # € % & - _ + ( )"
-        - "show_symbols   , \" ' : = < >  BackSpace"
+        - "show_symbols   ; \" ' : = < >  BackSpace"
         - "show_letters show_eschars preferences         space        , . Return"
     symbols:
         - "~ ` ´ | · √ µ ÷ × ¶"
         - "© ® £ $ ¥ ^ ° * { }"
         - "show_numbers   \\ / § π τ [ ]  BackSpace"
-        - "show_letters show_eschars preferences         space        ; . Return"
+        - "show_letters show_eschars preferences         space        , . Return"
     eschars:
         - "ä è é ö ü Ä È É Ö Ü"
         - "à â ê î ô À Â È Î Ô"
