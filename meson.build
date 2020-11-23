@@ -72,6 +72,7 @@ summary = [
 message('\n'.join(summary))
 
 # Rust deps are changing, depending on compile flags. Cargo can't handle it alone.
+# As a side effect, Cargo.toml never gets used.
 cargo_toml_in = files('Cargo.toml.in')
 path_data = configuration_data()
 path_data.set('path', meson.source_root())
