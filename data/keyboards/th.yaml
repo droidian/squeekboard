@@ -15,7 +15,7 @@ views:
         - "show_numbers preferences         space        period Return"
     upper:
         - "+ ๑ ๒ ๓ ๔ ู ฿ ๕ ๖ ๗ ๘ ๙"
-        - "๐ " ฎ ฑ ธ ํ ๊ ณ ฯ ญ ฐ ,"
+        - "๐ \" ฎ ฑ ธ ํ ๊ ณ ฯ ญ ฐ ,"
         - "ฤ ฆ ฏ โ ฌ ็ ๋ ษ ศ ซ . ฅ"
         - "Shift_L   ( ) ฉ ฮ ฺ ์ ? ฒ ฬ ฦ  BackSpace"
         - "show_numbers preferences         space        period Return"
