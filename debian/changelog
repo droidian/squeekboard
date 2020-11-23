@@ -1,3 +1,16 @@
+squeekboard (1.11.1) amber-phone; urgency=medium
+
+  [ Mark Müller ]
+  * keyboard: Fix semicolon in German layout
+  * keyboard: Move semicolon in German layout to numbers view replacing redundant comma key
+
+  [ Dorota Czaplejewicz ]
+  * imservice: Set up UI according to current needs when it shows up
+  * UI: Keep visibility factors in a central place
+  * cargo: Update deps
+
+ -- Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>  Sat, 21 Nov 2020 11:08:06 +0000
+
 squeekboard (1.11.0) amber-phone; urgency=medium
 
   [ Dorota Czaplejewicz ]
