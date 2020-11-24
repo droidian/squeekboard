@@ -84,11 +84,11 @@ pub mod c {
         }
         let submission: &mut Submission = unsafe { &mut *submission };
         if let Some(ref mut imservice) = &mut submission.imservice {
-            imservice.ui_manager = if ui_manager.is_null() {
+            imservice.set_ui_manager(if ui_manager.is_null() {
                 None
             } else {
                 Some(ui_manager)
-            }
+            })
         };
     }
 
