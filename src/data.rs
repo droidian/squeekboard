@@ -137,6 +137,7 @@ fn list_layout_sources(
 
     let ret = Vec::new();
 
+    // Name as given takes priority.
     let ret = match &kind {
         ArrangementKind::Base => ret,
         kind => add_by_name(
@@ -148,6 +149,35 @@ fn list_layout_sources(
 
     let ret = add_by_name(ret, name, &ArrangementKind::Base);
 
+    // Then try non-alternative name if applicable (`us` for `us+colemak`).
+    let ret = {
+        let mut parts = name.splitn(2, '+');
+        match parts.next() {
+            Some(base) => {
+                // The name is already equal to base, so it was already added.
+                if base == name { ret }
+                else {
+                    let ret = match &kind {
+                        ArrangementKind::Base => ret,
+                        kind => add_by_name(
+                            ret,
+                            &name_with_arrangement(base.into(), &kind),
+                            &kind,
+                        ),
+                    };
+
+                    add_by_name(ret, base, &ArrangementKind::Base)
+                }
+            },
+            // The layout's base name starts with a "+". Weird but OK.
+            None => {
+                log_print!(logging::Level::Surprise, "Base layout name is empty: {}", name);
+                ret
+            }
+        }
+    };
+
+    // Finally, fallback name
     let ret = match &kind {
         ArrangementKind::Base => ret,
         kind => add_by_name(
@@ -914,7 +944,26 @@ mod tests {
             )
         );
     }
+
+    /// If layout contains a "+", it should reach for what's in front of it too.
+    #[test]
+    fn fallbacks_order_base() {
+        let sources = list_layout_sources("nb+aliens", ArrangementKind::Base, None);
+
+        assert_eq!(
+            sources,
+            vec!(
+                (ArrangementKind::Base, DataSource::Resource("nb+aliens".into())),
+                (ArrangementKind::Base, DataSource::Resource("nb".into())),
+                (
+                    ArrangementKind::Base,
+                    DataSource::Resource(FALLBACK_LAYOUT_NAME.into())
+                ),
+            )
+        );
+    }
     
+
     #[test]
     fn unicode_keysym() {
         let keysym = xkb::keysym_from_name(
