@@ -672,6 +672,12 @@ pub struct Layout {
     pub margins: Margins,
     pub kind: ArrangementKind,
     pub current_view: String,
+
+    // If current view is latched,
+    // clicking any button that emits an action (erase, submit, set modifier)
+    // will cause lock buttons to unlatch.
+    view_latched: bool,
+
     // Views own the actual buttons which have state
     // Maybe they should own UI only,
     // and keys should be owned by a dedicated non-UI-State?
@@ -718,6 +724,7 @@ impl Layout {
         Layout {
             kind,
             current_view: "base".to_owned(),
+            view_latched: false,
             views: data.views,
             keymaps: data.keymaps,
             pressed_keys: HashSet::new(),
@@ -818,6 +825,8 @@ impl Layout {
         }
         out
     }
+
+    
 }
 
 mod procedures {
@@ -1026,24 +1035,35 @@ mod seat {
             Action::Submit { text: _, keys: _ }
                 | Action::Erase
             => {
-                unstick_locks(layout).apply();
+                if layout.view_latched {
+                    unstick_locks(layout).apply();
+                }
                 submission.handle_release(KeyState::get_id(rckey), time);
             },
             Action::SetView(view) => {
+                layout.view_latched = false;
                 try_set_view(layout, view)
             },
             Action::LockView { lock, unlock } => {
-                let gets_locked = !key.action.is_locked(&layout.current_view);
-                unstick_locks(layout)
-                    // It doesn't matter what the resulting view should be,
-                    // it's getting changed anyway.
-                    .choose_view(
-                        match gets_locked {
-                            true => lock.clone(),
-                            false => unlock.clone(),
-                        }
-                    )
-                    .apply()
+                let locked = key.action.is_locked(&layout.current_view);
+                let (gets_latched, new_view) = match (layout.view_latched, locked) {
+                    // Was unlocked, now make locked but latched. (false)
+                    // OR (true)
+                    // Layout is latched for reason other than this button.
+                    (_, false) => (true, Some(lock.clone())),
+                    // Was latched, now only locked.
+                    (true, true) => (false, None),
+                    // Was locked, now make unlocked.
+                    (false, true) => (false, Some(unlock.clone())),
+                };
+                layout.view_latched = gets_latched;
+                if let Some(view) = new_view {
+                    unstick_locks(layout)
+                        // It doesn't matter what the resulting view should be,
+                        // it's getting changed anyway.
+                        .choose_view(view)
+                        .apply()
+                }
             },
             Action::ApplyModifier(modifier) => {
                 // FIXME: key id is unneeded with stateless locks
@@ -1193,6 +1213,7 @@ mod test {
         ]);
         let layout = Layout {
             current_view: String::new(),
+            view_latched: false,
             keymaps: Vec::new(),
             kind: ArrangementKind::Base,
             pressed_keys: HashSet::new(),
