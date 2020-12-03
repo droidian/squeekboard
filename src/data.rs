@@ -128,41 +128,36 @@ fn list_layout_sources(
         ret
     };
 
-    let ret = {
-        fn name_with_arrangement(name: String, kind: &ArrangementKind)
-            -> String
-        {
-            match kind {    
-                ArrangementKind::Base => name,
-                ArrangementKind::Wide => name + "_wide",
-            }
+    fn name_with_arrangement(name: String, kind: &ArrangementKind) -> String {
+        match kind {    
+            ArrangementKind::Base => name,
+            ArrangementKind::Wide => name + "_wide",
         }
+    }
 
-        let ret = Vec::new();
+    let ret = Vec::new();
 
-        let ret = match &kind {
-            ArrangementKind::Base => ret,
-            kind => add_by_name(
-                ret,
-                &name_with_arrangement(name.into(), &kind),
-                &kind,
-            ),
-        };
-
-        let ret = add_by_name(ret, name, &ArrangementKind::Base);
-
-        let ret = match &kind {
-            ArrangementKind::Base => ret,
-            kind => add_by_name(
-                ret,
-                &name_with_arrangement(FALLBACK_LAYOUT_NAME.into(), &kind),
-                &kind,
-            ),
-        };
-
-        add_by_name(ret, FALLBACK_LAYOUT_NAME, &ArrangementKind::Base)
+    let ret = match &kind {
+        ArrangementKind::Base => ret,
+        kind => add_by_name(
+            ret,
+            &name_with_arrangement(name.into(), &kind),
+            &kind,
+        ),
     };
-    ret
+
+    let ret = add_by_name(ret, name, &ArrangementKind::Base);
+
+    let ret = match &kind {
+        ArrangementKind::Base => ret,
+        kind => add_by_name(
+            ret,
+            &name_with_arrangement(FALLBACK_LAYOUT_NAME.into(), &kind),
+            &kind,
+        ),
+    };
+
+    add_by_name(ret, FALLBACK_LAYOUT_NAME, &ArrangementKind::Base)
 }
 
 fn load_layout_data(source: DataSource)
