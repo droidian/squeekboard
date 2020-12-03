@@ -841,7 +841,7 @@ impl Layout {
         match transition {
             ViewTransition::UnlatchAll => unstick_locks(self).apply(),
             ViewTransition::ChangeTo(view) => {
-                self.current_view = view.into();
+                try_set_view(self, view.into());
             },
             ViewTransition::NoChange => {},
         };
@@ -915,12 +915,6 @@ struct ViewChange<'a> {
 }
 
 impl<'a> ViewChange<'a> {
-    fn choose_view(self, view_name: String) -> ViewChange<'a> {
-        ViewChange {
-            view_name: Some(view_name),
-            ..self
-        }
-    }
     fn apply(self) {
         if let Some(name) = self.view_name {
             try_set_view(self.layout, name);
@@ -1098,54 +1092,22 @@ mod seat {
         };
         let action = key.action.clone();
 
-        let (view_transition, latch_state) = Layout::process_action_for_view(
-            &action,
-            &layout.current_view,
-            layout.view_latched,
-        );
+        layout.apply_view_transition(&action);
 
         // update
         let key = key.into_released();
 
-        // process changes
+        // process non-view switching
         match action {
             Action::Submit { text: _, keys: _ }
                 | Action::Erase
             => {
-                if layout.view_latched {
-                    unstick_locks(layout).apply();
-                }
                 submission.handle_release(KeyState::get_id(rckey), time);
-            },
-            Action::SetView(view) => {
-                layout.view_latched = false;
-                try_set_view(layout, view)
-            },
-            Action::LockView { lock, unlock } => {
-                let locked = key.action.is_locked(&layout.current_view);
-                let (gets_latched, new_view) = match (layout.view_latched, locked) {
-                    // Was unlocked, now make locked but latched. (false)
-                    // OR (true)
-                    // Layout is latched for reason other than this button.
-                    (_, false) => (true, Some(lock.clone())),
-                    // Was latched, now only locked.
-                    (true, true) => (false, None),
-                    // Was locked, now make unlocked.
-                    (false, true) => (false, Some(unlock.clone())),
-                };
-                layout.view_latched = gets_latched;
-                if let Some(view) = new_view {
-                    unstick_locks(layout)
-                        // It doesn't matter what the resulting view should be,
-                        // it's getting changed anyway.
-                        .choose_view(view)
-                        .apply()
-                }
             },
             Action::ApplyModifier(modifier) => {
                 // FIXME: key id is unneeded with stateless locks
                 let key_id = KeyState::get_id(rckey);
-                let gets_locked = !submission.is_modifier_active(modifier.clone());
+                let gets_locked = !submission.is_modifier_active(modifier);
                 match gets_locked {
                     true => submission.handle_add_modifier(
                         key_id,
@@ -1180,6 +1142,8 @@ mod seat {
                     }
                 }
             },
+            // Other keys are handled in view switcher before.
+            _ => {}
         };
 
         let pointer = ::util::Pointer(rckey.clone());

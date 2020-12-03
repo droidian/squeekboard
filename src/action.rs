@@ -10,7 +10,7 @@ pub struct KeySym(pub String);
 type View = String;
 
 /// Use to send modified keypresses
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Modifier {
     /// Control and Alt are the only modifiers
     /// which doesn't interfere with levels,
