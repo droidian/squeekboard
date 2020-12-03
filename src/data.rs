@@ -97,6 +97,8 @@ impl fmt::Display for DataSource {
     }
 }
 
+type LayoutSource = (ArrangementKind, DataSource);
+
 /// Lists possible sources, with 0 as the most preferred one
 /// Trying order: native lang of the right kind, native base,
 /// fallback lang of the right kind, fallback base
@@ -104,9 +106,29 @@ fn list_layout_sources(
     name: &str,
     kind: ArrangementKind,
     keyboards_path: Option<PathBuf>,
-) -> Vec<(ArrangementKind, DataSource)> {
-    let mut ret = Vec::new();
-    {
+) -> Vec<LayoutSource> {
+    let add_by_name = |
+        mut ret: Vec<LayoutSource>,
+        name: &str,
+        kind: &ArrangementKind,
+    | -> Vec<LayoutSource> {
+        if let Some(path) = keyboards_path.clone() {
+            ret.push((
+                kind.clone(),
+                DataSource::File(
+                    path.join(name.to_owned()).with_extension("yaml")
+                )
+            ))
+        }
+
+        ret.push((
+            kind.clone(),
+            DataSource::Resource(name.into())
+        ));
+        ret
+    };
+
+    let ret = {
         fn name_with_arrangement(name: String, kind: &ArrangementKind)
             -> String
         {
@@ -116,42 +138,30 @@ fn list_layout_sources(
             }
         }
 
-        let mut add_by_name = |name: &str, kind: &ArrangementKind| {
-            if let Some(path) = keyboards_path.clone() {
-                ret.push((
-                    kind.clone(),
-                    DataSource::File(
-                        path.join(name.to_owned()).with_extension("yaml")
-                    )
-                ))
-            }
-            
-            ret.push((
-                kind.clone(),
-                DataSource::Resource(name.into())
-            ));
-        };
+        let ret = Vec::new();
 
-        match &kind {
-            ArrangementKind::Base => {},
+        let ret = match &kind {
+            ArrangementKind::Base => ret,
             kind => add_by_name(
+                ret,
                 &name_with_arrangement(name.into(), &kind),
                 &kind,
             ),
         };
 
-        add_by_name(name, &ArrangementKind::Base);
+        let ret = add_by_name(ret, name, &ArrangementKind::Base);
 
-        match &kind {
-            ArrangementKind::Base => {},
+        let ret = match &kind {
+            ArrangementKind::Base => ret,
             kind => add_by_name(
+                ret,
                 &name_with_arrangement(FALLBACK_LAYOUT_NAME.into(), &kind),
                 &kind,
             ),
         };
 
-        add_by_name(FALLBACK_LAYOUT_NAME, &ArrangementKind::Base);
-    }
+        add_by_name(ret, FALLBACK_LAYOUT_NAME, &ArrangementKind::Base)
+    };
     ret
 }
 
