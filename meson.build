@@ -43,7 +43,7 @@ endif
 if get_option('strict')
     add_project_arguments(
         [
-            '-Werror=unused',
+            '-Werror',
         ],
         language: 'c'
     )
