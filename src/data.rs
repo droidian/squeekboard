@@ -107,6 +107,7 @@ fn list_layout_sources(
     kind: ArrangementKind,
     keyboards_path: Option<PathBuf>,
 ) -> Vec<LayoutSource> {
+    // Just a simplification of often called code.
     let add_by_name = |
         mut ret: Vec<LayoutSource>,
         name: &str,
@@ -128,6 +129,20 @@ fn list_layout_sources(
         ret
     };
 
+    // Another grouping.
+    let add_by_kind = |ret, name: &str, kind| {
+        let ret = match kind {
+            &ArrangementKind::Base => ret,
+            kind => add_by_name(
+                ret,
+                &name_with_arrangement(name.into(), kind),
+                kind,
+            ),
+        };
+
+        add_by_name(ret, name, &ArrangementKind::Base)
+    };
+
     fn name_with_arrangement(name: String, kind: &ArrangementKind) -> String {
         match kind {    
             ArrangementKind::Base => name,
@@ -138,16 +153,7 @@ fn list_layout_sources(
     let ret = Vec::new();
 
     // Name as given takes priority.
-    let ret = match &kind {
-        ArrangementKind::Base => ret,
-        kind => add_by_name(
-            ret,
-            &name_with_arrangement(name.into(), &kind),
-            &kind,
-        ),
-    };
-
-    let ret = add_by_name(ret, name, &ArrangementKind::Base);
+    let ret = add_by_kind(ret, name, &kind);
 
     // Then try non-alternative name if applicable (`us` for `us+colemak`).
     let ret = {
@@ -157,16 +163,7 @@ fn list_layout_sources(
                 // The name is already equal to base, so it was already added.
                 if base == name { ret }
                 else {
-                    let ret = match &kind {
-                        ArrangementKind::Base => ret,
-                        kind => add_by_name(
-                            ret,
-                            &name_with_arrangement(base.into(), &kind),
-                            &kind,
-                        ),
-                    };
-
-                    add_by_name(ret, base, &ArrangementKind::Base)
+                    add_by_kind(ret, base, &kind)
                 }
             },
             // The layout's base name starts with a "+". Weird but OK.
@@ -177,17 +174,8 @@ fn list_layout_sources(
         }
     };
 
-    // Finally, fallback name
-    let ret = match &kind {
-        ArrangementKind::Base => ret,
-        kind => add_by_name(
-            ret,
-            &name_with_arrangement(FALLBACK_LAYOUT_NAME.into(), &kind),
-            &kind,
-        ),
-    };
-
-    add_by_name(ret, FALLBACK_LAYOUT_NAME, &ArrangementKind::Base)
+    // No other choices left, so give anything.
+    add_by_kind(ret, FALLBACK_LAYOUT_NAME.into(), &kind)
 }
 
 fn load_layout_data(source: DataSource)
