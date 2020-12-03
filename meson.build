@@ -100,7 +100,7 @@ cargo_toml = custom_target(
 
 dep_cargo = find_program('cargo')
 cargo_script = find_program('cargo.sh')
-cargo_build = find_program('cargo_build.sh')
+cargo_build = find_program('cargo_build.py')
 
 subdir('data')
 subdir('protocols')

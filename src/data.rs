@@ -746,13 +746,21 @@ mod tests {
 
     use ::logging::ProblemPanic;
 
-    const THIS_FILE: &str = file!();
-
     fn path_from_root(file: &'static str) -> PathBuf {
-        PathBuf::from(THIS_FILE)
-            .parent().unwrap()
-            .parent().unwrap()
-            .join(file)
+        let source_dir = env::var("SOURCE_DIR")
+            .map(PathBuf::from)
+            .unwrap_or_else(|e| {
+                if let env::VarError::NotPresent = e {
+                    let this_file = file!();
+                    PathBuf::from(this_file)
+                        .parent().unwrap()
+                        .parent().unwrap()
+                        .into()
+                } else {
+                    panic!("{:?}", e);
+                }
+            });
+        source_dir.join(file)
     }
 
     #[test]

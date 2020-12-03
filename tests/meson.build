@@ -77,13 +77,23 @@ foreach layout : [
     if layout == 'emoji'
         extra += ['allow_missing_return']
     endif
-
+    
+    # Older Cargo seens to be sensitive to something
+    # about the RUST_FLAGS env var, and rebuilds all tests when it's set,
+    # increasing test time by 2 orders of magnitude.
+    # Let it have its way.
+    if get_option('legacy') == true
+        timeout = 300
+    else
+        timeout = 30
+    endif
     test(
         'test_layout_' + layout,
         cargo_script,
         args: ['run'] + cargo_build_flags
             + ['--example', 'test_layout', '--', layout]
             + extra,
+        timeout: timeout,
         workdir: meson.build_root(),
     )
 endforeach
