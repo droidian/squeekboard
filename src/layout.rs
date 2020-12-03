@@ -837,14 +837,13 @@ impl Layout {
             self.view_latched,
         );
 
-        self.view_latched = new_latched;
         match transition {
-            ViewTransition::UnlatchAll => unstick_locks(self).apply(),
-            ViewTransition::ChangeTo(view) => {
-                try_set_view(self, view.into());
-            },
+            ViewTransition::UnlatchAll => unstick_locks(self),
+            ViewTransition::ChangeTo(view) => try_set_view(self, view.into()),
             ViewTransition::NoChange => {},
         };
+
+        self.view_latched = new_latched;
     }
 
     /// Last bool is new latch state.
@@ -907,31 +906,18 @@ fn try_set_view(layout: &mut Layout, view_name: String) {
         );
 }
 
-/// A vessel holding an obligation to switch view.
-/// Use with #[must_use]
-struct ViewChange<'a> {
-    layout: &'a mut Layout,
-    view_name: Option<String>,
-}
-
-impl<'a> ViewChange<'a> {
-    fn apply(self) {
-        if let Some(name) = self.view_name {
-            try_set_view(self.layout, name);
-        }
-    }
-}
-
 /// Find all impermanent view changes and undo them in an arbitrary order.
-/// Return an obligation to actually switch the view.
 /// The final view is the "unlock" view
-/// from one of the currently stuck keys.
+/// from one of the currently latched keys.
 // As long as only one stuck button is used, this should be fine.
 // This is guaranteed because pressing a lock button unlocks all others.
 // TODO: Make some broader guarantee about the resulting view,
 // e.g. by maintaining a stack of stuck keys.
-#[must_use]
-fn unstick_locks(layout: &mut Layout) -> ViewChange {
+fn unstick_locks(layout: &mut Layout) {
+    if !layout.view_latched {
+        return;
+    }
+
     let mut new_view = None;
     for key in layout.get_locked_keys().clone() {
         let key: &Rc<RefCell<KeyState>> = key.borrow();
@@ -948,9 +934,8 @@ fn unstick_locks(layout: &mut Layout) -> ViewChange {
         };
     }
     
-    ViewChange {
-        layout,
-        view_name: new_view,
+    if let Some(name) = new_view {
+        try_set_view(layout, name);
     }
 }
 
