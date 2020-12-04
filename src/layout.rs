@@ -41,7 +41,7 @@ pub mod c {
     use super::*;
 
     use gtk_sys;
-    use std::os::raw::{ c_char, c_void };
+    use std::os::raw::c_void;
 
     use std::ops::{ Add, Sub };
 
@@ -160,13 +160,6 @@ pub mod c {
     pub struct LevelKeyboard(*const c_void);
 
     // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
-    
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_button_print(button: *const ::layout::Button) {
-        let button = unsafe { &*button };
-        println!("{:?}", button);
-    }
     
     /// Positions the layout contents within the available space.
     /// The origin of the transformation is the point inside the margins.

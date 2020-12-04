@@ -90,13 +90,5 @@ struct transformation {
     gdouble scale;
 };
 
-struct squeek_button;
-struct squeek_row;
-
-/// Represents the path to the button within a view
-struct button_place {
-    const struct squeek_row *row;
-    const struct squeek_button *button;
-};
 G_END_DECLS
 #endif  /* EEK_TYPES_H */

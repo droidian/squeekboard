@@ -31,10 +31,6 @@
 static void render_button_label (cairo_t *cr, GtkStyleContext *ctx,
                                                 const gchar *label, EekBounds bounds);
 
-void eek_render_button                         (EekRenderer *self,
-                                                cairo_t     *cr, const struct squeek_button *button,
-                                                gboolean     pressed, gboolean locked);
-
 static void
 render_outline (cairo_t     *cr,
                 GtkStyleContext *ctx,

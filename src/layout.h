@@ -26,7 +26,6 @@ struct squeek_layout_state {
 
 struct squeek_layout;
 
-void squeek_button_print(const struct squeek_button* button);
 
 struct transformation squeek_layout_calculate_transformation(
         const struct squeek_layout *layout,
