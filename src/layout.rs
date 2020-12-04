@@ -41,9 +41,7 @@ pub mod c {
     use super::*;
 
     use gtk_sys;
-    use std::ffi::CStr;
     use std::os::raw::{ c_char, c_void };
-    use std::ptr;
 
     use std::ops::{ Add, Sub };
 
@@ -162,57 +160,6 @@ pub mod c {
     pub struct LevelKeyboard(*const c_void);
 
     // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
-
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_button_get_bounds(button: *const ::layout::Button) -> Bounds {
-        let button = unsafe { &*button };
-        Bounds {
-            x: 0.0, y: 0.0,
-            width: button.size.width, height: button.size.height
-        }
-    }
-
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_button_get_label(
-        button: *const ::layout::Button
-    ) -> *const c_char {
-        let button = unsafe { &*button };
-        match &button.label {
-            Label::Text(text) => text.as_ptr(),
-            // returning static strings to C is a bit cumbersome
-            Label::IconName(_) => unsafe {
-                // CStr doesn't allocate anything, so it only points to
-                // the 'static str, avoiding a memory leak
-                CStr::from_bytes_with_nul_unchecked(b"icon\0")
-            }.as_ptr(),
-        }
-    }
-    
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_button_get_icon_name(button: *const Button) -> *const c_char {
-        let button = unsafe { &*button };
-        match &button.label {
-            Label::Text(_) => ptr::null(),
-            Label::IconName(name) => name.as_ptr(),
-        }
-    }
-    
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_button_get_name(button: *const Button) -> *const c_char {
-        let button = unsafe { &*button };
-        button.name.as_ptr()
-    }
-    
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_button_get_outline_name(button: *const Button) -> *const c_char {
-        let button = unsafe { &*button };
-        button.outline_name.as_ptr()
-    }
     
     #[no_mangle]
     pub extern "C"
@@ -483,6 +430,15 @@ pub struct Button {
     pub outline_name: CString,
     /// current state, shared with other buttons
     pub state: Rc<RefCell<KeyState>>,
+}
+
+impl Button {
+    pub fn get_bounds(&self) -> c::Bounds {
+        c::Bounds {
+            x: 0.0, y: 0.0,
+            width: self.size.width, height: self.size.height,
+        }
+    }
 }
 
 /// The graphical representation of a row of buttons
