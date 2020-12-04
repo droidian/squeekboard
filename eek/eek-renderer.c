@@ -111,8 +111,8 @@ GtkStyleContext *
 eek_get_style_context_for_button (EekRenderer *self,
                                   const char *name,
                                   const char *outline_name,
-               uint64_t     pressed,
-               uint64_t     locked)
+                                  const char *locked_class,
+               uint64_t     pressed)
 {
     GtkStyleContext *ctx = self->button_context;
     /* Set the name of the button on the widget path, using the name obtained
@@ -127,8 +127,8 @@ eek_get_style_context_for_button (EekRenderer *self,
        (pressed) or normal. */
     gtk_style_context_set_state(ctx,
         pressed ? GTK_STATE_FLAG_ACTIVE : GTK_STATE_FLAG_NORMAL);
-    if (locked) {
-        gtk_style_context_add_class(ctx, "locked");
+    if (locked_class) {
+        gtk_style_context_add_class(ctx, locked_class);
     }
     gtk_style_context_add_class(ctx, outline_name);
     return ctx;
@@ -137,12 +137,12 @@ eek_get_style_context_for_button (EekRenderer *self,
 /// Interface for Rust.
 void eek_put_style_context_for_button(GtkStyleContext *ctx,
                                       const char *outline_name,
-                                      uint64_t locked) {
+                                      const char *locked_class) {
     // Save and restore functions don't work if gtk_render_* was used in between
     gtk_style_context_set_state(ctx, GTK_STATE_FLAG_NORMAL);
     gtk_style_context_remove_class(ctx, outline_name);
-    if (locked) {
-        gtk_style_context_remove_class(ctx, "locked");
+    if (locked_class) {
+        gtk_style_context_remove_class(ctx, locked_class);
     }
 }
 

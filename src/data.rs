@@ -270,6 +270,8 @@ enum Action {
         lock_view: String,
         unlock_view: String,
         pops: Option<bool>,
+        #[serde(default)]
+        looks_locked_from: Vec<String>,
     },
     #[serde(rename="set_view")]
     SetView(String),
@@ -583,6 +585,7 @@ fn create_action<H: logging::Handler>(
         SubmitData::Action(Action::Locking {
             lock_view, unlock_view,
             pops,
+            looks_locked_from,
         }) => ::action::Action::LockView {
             lock: filter_view_name(
                 name,
@@ -597,6 +600,7 @@ fn create_action<H: logging::Handler>(
                 warning_handler,
             ),
             latches: pops.unwrap_or(true),
+            looks_locked_from,
         },
         SubmitData::Action(
             Action::ShowPrefs

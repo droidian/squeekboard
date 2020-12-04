@@ -616,10 +616,16 @@ pub struct Margins {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-enum LatchedState {
+pub enum LatchedState {
     /// Holds view to return to.
     FromView(String),
     Not,
+}
+
+impl LatchedState {
+    pub fn is_latched(&self) -> bool {
+        self != &LatchedState::Not
+    }
 }
 
 // TODO: split into sth like
@@ -705,6 +711,12 @@ impl Layout {
         } else {
             Err(NoSuchView)
         }
+    }
+
+    // Layout is passed around mutably,
+    // so better keep the field away from direct access.
+    pub fn get_view_latched(&self) -> &LatchedState {
+        &self.view_latched
     }
 
     /// Calculates size without margins
@@ -847,7 +859,7 @@ impl Layout {
                 ViewTransition::ChangeTo(view),
                 LatchedState::Not,
             ),
-            Action::LockView { lock, unlock, latches } => {
+            Action::LockView { lock, unlock, latches, looks_locked_from: _ } => {
                 use self::ViewTransition as VT;
                 let locked = action.is_locked(current_view);
                 match (locked, latched, latches) {
@@ -1132,6 +1144,7 @@ mod test {
             lock: "lock".into(),
             unlock: "unlock".into(),
             latches: true,
+            looks_locked_from: vec![],
         };
 
         assert_eq!(
@@ -1161,6 +1174,7 @@ mod test {
             lock: "locked".into(),
             unlock: "base".into(),
             latches: true,
+            looks_locked_from: vec![],
         };
         
         let submit = Action::Erase;
@@ -1228,12 +1242,14 @@ mod test {
             lock: "locked".into(),
             unlock: "base".into(),
             latches: true,
+            looks_locked_from: vec![],
         };
         
         let unswitch = Action::LockView {
             lock: "locked".into(),
             unlock: "unlocked".into(),
             latches: false,
+            looks_locked_from: vec![],
         };
         
         let submit = Action::Erase;
@@ -1292,12 +1308,14 @@ mod test {
             lock: "locked".into(),
             unlock: "base".into(),
             latches: true,
+            looks_locked_from: vec![],
         };
         
         let switch_again = Action::LockView {
             lock: "ĄĘ".into(),
             unlock: "locked".into(),
             latches: true,
+            looks_locked_from: vec![],
         };
         
         let submit = Action::Erase;

@@ -3,15 +3,16 @@
 use cairo;
 use std::cell::RefCell;
 
-use ::action::Action;
+use ::action::{ Action, Modifier };
 use ::keyboard;
-use ::layout::{ Button, Label, Layout };
+use ::layout::{ Button, Label, LatchedState, Layout };
 use ::layout::c::{ Bounds, EekGtkKeyboard, Point };
 use ::submission::Submission;
 
 use glib::translate::FromGlibPtrNone;
 use gtk::WidgetExt;
 
+use std::collections::HashSet;
 use std::ffi::CStr;
 use std::ptr;
 
@@ -57,15 +58,15 @@ mod c {
             renderer: EekRenderer,
             name: *const c_char,
             outline_name: *const c_char,
+            locked_class: *const c_char,
             pressed: u64,
-            locked: u64,
         ) -> GtkStyleContext;
 
         #[allow(improper_ctypes)]
         pub fn eek_put_style_context_for_button(
             ctx: GtkStyleContext,
             outline_name: *const c_char,
-            locked: u64,
+            locked_class: *const c_char,
         );
     }
 
@@ -85,13 +86,16 @@ mod c {
 
         layout.foreach_visible_button(|offset, button| {
             let state = RefCell::borrow(&button.state).clone();
-            let active_mod = match &state.action {
-                Action::ApplyModifier(m) => active_modifiers.contains(m),
-                _ => false,
-            };
-            let locked = state.action.is_active(&layout.current_view)
-                | active_mod;
-            if state.pressed == keyboard::PressType::Pressed || locked {
+
+            let locked = LockedStyle::from_action(
+                &state.action,
+                &active_modifiers,
+                layout.get_view_latched(),
+                &layout.current_view,
+            );
+            if state.pressed == keyboard::PressType::Pressed
+                || locked != LockedStyle::Free
+            {
                 render_button_at_position(
                     renderer, &cr,
                     offset,
@@ -117,20 +121,55 @@ mod c {
                 renderer, &cr,
                 offset,
                 button.as_ref(),
-                keyboard::PressType::Released, false,
+                keyboard::PressType::Released,
+                LockedStyle::Free,
             );
         })
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Debug)]
+enum LockedStyle {
+    Free,
+    Latched,
+    Locked,
+}
+
+impl LockedStyle {
+    fn from_action(
+        action: &Action,
+        mods: &HashSet<Modifier>,
+        latched_view: &LatchedState,
+        current_view: &str,
+    ) -> LockedStyle {
+        let active_mod = match action {
+            Action::ApplyModifier(m) => mods.contains(m),
+            _ => false,
+        };
+        
+        let active_view = action.is_active(current_view);
+        let latched_button = match latched_view {
+            LatchedState::Not => false,
+            LatchedState::FromView(view) => !action.has_locked_appearance_from(view),
+        };
+        match (active_mod, active_view, latched_button) {
+            // Modifiers don't latch.
+            (true, _, _) => LockedStyle::Locked,
+            (false, true, false) => LockedStyle::Locked,
+            (false, true, true) => LockedStyle::Latched,
+            _ => LockedStyle::Free,
+        }
+    }
+}
+
 /// Renders a button at a position (button's own bounds ignored)
-pub fn render_button_at_position(
+fn render_button_at_position(
     renderer: c::EekRenderer,
     cr: &cairo::Context,
     position: Point,
     button: &Button,
     pressed: keyboard::PressType,
-    locked: bool,
+    locked: LockedStyle,
 ) {
     cr.save();
     cr.translate(position.x, position.y);
@@ -182,18 +221,27 @@ fn with_button_context<R, F: FnOnce(&c::GtkStyleContext) -> R>(
     renderer: c::EekRenderer,
     button: &Button,
     pressed: keyboard::PressType,
-    locked: bool,
+    locked: LockedStyle,
     operation: F,
 ) -> R {
     let outline_name_c = button.outline_name.as_ptr();
+    let locked_class_c = match locked {
+        LockedStyle::Free => ptr::null(),
+        LockedStyle::Locked => unsafe {
+            CStr::from_bytes_with_nul_unchecked(b"locked\0").as_ptr()
+        },
+        LockedStyle::Latched => unsafe {
+            CStr::from_bytes_with_nul_unchecked(b"latched\0").as_ptr()
+        },
+    };
     
     let ctx = unsafe {
         c::eek_get_style_context_for_button(
             renderer,
             button.name.as_ptr(),
             outline_name_c,
+            locked_class_c,
             pressed as u64,
-            locked as u64,
         )
     };
     
@@ -203,7 +251,7 @@ fn with_button_context<R, F: FnOnce(&c::GtkStyleContext) -> R>(
         c::eek_put_style_context_for_button(
             ctx,
             outline_name_c,
-            locked as u64,
+            locked_class_c,
         )
     };
 
@@ -213,4 +261,27 @@ fn with_button_context<R, F: FnOnce(&c::GtkStyleContext) -> R>(
 pub fn queue_redraw(keyboard: EekGtkKeyboard) {
     let widget = unsafe { gtk::Widget::from_glib_none(keyboard.0) };
     widget.queue_draw();
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_exit_only() {
+        assert_eq!(
+            LockedStyle::from_action(
+                &Action::LockView {
+                    lock: "ab".into(), 
+                    unlock: "a".into(),
+                    latches: true,
+                    looks_locked_from: vec!["b".into()],
+                },
+                &HashSet::new(),
+                &LatchedState::FromView("b".into()),
+                "ab",
+            ),
+            LockedStyle::Locked,
+        );
+    }
 }
