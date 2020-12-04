@@ -830,14 +830,14 @@ impl Layout {
     fn process_action_for_view<'a>(
         action: &'a Action,
         current_view: &str,
-        latch: &LatchedState,
+        latched: &LatchedState,
     ) -> (ViewTransition<'a>, LatchedState) {
         match action {
             Action::Submit { text: _, keys: _ }
                 | Action::Erase
                 | Action::ApplyModifier(_)
             => {
-                let t = match latch {
+                let t = match latched {
                     LatchedState::FromView(_) => ViewTransition::UnlatchAll,
                     LatchedState::Not => ViewTransition::NoChange,
                 };
@@ -847,29 +847,32 @@ impl Layout {
                 ViewTransition::ChangeTo(view),
                 LatchedState::Not,
             ),
-            Action::LockView { lock, unlock } => {
+            Action::LockView { lock, unlock, latches } => {
                 use self::ViewTransition as VT;
                 let locked = action.is_locked(current_view);
-                match (locked, latch) {
+                match (locked, latched, latches) {
                     // Was unlocked, now make locked but latched.
-                    (false, LatchedState::Not) => (
+                    (false, LatchedState::Not, true) => (
                         VT::ChangeTo(lock),
                         LatchedState::FromView(current_view.into()),
                     ),
                     // Layout is latched for reason other than this button.
-                    (false, LatchedState::FromView(view)) => (
+                    (false, LatchedState::FromView(view), true) => (
                         VT::ChangeTo(lock),
                         LatchedState::FromView(view.clone()),
                     ),
                     // Was latched, now only locked.
-                    (true, LatchedState::FromView(_))
+                    (true, LatchedState::FromView(_), true)
                         => (VT::NoChange, LatchedState::Not),
+                    // Was unlocked, can't latch so now make fully locked.
+                    (false, _, false)
+                        => (VT::ChangeTo(lock), LatchedState::Not),
                     // Was locked, now make unlocked.
-                    (true, LatchedState::Not)
+                    (true, _, _)
                         => (VT::ChangeTo(unlock), LatchedState::Not),
                 }
             },
-            _ => (ViewTransition::NoChange, latch.clone()),
+            _ => (ViewTransition::NoChange, latched.clone()),
         }
     }
 }
@@ -1128,6 +1131,7 @@ mod test {
         let action = Action::LockView {
             lock: "lock".into(),
             unlock: "unlock".into(),
+            latches: true,
         };
 
         assert_eq!(
@@ -1156,6 +1160,7 @@ mod test {
         let switch = Action::LockView {
             lock: "locked".into(),
             unlock: "base".into(),
+            latches: true,
         };
         
         let submit = Action::Erase;
@@ -1218,15 +1223,81 @@ mod test {
     }
 
     #[test]
+    fn reverse_unlatch_layout() {
+        let switch = Action::LockView {
+            lock: "locked".into(),
+            unlock: "base".into(),
+            latches: true,
+        };
+        
+        let unswitch = Action::LockView {
+            lock: "locked".into(),
+            unlock: "unlocked".into(),
+            latches: false,
+        };
+        
+        let submit = Action::Erase;
+
+        let view = View::new(vec![(
+            0.0,
+            Row::new(vec![
+                (
+                    0.0,
+                    make_button_with_state(
+                        "switch".into(),
+                        make_state_with_action(switch.clone())
+                    ),
+                ),
+                (
+                    1.0,
+                    make_button_with_state(
+                        "submit".into(),
+                        make_state_with_action(submit.clone())
+                    ),
+                ),
+            ]),
+        )]);
+
+        let mut layout = Layout {
+            current_view: "base".into(),
+            view_latched: LatchedState::Not,
+            keymaps: Vec::new(),
+            kind: ArrangementKind::Base,
+            pressed_keys: HashSet::new(),
+            margins: Margins {
+                top: 0.0,
+                left: 0.0,
+                right: 0.0,
+                bottom: 0.0,
+            },
+            views: hashmap! {
+                // Both can use the same structure.
+                // Switching doesn't depend on the view shape
+                // as long as the switching button is present.
+                "base".into() => (c::Point { x: 0.0, y: 0.0 }, view.clone()),
+                "locked".into() => (c::Point { x: 0.0, y: 0.0 }, view.clone()),
+                "unlocked".into() => (c::Point { x: 0.0, y: 0.0 }, view),
+            },
+        };        
+
+        layout.apply_view_transition(&switch);
+        assert_eq!(&layout.current_view, "locked");
+        layout.apply_view_transition(&unswitch);
+        assert_eq!(&layout.current_view, "unlocked");
+    }
+
+    #[test]
     fn latch_twopop_layout() {
         let switch = Action::LockView {
             lock: "locked".into(),
             unlock: "base".into(),
+            latches: true,
         };
         
         let switch_again = Action::LockView {
             lock: "ĄĘ".into(),
             unlock: "locked".into(),
+            latches: true,
         };
         
         let submit = Action::Erase;

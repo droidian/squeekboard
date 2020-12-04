@@ -29,6 +29,9 @@ pub enum Action {
         lock: View,
         /// When unlocked by pressing it or emitting a key
         unlock: View,
+        /// Whether key has a latched state
+        /// that pops when another key is pressed.
+        latches: bool,
     },
     /// Hold this modifier for as long as the button is pressed
     ApplyModifier(Modifier),
@@ -48,14 +51,14 @@ pub enum Action {
 impl Action {
     pub fn is_locked(&self, view_name: &str) -> bool {
         match self {
-            Action::LockView { lock, unlock: _ } => lock == view_name,
+            Action::LockView { lock, unlock: _, latches: _ } => lock == view_name,
             _ => false,
         }
     }
     pub fn is_active(&self, view_name: &str) -> bool {
         match self {
             Action::SetView(view) => view == view_name,
-            Action::LockView { lock, unlock: _ } => lock == view_name,
+            Action::LockView { lock, unlock: _, latches: _ } => lock == view_name,
             _ => false,
         }
     }
