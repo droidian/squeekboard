@@ -97,6 +97,8 @@ impl fmt::Display for DataSource {
     }
 }
 
+type LayoutSource = (ArrangementKind, DataSource);
+
 /// Lists possible sources, with 0 as the most preferred one
 /// Trying order: native lang of the right kind, native base,
 /// fallback lang of the right kind, fallback base
@@ -104,55 +106,76 @@ fn list_layout_sources(
     name: &str,
     kind: ArrangementKind,
     keyboards_path: Option<PathBuf>,
-) -> Vec<(ArrangementKind, DataSource)> {
-    let mut ret = Vec::new();
-    {
-        fn name_with_arrangement(name: String, kind: &ArrangementKind)
-            -> String
-        {
-            match kind {    
-                ArrangementKind::Base => name,
-                ArrangementKind::Wide => name + "_wide",
-            }
-        }
-
-        let mut add_by_name = |name: &str, kind: &ArrangementKind| {
-            if let Some(path) = keyboards_path.clone() {
-                ret.push((
-                    kind.clone(),
-                    DataSource::File(
-                        path.join(name.to_owned()).with_extension("yaml")
-                    )
-                ))
-            }
-            
+) -> Vec<LayoutSource> {
+    // Just a simplification of often called code.
+    let add_by_name = |
+        mut ret: Vec<LayoutSource>,
+        name: &str,
+        kind: &ArrangementKind,
+    | -> Vec<LayoutSource> {
+        if let Some(path) = keyboards_path.clone() {
             ret.push((
                 kind.clone(),
-                DataSource::Resource(name.into())
-            ));
-        };
+                DataSource::File(
+                    path.join(name.to_owned()).with_extension("yaml")
+                )
+            ))
+        }
 
-        match &kind {
-            ArrangementKind::Base => {},
+        ret.push((
+            kind.clone(),
+            DataSource::Resource(name.into())
+        ));
+        ret
+    };
+
+    // Another grouping.
+    let add_by_kind = |ret, name: &str, kind| {
+        let ret = match kind {
+            &ArrangementKind::Base => ret,
             kind => add_by_name(
-                &name_with_arrangement(name.into(), &kind),
-                &kind,
+                ret,
+                &name_with_arrangement(name.into(), kind),
+                kind,
             ),
         };
 
-        add_by_name(name, &ArrangementKind::Base);
+        add_by_name(ret, name, &ArrangementKind::Base)
+    };
 
-        match &kind {
-            ArrangementKind::Base => {},
-            kind => add_by_name(
-                &name_with_arrangement(FALLBACK_LAYOUT_NAME.into(), &kind),
-                &kind,
-            ),
-        };
-
-        add_by_name(FALLBACK_LAYOUT_NAME, &ArrangementKind::Base);
+    fn name_with_arrangement(name: String, kind: &ArrangementKind) -> String {
+        match kind {    
+            ArrangementKind::Base => name,
+            ArrangementKind::Wide => name + "_wide",
+        }
     }
-    ret
+
+    let ret = Vec::new();
+
+    // Name as given takes priority.
+    let ret = add_by_kind(ret, name, &kind);
+
+    // Then try non-alternative name if applicable (`us` for `us+colemak`).
+    let ret = {
+        let mut parts = name.splitn(2, '+');
+        match parts.next() {
+            Some(base) => {
+                // The name is already equal to base, so it was already added.
+                if base == name { ret }
+                else {
+                    add_by_kind(ret, base, &kind)
+                }
+            },
+            // The layout's base name starts with a "+". Weird but OK.
+            None => {
+                log_print!(logging::Level::Surprise, "Base layout name is empty: {}", name);
+                ret
+            }
+        }
+    };
+
+    // No other choices left, so give anything.
+    add_by_kind(ret, FALLBACK_LAYOUT_NAME.into(), &kind)
 }
 
 fn load_layout_data(source: DataSource)
@@ -917,7 +940,26 @@ mod tests {
             )
         );
     }
+
+    /// If layout contains a "+", it should reach for what's in front of it too.
+    #[test]
+    fn fallbacks_order_base() {
+        let sources = list_layout_sources("nb+aliens", ArrangementKind::Base, None);
+
+        assert_eq!(
+            sources,
+            vec!(
+                (ArrangementKind::Base, DataSource::Resource("nb+aliens".into())),
+                (ArrangementKind::Base, DataSource::Resource("nb".into())),
+                (
+                    ArrangementKind::Base,
+                    DataSource::Resource(FALLBACK_LAYOUT_NAME.into())
+                ),
+            )
+        );
+    }
     
+
     #[test]
     fn unicode_keysym() {
         let keysym = xkb::keysym_from_name(
