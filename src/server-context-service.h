@@ -29,11 +29,10 @@ G_BEGIN_DECLS
 /** Manages the lifecycle of the window displaying layouts. */
 G_DECLARE_FINAL_TYPE (ServerContextService, server_context_service, SERVER, CONTEXT_SERVICE, GObject)
 
-ServerContextService *server_context_service_new(EekboardContextService *self, struct submission *submission, struct squeek_layout_state *layout, struct ui_manager *uiman);
+ServerContextService *server_context_service_new(EekboardContextService *self, struct submission *submission, struct squeek_layout_state *layout, struct ui_manager *uiman, struct vis_manager *visman);
 enum squeek_arrangement_kind server_context_service_get_layout_type(ServerContextService *);
 void server_context_service_show_keyboard (ServerContextService *self);
 void server_context_service_hide_keyboard (ServerContextService *self);
-void server_context_service_set_enabled (ServerContextService *self, gboolean enabled);
 G_END_DECLS
 #endif  /* SERVER_CONTEXT_SERVICE_H */
 
