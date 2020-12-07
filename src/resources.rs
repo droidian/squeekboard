@@ -10,42 +10,67 @@ use std::iter::FromIterator;
 // TODO: keep a list of what is a language layout,
 // and what a convenience layout. "_wide" is not a layout,
 // neither is "number"
+/// List of builtin layouts
 const KEYBOARDS: &[(*const str, *const str)] = &[
     // layouts: us must be left as first, as it is the,
-    // fallback layout. The others should be alphabetical.
+    // fallback layout.
     ("us", include_str!("../data/keyboards/us.yaml")),
-    ("us+colemak", include_str!("../data/keyboards/us+colemak.yaml")),
     ("us_wide", include_str!("../data/keyboards/us_wide.yaml")),
 
-    ("br", include_str!("../data/keyboards/br.yaml")),
-    ("de", include_str!("../data/keyboards/de.yaml")),
+    // Language layouts: keep alphabetical.
     ("be", include_str!("../data/keyboards/be.yaml")),
     ("be_wide", include_str!("../data/keyboards/be_wide.yaml")),
+
+    ("bg", include_str!("../data/keyboards/bg.yaml")),
+
+    ("br", include_str!("../data/keyboards/br.yaml")),
+
+    ("de", include_str!("../data/keyboards/de.yaml")),
     ("de_wide", include_str!("../data/keyboards/de_wide.yaml")),
+
     ("cz", include_str!("../data/keyboards/cz.yaml")),
     ("cz_wide", include_str!("../data/keyboards/cz_wide.yaml")),
+
     ("cz+qwerty", include_str!("../data/keyboards/cz+qwerty.yaml")),
     ("cz+qwerty_wide", include_str!("../data/keyboards/cz+qwerty_wide.yaml")),
+
     ("dk", include_str!("../data/keyboards/dk.yaml")),
+
     ("epo", include_str!("../data/keyboards/epo.yaml")),
+
     ("es", include_str!("../data/keyboards/es.yaml")),
+
     ("fi", include_str!("../data/keyboards/fi.yaml")),
+
     ("fr", include_str!("../data/keyboards/fr.yaml")),
     ("fr_wide", include_str!("../data/keyboards/fr_wide.yaml")),
-    ("it+fur", include_str!("../data/keyboards/it+fur.yaml")),
+
     ("gr", include_str!("../data/keyboards/gr.yaml")),
+
     ("it", include_str!("../data/keyboards/it.yaml")),
+    ("it+fur", include_str!("../data/keyboards/it+fur.yaml")),
+
     ("jp+kana", include_str!("../data/keyboards/jp+kana.yaml")),
     ("jp+kana_wide", include_str!("../data/keyboards/jp+kana_wide.yaml")),
+
     ("no", include_str!("../data/keyboards/no.yaml")),
-    ("number", include_str!("../data/keyboards/number.yaml")),
+
     ("pl", include_str!("../data/keyboards/pl.yaml")),
     ("pl_wide", include_str!("../data/keyboards/pl_wide.yaml")),
+
     ("ru", include_str!("../data/keyboards/ru.yaml")),
+
     ("se", include_str!("../data/keyboards/se.yaml")),
+
     ("th", include_str!("../data/keyboards/th.yaml")),
+
     ("ua", include_str!("../data/keyboards/ua.yaml")),
-    ("bg", include_str!("../data/keyboards/bg.yaml")),
+
+    ("us+colemak", include_str!("../data/keyboards/us+colemak.yaml")),
+
+    // Others
+    ("number", include_str!("../data/keyboards/number.yaml")),
+
     // layout+overlay
     ("terminal", include_str!("../data/keyboards/terminal.yaml")),
     ("terminal_wide", include_str!("../data/keyboards/terminal_wide.yaml")),
