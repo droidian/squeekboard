@@ -55,6 +55,7 @@ foreach layout : [
     'cz+qwerty', 'cz+qwerty_wide',
     'de', 'de_wide',
     'dk',
+    'epo',
     'es',
     'fi',
     'fr', 'fr_wide',
