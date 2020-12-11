@@ -23,12 +23,13 @@ add_project_arguments(
     '-Werror=parentheses',
     '-Wformat-nonliteral',
     '-Wformat-security',
+    '-Wformat',
     '-Winit-self',
     '-Wmaybe-uninitialized',
     '-Wold-style-definition',
     '-Wredundant-decls',
     '-Wstrict-prototypes',
-    '-Wunused-function',
+    '-Wunused',
   ],
   language: 'c'
 )
@@ -40,6 +41,16 @@ conf_data = configuration_data()
 if get_option('buildtype').startswith('debug')
     add_project_arguments('-DDEBUG=1', language : 'c')
 endif
+
+if get_option('strict')
+    add_project_arguments(
+        [
+            '-Werror',
+        ],
+        language: 'c'
+    )
+endif
+
 if get_option('buildtype') != 'plain'
     add_project_arguments('-fstack-protector-strong', language: 'c')
 endif
