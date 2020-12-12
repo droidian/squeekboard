@@ -44,6 +44,7 @@ const KEYBOARDS: &[(*const str, *const str)] = &[
     ("se", include_str!("../data/keyboards/se.yaml")),
     ("th", include_str!("../data/keyboards/th.yaml")),
     ("ua", include_str!("../data/keyboards/ua.yaml")),
+    ("bg", include_str!("../data/keyboards/bg.yaml")),
     // layout+overlay
     ("terminal", include_str!("../data/keyboards/terminal.yaml")),
     ("terminal_wide", include_str!("../data/keyboards/terminal_wide.yaml")),

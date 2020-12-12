@@ -51,6 +51,7 @@ foreach layout : [
     'us', 'us+colemak', 'us_wide',
     'br',
     'be', 'be_wide',
+    'bg',
     'cz', 'cz_wide',
     'cz+qwerty', 'cz+qwerty_wide',
     'de', 'de_wide',
