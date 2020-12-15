@@ -255,7 +255,7 @@ on_hide (ServerContextService *self)
     return G_SOURCE_REMOVE;
 }
 
-void
+static void
 server_context_service_show_keyboard (ServerContextService *self)
 {
     g_return_if_fail (SERVER_IS_CONTEXT_SERVICE(self));
@@ -268,6 +268,19 @@ server_context_service_show_keyboard (ServerContextService *self)
     if (!self->visible) {
         server_context_service_real_show_keyboard (self);
     }
+}
+
+void
+server_context_service_force_show_keyboard (ServerContextService *self)
+{
+    if (!submission_hint_available(self->submission)) {
+        eekboard_context_service_set_hint_purpose(
+            self->state,
+            ZWP_TEXT_INPUT_V3_CONTENT_HINT_NONE,
+            ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_NORMAL
+        );
+    }
+    server_context_service_show_keyboard(self);
 }
 
 void

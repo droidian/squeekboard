@@ -93,6 +93,18 @@ pub mod c {
         let layout = unsafe { &*layout };
         submission.use_layout(layout, Timestamp(time));
     }
+
+    #[no_mangle]
+    pub extern "C"
+    fn submission_hint_available(submission: *mut Submission) -> u8 {
+        if submission.is_null() {
+            panic!("Null submission pointer");
+        }
+        let submission: &mut Submission = unsafe { &mut *submission };
+        let active = submission.imservice.as_ref()
+            .map(|imservice| imservice.is_active());
+        (Some(true) == active) as u8
+    }
 }
 
 #[derive(Clone, Copy)]
