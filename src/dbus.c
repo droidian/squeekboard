@@ -59,7 +59,7 @@ handle_set_visible(SmPuriOSK0 *object, GDBusMethodInvocation *invocation,
 
     if (service->context) {
         if (arg_visible) {
-            server_context_service_show_keyboard (service->context);
+            server_context_service_force_show_keyboard (service->context);
         } else {
             server_context_service_hide_keyboard (service->context);
         }
