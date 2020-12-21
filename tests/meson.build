@@ -46,12 +46,21 @@ endforeach
 
 # The layout test is in the examples directory
 # due to the way Cargo builds executables
-# and the need to call it manually
+# and the need to call it manually.
+
+# This is the list of tested builtin layouts.
+# Please keep each block alphabetical!
+# Please keep shapes (with _) on the same line,
+# variants (with +) on separate lines.
 foreach layout : [
-    'us', 'us+colemak', 'us_wide',
-    'br',
+    # This is the fallback layout,
+    # so stays first to make sure it never goes missing.
+    'us', 'us_wide',
+
+    # Block: Languages
     'be', 'be_wide',
     'bg',
+    'br',
     'cz', 'cz_wide',
     'cz+qwerty', 'cz+qwerty_wide',
     'de', 'de_wide',
@@ -60,20 +69,22 @@ foreach layout : [
     'es',
     'fi',
     'fr', 'fr_wide',
-    'it+fur',
     'gr',
     'it',
+    'it+fur',
     'jp+kana','jp+kana_wide',
     'no',
-    'number',
     'pl', 'pl_wide',
     'ru',
     'se',
-    'ua',
     'th',
-    'terminal', 'terminal_wide',
+    'ua',
+    'us+colemak',
 
+    # Block: Not languages.
     'emoji',
+    'number',
+    'terminal', 'terminal_wide',
 ]
     extra = []
     if layout == 'emoji'
