@@ -8,14 +8,14 @@ outlines:
 
 views:
     base:
-        - "ض ص ث ق ف غ ع ه خ ح"
-        - "ش س ی ب ل ا ت ن م"
-        - "Shift_L   ظ ط ز ر ذ د پ  BackSpace"
+        - "ض ص ق ف غ ع ه خ ح ج"
+        - "ش س ی ب ل ا ت ن م ک"
+        - "Shift_L   ظ ط ز ر ذ د و  BackSpace"
         - "show_numbers preferences         space        period Return"
     upper:
-        - "ْ ٌ ٍ ً ُ ِ َ ّ ج چ"
-        - "و ئ ي إ أ آ ة » «"
-        - "Shift_L   ك گ ژ ٰ ‌ ٔ ء  BackSpace"
+        - "پ { } [ ] ّ   َ   ِ  ُ چ"
+        - "ؤ‌ ئ ي‌ إ أ آ ة‌ » « گ"
+        - "Shift_L  ك ٓ ژ ء > < ؟  BackSpace"
         - "show_numbers preferences         space        period Return"
     numbers:
         - "۱ ۲ ۳ ۴ ۵ ۶ ۷ ۸ ۹ ۰"
