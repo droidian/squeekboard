@@ -70,6 +70,7 @@ foreach layout : [
     'fi',
     'fr', 'fr_wide',
     'gr',
+    'ir',
     'it',
     'it+fur',
     'jp+kana','jp+kana_wide',
