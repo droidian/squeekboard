@@ -239,11 +239,25 @@ server_context_service_real_show_keyboard (ServerContextService *self)
     gtk_widget_show (GTK_WIDGET(self->window));
 }
 
+static gboolean
+show_keyboard_source_func(ServerContextService *context)
+{
+    server_context_service_real_show_keyboard(context);
+    return G_SOURCE_REMOVE;
+}
+
 static void
 server_context_service_real_hide_keyboard (ServerContextService *self)
 {
     gtk_widget_hide (GTK_WIDGET(self->window));
     self->visible = FALSE;
+}
+
+static gboolean
+hide_keyboard_source_func(ServerContextService *context)
+{
+    server_context_service_real_hide_keyboard(context);
+    return G_SOURCE_REMOVE;
 }
 
 static gboolean
@@ -266,7 +280,7 @@ server_context_service_show_keyboard (ServerContextService *self)
     }
 
     if (!self->visible) {
-        server_context_service_real_show_keyboard (self);
+        g_idle_add((GSourceFunc)show_keyboard_source_func, self);
     }
 }
 
@@ -289,7 +303,7 @@ server_context_service_hide_keyboard (ServerContextService *self)
     g_return_if_fail (SERVER_IS_CONTEXT_SERVICE(self));
 
     if (self->visible) {
-        server_context_service_real_hide_keyboard (self);
+        g_idle_add((GSourceFunc)hide_keyboard_source_func, self);
     }
 }
 
