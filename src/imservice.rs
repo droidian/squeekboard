@@ -149,6 +149,8 @@ pub mod c {
             ..IMProtocolState::default()
         };
 
+        imservice.serial += Wrapping(1u32);
+
         if active_changed {
             (imservice.active_callback)(imservice.current.active);
             if imservice.current.active {
@@ -404,7 +406,6 @@ impl IMService {
                 unsafe {
                     c::eek_input_method_commit(self.im, self.serial.0)
                 }
-                self.serial += Wrapping(1u32);
                 Ok(())
             },
             false => Err(SubmitError::NotActive),
