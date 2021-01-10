@@ -294,8 +294,8 @@
 
         The serial number reflects the last state of the zwp_input_method_v2
         object known to the client. The value of the serial argument must be
-        equal to the number of commit requests already issued on that object.
-        When the compositor receives a done event with a serial different than
+        equal to the number of done events already issued on that object.
+        When the compositor receives a commit request with a serial different than
         the number of past commit requests, it must proceed as normal, except
         it should not change the current state of the zwp_input_method_v2
         object.
