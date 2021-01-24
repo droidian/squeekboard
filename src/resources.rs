@@ -70,6 +70,10 @@ const KEYBOARDS: &[(*const str, *const str)] = &[
     ("ua", include_str!("../data/keyboards/ua.yaml")),
 
     ("us+colemak", include_str!("../data/keyboards/us+colemak.yaml")),
+    ("us+colemak_wide", include_str!("../data/keyboards/us+colemak_wide.yaml")),
+
+    ("us+dvorak", include_str!("../data/keyboards/us+dvorak.yaml")),
+    ("us+dvorak_wide", include_str!("../data/keyboards/us+dvorak_wide.yaml")),
 
     // Others
     ("number", include_str!("../data/keyboards/number.yaml")),

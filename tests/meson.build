@@ -80,7 +80,8 @@ foreach layout : [
     'se',
     'th',
     'ua',
-    'us+colemak',
+    'us+colemak', 'us+colemak_wide',
+    'us+dvorak', 'us+dvorak_wide',
 
     # Block: Not languages.
     'emoji',
