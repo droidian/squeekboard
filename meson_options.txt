@@ -10,3 +10,7 @@ option('tests',
 option('legacy',
        type: 'boolean', value: false,
        description: 'Build with Deban Buster versions of dependencies')
+
+option('strict',
+       type: 'boolean', value: true,
+       description: 'Turn more warnings into errors')

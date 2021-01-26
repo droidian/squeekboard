@@ -277,8 +277,11 @@ main (int argc, char **argv)
         }
     }
 
+    struct vis_manager *vis_manager = squeek_visman_new();
+
     instance.submission = get_submission(instance.wayland.input_method_manager,
                                          instance.wayland.virtual_keyboard_manager,
+                                         vis_manager,
                                          instance.wayland.seat,
                                          instance.settings_context);
 
@@ -288,15 +291,15 @@ main (int argc, char **argv)
                 instance.settings_context,
                 instance.submission,
                 &instance.layout_choice,
-                instance.ui_manager);
+                instance.ui_manager,
+                vis_manager);
     if (!ui_context) {
         g_error("Could not initialize GUI");
         exit(1);
     }
     instance.ui_context = ui_context;
-    if (instance.submission) {
-        submission_set_ui(instance.submission, instance.ui_context);
-    }
+    squeek_visman_set_ui(vis_manager, instance.ui_context);
+
     if (instance.dbus_handler) {
         dbus_handler_set_ui_context(instance.dbus_handler, instance.ui_context);
     }
