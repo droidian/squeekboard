@@ -6,7 +6,6 @@
 use std::boxed::Box;
 use std::ffi::CString;
 use std::fmt;
-use std::mem;
 use std::num::Wrapping;
 use std::string::String;
 
@@ -24,7 +23,7 @@ pub mod c {
 
     use std::os::raw::{c_char, c_void};
 
-    pub use ::submission::c::UIManager;
+    pub use ::ui_manager::c::UIManager;
     pub use ::submission::c::StateManager;
 
     // The following defined in C
@@ -42,8 +41,6 @@ pub mod c {
         pub fn eek_input_method_delete_surrounding_text(im: *mut InputMethod, before: u32, after: u32);
         pub fn eek_input_method_commit(im: *mut InputMethod, serial: u32);
         fn eekboard_context_service_set_hint_purpose(state: *const StateManager, hint: u32, purpose: u32);
-        pub fn server_context_service_set_im_active(imservice: *const UIManager, active: u32);
-        pub fn server_context_service_keyboard_release_visibility(imservice: *const UIManager);
     }
     
     // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
@@ -153,7 +150,7 @@ pub mod c {
         };
 
         if active_changed {
-            imservice.apply_active_to_ui();
+            (imservice.active_callback)(imservice.current.active);
             if imservice.current.active {
                 unsafe {
                     eekboard_context_service_set_hint_purpose(
@@ -179,9 +176,7 @@ pub mod c {
         // the keyboard is already decommissioned
         imservice.current.active = false;
 
-        if let Some(ui) = imservice.ui_manager {
-            unsafe { server_context_service_keyboard_release_visibility(ui); }
-        }
+        (imservice.active_callback)(imservice.current.active);
     }    
 
     // FIXME: destroy and deallocate
@@ -334,8 +329,7 @@ pub struct IMService {
     pub im: *mut c::InputMethod,
     /// Unowned reference. Be careful, it's shared with C at large
     state_manager: *const c::StateManager,
-    /// Unowned reference. Be careful, it's shared with C at large
-    ui_manager: Option<*const c::UIManager>,
+    active_callback: Box<dyn Fn(bool)>,
 
     pending: IMProtocolState,
     current: IMProtocolState, // turn current into an idiomatic representation?
@@ -352,12 +346,13 @@ impl IMService {
     pub fn new(
         im: *mut c::InputMethod,
         state_manager: *const c::StateManager,
+        active_callback: Box<dyn Fn(bool)>,
     ) -> Box<IMService> {
         // IMService will be referenced to by C,
         // so it needs to stay in the same place in memory via Box
         let imservice = Box::new(IMService {
             im,
-            ui_manager: None,
+            active_callback,
             state_manager,
             pending: IMProtocolState::default(),
             current: IMProtocolState::default(),
@@ -371,26 +366,6 @@ impl IMService {
             );
         }
         imservice
-    }
-
-    pub fn set_ui_manager(&mut self, mut ui_manager: Option<*const c::UIManager>) {
-        mem::swap(&mut self.ui_manager, &mut ui_manager);
-        // Now ui_manager is what was previously self.ui_manager.
-        // If there wasn't any, we need to consider if UI was requested.
-        if let None = ui_manager {
-            self.apply_active_to_ui();
-        }
-    }
-
-    fn apply_active_to_ui(&self) {
-        if let Some(ui) = self.ui_manager {
-            unsafe {
-                c::server_context_service_set_im_active(
-                    ui,
-                    self.is_active() as u32,
-                );
-            }
-        }
     }
 
     pub fn commit_string(&self, text: &CString) -> Result<(), SubmitError> {

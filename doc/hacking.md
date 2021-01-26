@@ -179,7 +179,10 @@ Dependencies must be specified in `Cargo.toml` with 2 numbers: "major.minor". Si
 
 ```
 cd build_dir
-ninja build src/Cargo.toml
+ninja ./Cargo.toml
 sh /source_path/cargo.sh update
 ninja test
+cp ./Cargo.lock /source_path/
 ```
+
+Since version 1.9.3, `Cargo.lock` is not actually used by the build system, due to `Cargo.toml` being generated at every build.

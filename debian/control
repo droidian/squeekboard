@@ -28,6 +28,8 @@ Build-Depends:
  librust-thread-local-dev,
  librust-xkbcommon-dev (>= 0.4),
  libwayland-dev (>= 1.16),
+ lsb-release,
+ python3,
  rustc,
  wayland-protocols (>= 1.14),
 Standards-Version: 4.5.0

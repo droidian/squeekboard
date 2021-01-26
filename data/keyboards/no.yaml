@@ -2,9 +2,9 @@
 outlines:
     default: { width: 32, height: 52 }
     altline: { width: 48.39024, height: 52 }
-    wide: { width: 62, height: 52 }
-    outline7: { width: 88.97561, height: 52 }
-    spaceline: { width: 150.5853, height: 52 }
+    wide: { width: 64, height: 52 }
+    spaceline: { width: 142, height: 52 }
+    special: { width: 44, height: 52 }
 
 views:
     base:
@@ -25,7 +25,7 @@ views:
     symbols:
         - "~ ` | U00B7 squareroot Greek_pi Greek_tau division multiply paragraph"
         - "copyright U00AE U00A3 EuroSign U00A5 asciicircum degree * { }"
-        - "show_numbers   \\ / < > = [ ]  BackSpace"
+        - "show_numbers_from_symbols   \\ / < > = [ ]  BackSpace"
         - "show_letters preferences         space        .    Return"
 
 buttons:
@@ -42,17 +42,22 @@ buttons:
         action: erase
     preferences:
         action: "show_prefs"
-        outline: "altline"
+        outline: "special"
         icon: "keyboard-mode-symbolic"
     show_numbers:
         action:
             set_view: "numbers"
-        outline: "altline"
+        outline: "wide"
+        label: "123"
+    show_numbers_from_symbols:
+        action:
+            set_view: "numbers"
+        outline: altline
         label: "123"
     show_letters:
         action:
             set_view: "base"
-        outline: "altline"
+        outline: "wide"
         label: "ABC"
     show_symbols:
         action:
@@ -60,7 +65,7 @@ buttons:
         outline: "altline"
         label: "*/="
     ".":
-        outline: altline
+        outline: "special"
     space:
         outline: spaceline
         text: " "
