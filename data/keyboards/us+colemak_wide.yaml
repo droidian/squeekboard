@@ -1,0 +1,78 @@
+---
+outlines:
+    default: { width: 54, height: 42 }
+    altline: { width: 81, height: 42 }
+    wide: { width: 108, height: 42 }
+    spaceline: { width: 216, height: 42 }
+    special: { width: 54, height: 42 }
+
+views:
+    base:
+        - "q w f p g j l u y"
+        - "a r s t d h n e i o"
+        - "Shift_L   z x c v b k m  BackSpace"
+        - "show_numbers preferences         space        . Return"
+    upper:
+        - "Q W F P G J L U Y"
+        - "A R S T D H N E I O"
+        - "Shift_L   Z X C V B K M  BackSpace"
+        - "show_numbers preferences         space        . Return"
+    numbers:
+        - "1 2 3 4 5 6 7 8 9 0"
+        - "@ # $ % & - _ + ( )"
+        - "show_symbols   , \" ' colon ; ! ?  BackSpace"
+        - "show_letters preferences         space        . Return"
+    symbols:
+        - "~ ` | · √ π τ ÷ × ¶"
+        - "© ® £ € ¥ ^ ° * { }"
+        - "show_numbers_from_symbols   \\ / < > = [ ]  BackSpace"
+        - "show_letters preferences         space        . Return"
+
+buttons:
+    Shift_L:
+        action:
+            locking:
+                lock_view: "upper"
+                unlock_view: "base"
+        outline: "altline"
+        icon: "key-shift"
+    BackSpace:
+        outline: "altline"
+        icon: "edit-clear-symbolic"
+        action: "erase"
+    preferences:
+        action: "show_prefs"
+        outline: "special"
+        icon: "keyboard-mode-symbolic"
+    show_numbers:
+        action:
+            set_view: "numbers"
+        outline: "wide"
+        label: "123"
+    show_numbers_from_symbols:
+        action:
+            set_view: "numbers"
+        outline: "altline"
+        label: "123"
+    show_letters:
+        action:
+            set_view: "base"
+        outline: "wide"
+        label: "ABC"
+    show_symbols:
+        action:
+            set_view: "symbols"
+        outline: "altline"
+        label: "*/="
+    ".":
+        outline: "special"
+        text: "."
+    space:
+        outline: "spaceline"
+        text: " "
+    Return:
+        outline: "wide"
+        icon: "key-enter"
+        keysym: "Return"
+    colon:
+        text: ":"
