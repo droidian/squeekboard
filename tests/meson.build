@@ -71,6 +71,7 @@ foreach layout : [
     'fi',
     'fr', 'fr_wide',
     'gr',
+    'il',
     'ir',
     'it',
     'it+fur',
