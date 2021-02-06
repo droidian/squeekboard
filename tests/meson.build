@@ -67,6 +67,7 @@ foreach layout : [
     'dk',
     'epo',
     'es',
+    'es+cat',
     'fi',
     'fr', 'fr_wide',
     'gr',

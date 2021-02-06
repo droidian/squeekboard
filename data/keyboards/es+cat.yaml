@@ -1,0 +1,87 @@
+---
+outlines:
+    default: { width: 35.33, height: 52 }
+    altline: { width: 52.67, height: 52 }
+    wide: { width: 62, height: 52 }
+    spaceline: { width: 99.67, height: 52 }
+    special: { width: 44, height: 52 }
+
+views:
+    base:
+        - "q w e r t y u i o p"
+        - "a s d f g h j k l ç"
+        - "Shift_L   z x c v b n m  BackSpace"
+        - "show_numbers show_eschars preferences         space        ? period Return"
+    upper:
+        - "Q W E R T Y U I O P"
+        - "A S D F G H J K L Ç"
+        - "Shift_L   Z X C V B N M  BackSpace"
+        - "show_numbers show_eschars preferences         space        ¿ period Return"
+    numbers:
+        - "1 2 3 4 5 6 7 8 9 0"
+        - "@ # € % & - _ + ( )"
+        - "show_symbols   , \" ' colon ; ! = BackSpace"
+        - "show_letters show_eschars preferences         space        ? period Return"
+    symbols:
+        - "~ ` | · √ π τ ÷ × ¶"
+        - "© ® £ $ ¥ ^ ° * { }"
+        - "show_numbers   \\ / < > = [ ]  BackSpace"
+        - "show_letters show_eschars preferences         space        ? period Return"
+    eschars:
+        - "á é í ó ú Á É Í Ó Ú"
+        - "à è ì ò ù À È Ì Ò Ù"
+        - "show_numbers ü ç ï Ü Ç Ï ¡  BackSpace"
+        - "show_letters show_eschars preferences         space        « » Return"
+
+buttons:
+    Shift_L:
+        action:
+            locking:
+                lock_view: "upper"
+                unlock_view: "base"
+        outline: "altline"
+        icon: "key-shift"
+    BackSpace:
+        outline: "altline"
+        icon: "edit-clear-symbolic"
+        action: "erase"
+    preferences:
+        action: "show_prefs"
+        outline: "default"
+        icon: "keyboard-mode-symbolic"
+    show_numbers:
+        action:
+            set_view: "numbers"
+        outline: "altline"
+        label: "123"
+    show_letters:
+        action:
+            set_view: "base"
+        outline: "altline"
+        label: "abc"
+    show_symbols:
+        action:
+            set_view: "symbols"
+        outline: "altline"
+        label: "*/="
+    show_eschars:
+        action:
+            locking:
+                lock_view: "eschars"
+                unlock_view: "base"
+        outline: "altline"
+        label: "àÀ"
+
+    period:
+        outline: "default"
+        text: "."
+    space:
+        outline: "spaceline"
+        text: " "
+    Return:
+        outline: "altline"
+        icon: "key-enter"
+        keysym: "Return"
+    colon:
+        text: ":"
+

@@ -39,6 +39,7 @@ const KEYBOARDS: &[(*const str, *const str)] = &[
     ("epo", include_str!("../data/keyboards/epo.yaml")),
 
     ("es", include_str!("../data/keyboards/es.yaml")),
+    ("es+cat", include_str!("../data/keyboards/es+cat.yaml")),
 
     ("fi", include_str!("../data/keyboards/fi.yaml")),
 
