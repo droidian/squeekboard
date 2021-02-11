@@ -270,6 +270,7 @@ impl Submission {
             .map(|(_id, m)| match m {
                 Modifier::Control => Modifiers::CONTROL,
                 Modifier::Alt => Modifiers::MOD1,
+                Modifier::Mod4 => Modifiers::MOD4,
             })
             .fold(Modifiers::empty(), |m, n| m | n);
         self.virtual_keyboard.set_modifiers_state(raw_modifiers);

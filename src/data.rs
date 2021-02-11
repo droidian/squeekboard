@@ -658,6 +658,9 @@ fn create_action<H: logging::Handler>(
             Modifier::Alt => action::Action::ApplyModifier(
                 action::Modifier::Alt,
             ),
+            Modifier::Mod4 => action::Action::ApplyModifier(
+                action::Modifier::Mod4,
+            ),
             unsupported_modifier => {
                 warning_handler.handle(
                     logging::Level::Bug,

@@ -17,6 +17,7 @@ pub enum Modifier {
     /// so it's simple to implement as levels are deprecated in squeekboard.
     Control,
     Alt,
+    Mod4,
 }
 
 /// Action to perform on the keypress and, in reverse, on keyrelease
