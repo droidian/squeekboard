@@ -1,0 +1,84 @@
+---
+outlines:
+    default: { width: 75, height: 56 }
+    altline: { width: 75, height: 56 }
+    wide: { width: 135, height: 56 }
+    spaceline: { width: 450, height: 56 }
+    spacelinesymbol: { width: 300, height: 56 }
+    special: { width: 90, height: 56 }
+
+views:
+    base:
+        - "ๅ / _ ภ ถ ุ ึ ค ต จ ข ช"
+        - "ๆ ไ ำ พ ะ ั ี ร น ย บ ล"
+        - "ฟ ห ก ด เ ้ ่ า ส ว ง ฃ"
+        - "Shift_L   ผ ป แ อ ิ ื ท ม ใ ฝ   BackSpace"
+        - "show_numbers preferences         space        period Return"
+    upper:
+        - "+ ๑ ๒ ๓ ๔ ู ฿ ๕ ๖ ๗ ๘ ๙"
+        - "๐ \" ฎ ฑ ธ ํ ๊ ณ ฯ ญ ฐ ,"
+        - "ฤ ฆ ฏ โ ฌ ็ ๋ ษ ศ ซ . ฅ"
+        - "Shift_L   ( ) ฉ ฮ ฺ ์ ? ฒ ฬ ฦ  BackSpace"
+        - "show_numbers preferences         space        period Return"
+    numbers:
+        - "1 2 3 4 5 6 7 8 9 0"
+        - "@ # $ % & - _ + ( )"
+        - "show_symbols   , \" ' colon ; ! ?  BackSpace"
+        - "show_letters preferences         spacesymbol        period Return"
+    symbols:
+        - "~ ` | · √ π τ ÷ × ¶"
+        - "© ® £ € ¥ ^ ° * { }"
+        - "show_numbers_from_symbols   \\ / < > = [ ]  BackSpace"
+        - "show_letters preferences         spacesymbol        period Return"
+
+buttons:
+    Shift_L:
+        action:
+            locking:
+                lock_view: "upper"
+                unlock_view: "base"
+        outline: "altline"
+        icon: "key-shift"
+    BackSpace:
+        outline: "altline"
+        icon: "edit-clear-symbolic"
+        action: erase
+    preferences:
+        action: show_prefs
+        outline: "special"
+        icon: "keyboard-mode-symbolic"
+    show_numbers:
+        action:
+            set_view: "numbers"
+        outline: "wide"
+        label: "123"
+    show_numbers_from_symbols:
+        action:
+            set_view: "numbers"
+        outline: "altline"
+        label: "123"
+    show_letters:
+        action:
+            set_view: "base"
+        outline: "wide"
+        label: "กขค"
+    show_symbols:
+        action:
+            set_view: "symbols"
+        outline: "altline"
+        label: "*/="
+    period:
+        outline: "special"
+        text: "."
+    space:
+        outline: "spaceline"
+        text: " "
+    spacesymbol:
+        outline: "spacelinesymbol"
+        text: " "
+    Return:
+        outline: "wide"
+        icon: "key-enter"
+        keysym: "Return"
+    colon:
+        text: ":"
