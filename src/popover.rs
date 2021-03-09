@@ -437,7 +437,8 @@ pub fn show(
 
         let settings_action = gio::SimpleAction::new("settings", None);
         settings_action.connect_activate(move |_, _| {
-            unsafe { c::popover_open_settings_panel(CString::new("region").unwrap().as_ptr()) };
+            let s = CString::new("region").unwrap();
+            unsafe { c::popover_open_settings_panel(s.as_ptr()) };
         });
 
         let action_group = gio::SimpleActionGroup::new();
