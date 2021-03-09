@@ -29,7 +29,6 @@ use ::logging::Warn;
 mod c {
     use std::os::raw::c_char;
 
-    #[no_mangle]
     extern "C" {
         pub fn popover_open_settings_panel(panel: *const c_char);
     }

@@ -24,7 +24,6 @@ mod c {
     #[derive(Clone, Copy)]
     pub struct EekRenderer(*const c_void);
 
-    #[no_mangle]
     extern "C" {
         // Button and View inside CButtonPlace are safe to pass to C
         // as long as they don't outlive the call
