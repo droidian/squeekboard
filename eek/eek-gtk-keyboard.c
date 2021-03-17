@@ -100,7 +100,7 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
                                        gtk_widget_get_scale_factor (self));
     }
 
-    eek_renderer_render_keyboard (priv->renderer, priv->submission, cr, priv->keyboard);
+    eek_renderer_render_keyboard (priv->renderer, priv->renderer->widget_to_layout, priv->submission, cr, priv->keyboard);
     return FALSE;
 }
 
