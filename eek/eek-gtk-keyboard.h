@@ -28,6 +28,7 @@
 #include <glib.h>
 #include <gtk/gtk.h>
 
+#include "eek/eek-renderer.h"
 #include "eek/eek-types.h"
 
 struct submission;

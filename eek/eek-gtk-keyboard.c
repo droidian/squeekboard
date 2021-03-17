@@ -45,6 +45,8 @@
 typedef struct _EekGtkKeyboardPrivate
 {
     EekRenderer *renderer; // owned, nullable
+    struct render_geometry render_geometry; // mutable
+
     EekboardContextService *eekboard_context; // unowned reference
     struct submission *submission; // unowned reference
 
@@ -72,12 +74,23 @@ eek_gtk_keyboard_real_realize (GtkWidget      *self)
     GTK_WIDGET_CLASS (eek_gtk_keyboard_parent_class)->realize (self);
 }
 
+static void set_allocation_size(EekGtkKeyboard *gtk_keyboard,
+    struct squeek_layout *layout, gdouble width, gdouble height)
+{
+    // This is where size-dependent surfaces would be released
+    EekGtkKeyboardPrivate *priv =
+        eek_gtk_keyboard_get_instance_private (gtk_keyboard);
+    priv->render_geometry = eek_render_geometry_from_allocation_size(
+        layout, width, height);
+}
+
 static gboolean
 eek_gtk_keyboard_real_draw (GtkWidget *self,
                             cairo_t   *cr)
 {
+    EekGtkKeyboard *keyboard = EEK_GTK_KEYBOARD (self);
     EekGtkKeyboardPrivate *priv =
-        eek_gtk_keyboard_get_instance_private (EEK_GTK_KEYBOARD (self));
+        eek_gtk_keyboard_get_instance_private (keyboard);
     GtkAllocation allocation;
     gtk_widget_get_allocation (self, &allocation);
 
@@ -92,15 +105,14 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
                     priv->keyboard,
                     pcontext);
 
-        eek_renderer_set_allocation_size (priv->renderer,
-                                          priv->keyboard->layout,
-                                          allocation.width,
-                                          allocation.height);
+        set_allocation_size (keyboard, priv->keyboard->layout,
+            allocation.width, allocation.height);
         eek_renderer_set_scale_factor (priv->renderer,
                                        gtk_widget_get_scale_factor (self));
     }
 
-    eek_renderer_render_keyboard (priv->renderer, priv->renderer->widget_to_layout, priv->submission, cr, priv->keyboard);
+    eek_renderer_render_keyboard (priv->renderer, priv->render_geometry,
+        priv->submission, cr, priv->keyboard);
     return FALSE;
 }
 
@@ -117,8 +129,9 @@ static void
 eek_gtk_keyboard_real_size_allocate (GtkWidget     *self,
                                      GtkAllocation *allocation)
 {
+    EekGtkKeyboard *keyboard = EEK_GTK_KEYBOARD (self);
     EekGtkKeyboardPrivate *priv =
-        eek_gtk_keyboard_get_instance_private (EEK_GTK_KEYBOARD (self));
+        eek_gtk_keyboard_get_instance_private (keyboard);
     // check if the change would switch types
     enum squeek_arrangement_kind new_type = get_type(
                 (uint32_t)(allocation->width - allocation->x),
@@ -130,10 +143,8 @@ eek_gtk_keyboard_real_size_allocate (GtkWidget     *self,
     }
 
     if (priv->renderer) {
-        eek_renderer_set_allocation_size (priv->renderer,
-                                          priv->keyboard->layout,
-                                          allocation->width,
-                                          allocation->height);
+        set_allocation_size (keyboard, priv->keyboard->layout,
+            allocation->width, allocation->height);
     }
 
     GTK_WIDGET_CLASS (eek_gtk_keyboard_parent_class)->
@@ -162,7 +173,7 @@ static void depress(EekGtkKeyboard *self,
     }
     squeek_layout_depress(priv->keyboard->layout,
                           priv->submission,
-                          x, y, eek_renderer_get_transformation(priv->renderer), time, self);
+                          x, y, priv->render_geometry.widget_to_layout, time, self);
 }
 
 static void drag(EekGtkKeyboard *self,
@@ -174,7 +185,7 @@ static void drag(EekGtkKeyboard *self,
     }
     squeek_layout_drag(eekboard_context_service_get_keyboard(priv->eekboard_context)->layout,
                        priv->submission,
-                       x, y, eek_renderer_get_transformation(priv->renderer), time,
+                       x, y, priv->render_geometry.widget_to_layout, time,
                        priv->eekboard_context, self);
 }
 
@@ -185,8 +196,7 @@ static void release(EekGtkKeyboard *self, guint32 time)
         return;
     }
     squeek_layout_release(eekboard_context_service_get_keyboard(priv->eekboard_context)->layout,
-                          priv->submission,
-                          eek_renderer_get_transformation(priv->renderer), time,
+                          priv->submission, priv->render_geometry.widget_to_layout, time,
                           priv->eekboard_context, self);
 }
 
@@ -396,6 +406,24 @@ eek_gtk_keyboard_new (EekboardContextService *eekservice,
     priv->submission = submission;
     priv->layout = layout;
     priv->renderer = NULL;
+    // This should really be done on initialization.
+    // Before the widget is allocated,
+    // we don't really know what geometry it takes.
+    // When it's off the screen, we also kinda don't.
+    struct render_geometry initial_geometry = {
+        // Set to 100 just to make sure if there's any attempt to use it,
+        // it actually gives plausible results instead of blowing up,
+        // e.g. on zero division.
+        .allocation_width = 100,
+        .allocation_height = 100,
+        .widget_to_layout = {
+            .origin_x = 0,
+            .origin_y = 0,
+            .scale = 1,
+        },
+    };
+    priv->render_geometry = initial_geometry;
+
     g_signal_connect (eekservice,
                       "notify::keyboard",
                       G_CALLBACK(on_notify_keyboard),

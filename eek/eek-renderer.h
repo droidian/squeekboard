@@ -41,22 +41,23 @@ typedef struct EekRenderer
     gchar *extra_style; // owned
 
     // Mutable state
+    gint scale_factor; /* the outputs scale factor */
+} EekRenderer;
+
+
+/// Mutable part of the renderer state.
+/// TODO: Possibly should include scale factor.
+struct render_geometry {
     /// Background extents
     gdouble allocation_width;
     gdouble allocation_height;
-    gint scale_factor; /* the outputs scale factor */
     /// Coords transformation
     struct transformation widget_to_layout;
-} EekRenderer;
-
+};
 
 GType            eek_renderer_get_type         (void) G_GNUC_CONST;
 EekRenderer     *eek_renderer_new              (LevelKeyboard     *keyboard,
                                                 PangoContext    *pcontext);
-void             eek_renderer_set_allocation_size
-                                               (EekRenderer     *renderer, struct squeek_layout *layout,
-                                                gdouble          width,
-                                                gdouble          height);
 void             eek_renderer_set_scale_factor (EekRenderer     *renderer,
                                                 gint             scale);
 
@@ -64,13 +65,14 @@ cairo_surface_t *eek_renderer_get_icon_surface(const gchar     *icon_name,
                                                 gint             size,
                                                 gint             scale);
 
-void             eek_renderer_render_keyboard  (EekRenderer     *renderer, struct transformation widget_to_layout, struct submission *submission,
+void             eek_renderer_render_keyboard  (EekRenderer     *renderer, struct render_geometry geometry, struct submission *submission,
                                                 cairo_t         *cr, LevelKeyboard *keyboard);
 void
 eek_renderer_free (EekRenderer        *self);
 
-struct transformation
-eek_renderer_get_transformation (EekRenderer *renderer);
+struct render_geometry
+eek_render_geometry_from_allocation_size (struct squeek_layout *layout,
+    gdouble      width, gdouble      height);
 
 G_END_DECLS
 #endif  /* EEK_RENDERER_H */
