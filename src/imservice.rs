@@ -32,9 +32,9 @@ pub mod c {
     #[repr(transparent)]
     pub struct InputMethod(*const c_void);
 
-    #[no_mangle]
     extern "C" {
         fn imservice_destroy_im(im: *mut c::InputMethod);
+
         #[allow(improper_ctypes)] // IMService will never be dereferenced in C
         pub fn imservice_connect_listeners(im: *mut InputMethod, imservice: *const IMService);
         pub fn eek_input_method_commit_string(im: *mut InputMethod, text: *const c_char);
