@@ -1,45 +1,37 @@
 ---
 outlines:
-    default: { width: 35.33, height: 52 }
-    altline: { width: 52.67, height: 52 }
-    wide: { width: 62, height: 52 }
-    spaceline: { width: 142, height: 52 }
-    special: { width: 44, height: 52 }
+    default: { width: 40, height: 60 }
+    altline: { width: 56, height: 60 }
+    wide: { width: 62, height: 60 }
+    spaceline: { width: 142, height: 60 }
+    special: { width: 44, height: 60 }
 
 views:
     base:
-        - "ך ף ק ר א ט ו ן ם פ"
-        - "ץ ת ש ד ג כ ע י ח ל"
-        - "Shift_L   ז ס ב ה נ מ צ  BackSpace"
-        - "show_numbers preferences         space        period Return"
-    upper:
-        - "Q W E R T Y U I O P"
-        - "A S D F G H J K L"
-        - "Shift_L   Z X C V B N M  BackSpace"
-        - "show_numbers preferences         space        period Return"
+        - "' - ק  ר א ט ו ן ם פ"
+        - "ש ד ג כ ע י ח ל ך ף"
+        - "ז ס ב ה נ מ צ ת ץ  BackSpace"
+        - "show_numbers comma preferences         space        period Return"
     numbers:
         - "1 2 3 4 5 6 7 8 9 0"
-        - "@ # $ % & - _ + ( )"
+        - "@ # ₪ % & - _ + ( )"
         - "show_symbols   , \" ' colon ; ! ?  BackSpace"
         - "show_letters preferences         space        period Return"
     symbols:
         - "~ ` | · √ π τ ÷ × ¶"
-        - "© ® £ € ¥ ^ ° * { }"
+        - "© ® £ € $ ^ ° * { }"
         - "show_numbers_from_symbols   \\ / < > = [ ]  BackSpace"
         - "show_letters preferences         space        period Return"
 
 buttons:
-    Shift_L:
-        action:
-            locking:
-                lock_view: "upper"
-                unlock_view: "base"
-        outline: "altline"
-        icon: "key-shift"
     BackSpace:
-        outline: "altline"
+        outline: "default"
         icon: "edit-clear-symbolic"
         action: erase
+    comma:
+        outline: "special"
+        text: ","
+        
     preferences:
         action: show_prefs
         outline: "special"
