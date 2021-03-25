@@ -50,8 +50,15 @@ struct squeekboard {
 };
 
 
+GMainLoop *loop;
 static gboolean opt_system = FALSE;
 static gchar *opt_address = NULL;
+
+static void
+quit (void)
+{
+  g_main_loop_quit (loop);
+}
 
 // D-Bus
 
@@ -307,8 +314,7 @@ main (int argc, char **argv)
 
     session_register();
 
-    GMainLoop *loop = g_main_loop_new (NULL, FALSE);
-
+    loop = g_main_loop_new (NULL, FALSE);
     g_main_loop_run (loop);
 
     if (connection) {
