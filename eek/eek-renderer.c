@@ -194,22 +194,23 @@ render_button_label (cairo_t     *cr,
 // FIXME: Pass just the active modifiers instead of entire submission
 void
 eek_renderer_render_keyboard (EekRenderer *self,
+                              struct render_geometry geometry,
                               struct submission *submission,
                                    cairo_t     *cr,
                               LevelKeyboard *keyboard)
 {
-    g_return_if_fail (self->allocation_width > 0.0);
-    g_return_if_fail (self->allocation_height > 0.0);
+    g_return_if_fail (geometry.allocation_width > 0.0);
+    g_return_if_fail (geometry.allocation_height > 0.0);
 
     /* Paint the background covering the entire widget area */
     gtk_render_background (self->view_context,
                            cr,
                            0, 0,
-                           self->allocation_width, self->allocation_height);
+                           geometry.allocation_width, geometry.allocation_height);
 
     cairo_save(cr);
-    cairo_translate (cr, self->widget_to_layout.origin_x, self->widget_to_layout.origin_y);
-    cairo_scale (cr, self->widget_to_layout.scale, self->widget_to_layout.scale);
+    cairo_translate (cr, geometry.widget_to_layout.origin_x, geometry.widget_to_layout.origin_y);
+    cairo_scale (cr, geometry.widget_to_layout.scale, geometry.widget_to_layout.scale);
 
     squeek_draw_layout_base_view(keyboard->layout, self, cr);
     squeek_layout_draw_all_changed(keyboard->layout, self, cr, submission);
@@ -261,8 +262,6 @@ static void
 renderer_init (EekRenderer *self)
 {
     self->pcontext = NULL;
-    self->allocation_width = 0.0;
-    self->allocation_height = 0.0;
     self->scale_factor = 1;
 
     self->css_provider = squeek_load_style();
@@ -309,22 +308,18 @@ eek_renderer_new (LevelKeyboard  *keyboard,
     return renderer;
 }
 
-void
-eek_renderer_set_allocation_size (EekRenderer *renderer,
-                                  struct squeek_layout *layout,
+struct render_geometry
+eek_render_geometry_from_allocation_size (struct squeek_layout *layout,
                                   gdouble      width,
                                   gdouble      height)
 {
-    g_return_if_fail (width > 0.0 && height > 0.0);
-
-    renderer->allocation_width = width;
-    renderer->allocation_height = height;
-
-    renderer->widget_to_layout = squeek_layout_calculate_transformation(
-                layout,
-                renderer->allocation_width, renderer->allocation_height);
-
-    // This is where size-dependent surfaces would be released
+    struct render_geometry ret = {
+        .allocation_width = width,
+        .allocation_height = height,
+        .widget_to_layout = squeek_layout_calculate_transformation(
+            layout, width, height),
+    };
+    return ret;
 }
 
 void
@@ -355,9 +350,4 @@ eek_renderer_get_icon_surface (const gchar *icon_name,
         return NULL;
     }
     return surface;
-}
-
-struct transformation
-eek_renderer_get_transformation (EekRenderer *renderer) {
-    return renderer->widget_to_layout;
 }
