@@ -289,7 +289,13 @@ struct ButtonMeta {
 #[serde(deny_unknown_fields)]
 enum Action {
     #[serde(rename="locking")]
-    Locking { lock_view: String, unlock_view: String },
+    Locking {
+        lock_view: String,
+        unlock_view: String,
+        pops: Option<bool>,
+        #[serde(default)]
+        looks_locked_from: Vec<String>,
+    },
     #[serde(rename="set_view")]
     SetView(String),
     #[serde(rename="show_prefs")]
@@ -600,7 +606,9 @@ fn create_action<H: logging::Handler>(
             )
         ),
         SubmitData::Action(Action::Locking {
-            lock_view, unlock_view
+            lock_view, unlock_view,
+            pops,
+            looks_locked_from,
         }) => ::action::Action::LockView {
             lock: filter_view_name(
                 name,
@@ -614,6 +622,8 @@ fn create_action<H: logging::Handler>(
                 &view_names,
                 warning_handler,
             ),
+            latches: pops.unwrap_or(true),
+            looks_locked_from,
         },
         SubmitData::Action(
             Action::ShowPrefs

@@ -41,9 +41,7 @@ pub mod c {
     use super::*;
 
     use gtk_sys;
-    use std::ffi::CStr;
-    use std::os::raw::{ c_char, c_void };
-    use std::ptr;
+    use std::os::raw::c_void;
 
     use std::ops::{ Add, Sub };
 
@@ -161,64 +159,6 @@ pub mod c {
     pub struct LevelKeyboard(*const c_void);
 
     // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
-
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_button_get_bounds(button: *const ::layout::Button) -> Bounds {
-        let button = unsafe { &*button };
-        Bounds {
-            x: 0.0, y: 0.0,
-            width: button.size.width, height: button.size.height
-        }
-    }
-
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_button_get_label(
-        button: *const ::layout::Button
-    ) -> *const c_char {
-        let button = unsafe { &*button };
-        match &button.label {
-            Label::Text(text) => text.as_ptr(),
-            // returning static strings to C is a bit cumbersome
-            Label::IconName(_) => unsafe {
-                // CStr doesn't allocate anything, so it only points to
-                // the 'static str, avoiding a memory leak
-                CStr::from_bytes_with_nul_unchecked(b"icon\0")
-            }.as_ptr(),
-        }
-    }
-    
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_button_get_icon_name(button: *const Button) -> *const c_char {
-        let button = unsafe { &*button };
-        match &button.label {
-            Label::Text(_) => ptr::null(),
-            Label::IconName(name) => name.as_ptr(),
-        }
-    }
-    
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_button_get_name(button: *const Button) -> *const c_char {
-        let button = unsafe { &*button };
-        button.name.as_ptr()
-    }
-    
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_button_get_outline_name(button: *const Button) -> *const c_char {
-        let button = unsafe { &*button };
-        button.outline_name.as_ptr()
-    }
-    
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_button_print(button: *const ::layout::Button) {
-        let button = unsafe { &*button };
-        println!("{:?}", button);
-    }
     
     /// Positions the layout contents within the available space.
     /// The origin of the transformation is the point inside the margins.
@@ -484,6 +424,15 @@ pub struct Button {
     pub state: Rc<RefCell<KeyState>>,
 }
 
+impl Button {
+    pub fn get_bounds(&self) -> c::Bounds {
+        c::Bounds {
+            x: 0.0, y: 0.0,
+            width: self.size.width, height: self.size.height,
+        }
+    }
+}
+
 /// The graphical representation of a row of buttons
 #[derive(Clone, Debug)]
 pub struct Row {
@@ -551,6 +500,7 @@ pub struct Spacing {
     pub button: f64,
 }
 
+#[derive(Clone)]
 pub struct View {
     /// Rows together with their offsets from the top left
     rows: Vec<(c::Point, Row)>,
@@ -664,6 +614,19 @@ pub struct Margins {
     pub right: f64,
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum LatchedState {
+    /// Holds view to return to.
+    FromView(String),
+    Not,
+}
+
+impl LatchedState {
+    pub fn is_latched(&self) -> bool {
+        self != &LatchedState::Not
+    }
+}
+
 // TODO: split into sth like
 // Arrangement (views) + details (keymap) + State (keys)
 /// State of the UI, contains the backend as well
@@ -671,6 +634,12 @@ pub struct Layout {
     pub margins: Margins,
     pub kind: ArrangementKind,
     pub current_view: String,
+
+    // If current view is latched,
+    // clicking any button that emits an action (erase, submit, set modifier)
+    // will cause lock buttons to unlatch.
+    view_latched: LatchedState,
+
     // Views own the actual buttons which have state
     // Maybe they should own UI only,
     // and keys should be owned by a dedicated non-UI-State?
@@ -717,6 +686,7 @@ impl Layout {
         Layout {
             kind,
             current_view: "base".to_owned(),
+            view_latched: LatchedState::Not,
             views: data.views,
             keymaps: data.keymaps,
             pressed_keys: HashSet::new(),
@@ -740,6 +710,12 @@ impl Layout {
         } else {
             Err(NoSuchView)
         }
+    }
+
+    // Layout is passed around mutably,
+    // so better keep the field away from direct access.
+    pub fn get_view_latched(&self) -> &LatchedState {
+        &self.view_latched
     }
 
     /// Calculates size without margins
@@ -817,7 +793,116 @@ impl Layout {
         }
         out
     }
+    
+    fn apply_view_transition(
+        &mut self,
+        action: &Action,
+    ) {
+        let (transition, new_latched) = Layout::process_action_for_view(
+            action,
+            &self.current_view,
+            &self.view_latched,
+        );
+
+        match transition {
+            ViewTransition::UnlatchAll => self.unstick_locks(),
+            ViewTransition::ChangeTo(view) => try_set_view(self, view.into()),
+            ViewTransition::NoChange => {},
+        };
+
+        self.view_latched = new_latched;
+    }
+
+    /// Unlatch all latched keys,
+    /// so that the new view is the one before first press.
+    fn unstick_locks(&mut self) {
+        if let LatchedState::FromView(name) = self.view_latched.clone() {
+            match self.set_view(name.clone()) {
+                Ok(_) => { self.view_latched = LatchedState::Not; }
+                Err(e) => log_print!(
+                    logging::Level::Bug,
+                    "Bad view {}, can't unlatch ({:?})",
+                    name,
+                    e,
+                ),
+            }
+        }
+    }
+
+    /// Last bool is new latch state.
+    /// It doesn't make sense when the result carries UnlatchAll,
+    /// but let's not be picky.
+    ///
+    /// Although the state is not defined at the keys
+    /// (it's in the relationship between view and action),
+    /// keys go through the following stages when clicked repeatedly: 
+    /// unlocked+unlatched -> locked+latched -> locked+unlatched
+    /// -> unlocked+unlatched
+    fn process_action_for_view<'a>(
+        action: &'a Action,
+        current_view: &str,
+        latched: &LatchedState,
+    ) -> (ViewTransition<'a>, LatchedState) {
+        match action {
+            Action::Submit { text: _, keys: _ }
+                | Action::Erase
+                | Action::ApplyModifier(_)
+            => {
+                let t = match latched {
+                    LatchedState::FromView(_) => ViewTransition::UnlatchAll,
+                    LatchedState::Not => ViewTransition::NoChange,
+                };
+                (t, LatchedState::Not)
+            },
+            Action::SetView(view) => (
+                ViewTransition::ChangeTo(view),
+                LatchedState::Not,
+            ),
+            Action::LockView { lock, unlock, latches, looks_locked_from: _ } => {
+                use self::ViewTransition as VT;
+                let locked = action.is_locked(current_view);
+                match (locked, latched, latches) {
+                    // Was unlocked, now make locked but latched.
+                    (false, LatchedState::Not, true) => (
+                        VT::ChangeTo(lock),
+                        LatchedState::FromView(current_view.into()),
+                    ),
+                    // Layout is latched for reason other than this button.
+                    (false, LatchedState::FromView(view), true) => (
+                        VT::ChangeTo(lock),
+                        LatchedState::FromView(view.clone()),
+                    ),
+                    // Was latched, now only locked.
+                    (true, LatchedState::FromView(_), true)
+                        => (VT::NoChange, LatchedState::Not),
+                    // Was unlocked, can't latch so now make fully locked.
+                    (false, _, false)
+                        => (VT::ChangeTo(lock), LatchedState::Not),
+                    // Was locked, now make unlocked.
+                    (true, _, _)
+                        => (VT::ChangeTo(unlock), LatchedState::Not),
+                }
+            },
+            _ => (ViewTransition::NoChange, latched.clone()),
+        }
+    }
 }
+
+#[derive(Debug, PartialEq)]
+enum ViewTransition<'a> {
+    ChangeTo(&'a str),
+    UnlatchAll,
+    NoChange,
+}
+
+fn try_set_view(layout: &mut Layout, view_name: &str) {
+    layout.set_view(view_name.into())
+        .or_print(
+            logging::Problem::Bug,
+            &format!("Bad view {}, ignoring", view_name),
+        );
+}
+
 
 mod procedures {
     use super::*;
@@ -897,67 +982,6 @@ pub struct UIBackend {
 mod seat {
     use super::*;
 
-    fn try_set_view(layout: &mut Layout, view_name: String) {
-        layout.set_view(view_name.clone())
-            .or_print(
-                logging::Problem::Bug,
-                &format!("Bad view {}, ignoring", view_name),
-            );
-    }
-
-    /// A vessel holding an obligation to switch view.
-    /// Use with #[must_use]
-    struct ViewChange<'a> {
-        layout: &'a mut Layout,
-        view_name: Option<String>,
-    }
-    
-    impl<'a> ViewChange<'a> {
-        fn choose_view(self, view_name: String) -> ViewChange<'a> {
-            ViewChange {
-                view_name: Some(view_name),
-                ..self
-            }
-        }
-        fn apply(self) {
-            if let Some(name) = self.view_name {
-                try_set_view(self.layout, name);
-            }
-        }
-    }
-
-    /// Find all impermanent view changes and undo them in an arbitrary order.
-    /// Return an obligation to actually switch the view.
-    /// The final view is the "unlock" view
-    /// from one of the currently stuck keys.
-    // As long as only one stuck button is used, this should be fine.
-    // This is guaranteed because pressing a lock button unlocks all others.
-    // TODO: Make some broader guarantee about the resulting view,
-    // e.g. by maintaining a stack of stuck keys.
-    #[must_use]
-    fn unstick_locks(layout: &mut Layout) -> ViewChange {
-        let mut new_view = None;
-        for key in layout.get_locked_keys().clone() {
-            let key: &Rc<RefCell<KeyState>> = key.borrow();
-            let key = RefCell::borrow(key);
-            match &key.action {
-                Action::LockView { lock: _, unlock: view } => {
-                    new_view = Some(view.clone());
-                },
-                a => log_print!(
-                    logging::Level::Bug,
-                    "Non-locking action {:?} was found inside locked keys",
-                    a,
-                ),
-            };
-        }
-        
-        ViewChange {
-            layout,
-            view_name: new_view,
-        }
-    }
-
     pub fn handle_press_key(
         layout: &mut Layout,
         submission: &mut Submission,
@@ -1017,37 +1041,22 @@ mod seat {
         };
         let action = key.action.clone();
 
+        layout.apply_view_transition(&action);
+
         // update
         let key = key.into_released();
 
-        // process changes
+        // process non-view switching
         match action {
             Action::Submit { text: _, keys: _ }
                 | Action::Erase
             => {
-                unstick_locks(layout).apply();
                 submission.handle_release(KeyState::get_id(rckey), time);
-            },
-            Action::SetView(view) => {
-                try_set_view(layout, view)
-            },
-            Action::LockView { lock, unlock } => {
-                let gets_locked = !key.action.is_locked(&layout.current_view);
-                unstick_locks(layout)
-                    // It doesn't matter what the resulting view should be,
-                    // it's getting changed anyway.
-                    .choose_view(
-                        match gets_locked {
-                            true => lock.clone(),
-                            false => unlock.clone(),
-                        }
-                    )
-                    .apply()
             },
             Action::ApplyModifier(modifier) => {
                 // FIXME: key id is unneeded with stateless locks
                 let key_id = KeyState::get_id(rckey);
-                let gets_locked = !submission.is_modifier_active(modifier.clone());
+                let gets_locked = !submission.is_modifier_active(modifier);
                 match gets_locked {
                     true => submission.handle_add_modifier(
                         key_id,
@@ -1082,6 +1091,8 @@ mod seat {
                     }
                 }
             },
+            // Other keys are handled in view switcher before.
+            _ => {}
         };
 
         let pointer = ::util::Pointer(rckey.clone());
@@ -1099,12 +1110,18 @@ mod test {
     use std::ffi::CString;
     use ::keyboard::PressType;
 
-    pub fn make_state() -> Rc<RefCell<::keyboard::KeyState>> {
+    pub fn make_state_with_action(action: Action)
+        -> Rc<RefCell<::keyboard::KeyState>>
+    {
         Rc::new(RefCell::new(::keyboard::KeyState {
             pressed: PressType::Released,
             keycodes: Vec::new(),
-            action: Action::SetView("default".into()),
+            action,
         }))
+    }
+
+    pub fn make_state() -> Rc<RefCell<::keyboard::KeyState>> {
+        make_state_with_action(Action::SetView("default".into()))
     }
 
     pub fn make_button_with_state(
@@ -1120,6 +1137,242 @@ mod test {
         })
     }
     
+    #[test]
+    fn latch_lock_unlock() {
+        let action = Action::LockView {
+            lock: "lock".into(),
+            unlock: "unlock".into(),
+            latches: true,
+            looks_locked_from: vec![],
+        };
+
+        assert_eq!(
+            Layout::process_action_for_view(&action, "unlock", &LatchedState::Not),
+            (ViewTransition::ChangeTo("lock"), LatchedState::FromView("unlock".into())),
+        );
+
+        assert_eq!(
+            Layout::process_action_for_view(&action, "lock", &LatchedState::FromView("unlock".into())),
+            (ViewTransition::NoChange, LatchedState::Not),
+        );
+
+        assert_eq!(
+            Layout::process_action_for_view(&action, "lock", &LatchedState::Not),
+            (ViewTransition::ChangeTo("unlock"), LatchedState::Not),
+        );
+
+        assert_eq!(
+            Layout::process_action_for_view(&Action::Erase, "lock", &LatchedState::FromView("base".into())),
+            (ViewTransition::UnlatchAll, LatchedState::Not),
+        );
+    }
+
+    #[test]
+    fn latch_pop_layout() {
+        let switch = Action::LockView {
+            lock: "locked".into(),
+            unlock: "base".into(),
+            latches: true,
+            looks_locked_from: vec![],
+        };
+        
+        let submit = Action::Erase;
+
+        let view = View::new(vec![(
+            0.0,
+            Row::new(vec![
+                (
+                    0.0,
+                    make_button_with_state(
+                        "switch".into(),
+                        make_state_with_action(switch.clone())
+                    ),
+                ),
+                (
+                    1.0,
+                    make_button_with_state(
+                        "submit".into(),
+                        make_state_with_action(submit.clone())
+                    ),
+                ),
+            ]),
+        )]);
+
+        let mut layout = Layout {
+            current_view: "base".into(),
+            view_latched: LatchedState::Not,
+            keymaps: Vec::new(),
+            kind: ArrangementKind::Base,
+            pressed_keys: HashSet::new(),
+            margins: Margins {
+                top: 0.0,
+                left: 0.0,
+                right: 0.0,
+                bottom: 0.0,
+            },
+            views: hashmap! {
+                // Both can use the same structure.
+                // Switching doesn't depend on the view shape
+                // as long as the switching button is present.
+                "base".into() => (c::Point { x: 0.0, y: 0.0 }, view.clone()),
+                "locked".into() => (c::Point { x: 0.0, y: 0.0 }, view),
+            },
+        };        
+
+        // Basic cycle
+        layout.apply_view_transition(&switch);
+        assert_eq!(&layout.current_view, "locked");
+        layout.apply_view_transition(&switch);
+        assert_eq!(&layout.current_view, "locked");
+        layout.apply_view_transition(&submit);
+        assert_eq!(&layout.current_view, "locked");
+        layout.apply_view_transition(&switch);
+        assert_eq!(&layout.current_view, "base");
+        layout.apply_view_transition(&switch);
+        // Unlatch
+        assert_eq!(&layout.current_view, "locked");
+        layout.apply_view_transition(&submit);
+        assert_eq!(&layout.current_view, "base");
+    }
+
+    #[test]
+    fn reverse_unlatch_layout() {
+        let switch = Action::LockView {
+            lock: "locked".into(),
+            unlock: "base".into(),
+            latches: true,
+            looks_locked_from: vec![],
+        };
+        
+        let unswitch = Action::LockView {
+            lock: "locked".into(),
+            unlock: "unlocked".into(),
+            latches: false,
+            looks_locked_from: vec![],
+        };
+        
+        let submit = Action::Erase;
+
+        let view = View::new(vec![(
+            0.0,
+            Row::new(vec![
+                (
+                    0.0,
+                    make_button_with_state(
+                        "switch".into(),
+                        make_state_with_action(switch.clone())
+                    ),
+                ),
+                (
+                    1.0,
+                    make_button_with_state(
+                        "submit".into(),
+                        make_state_with_action(submit.clone())
+                    ),
+                ),
+            ]),
+        )]);
+
+        let mut layout = Layout {
+            current_view: "base".into(),
+            view_latched: LatchedState::Not,
+            keymaps: Vec::new(),
+            kind: ArrangementKind::Base,
+            pressed_keys: HashSet::new(),
+            margins: Margins {
+                top: 0.0,
+                left: 0.0,
+                right: 0.0,
+                bottom: 0.0,
+            },
+            views: hashmap! {
+                // Both can use the same structure.
+                // Switching doesn't depend on the view shape
+                // as long as the switching button is present.
+                "base".into() => (c::Point { x: 0.0, y: 0.0 }, view.clone()),
+                "locked".into() => (c::Point { x: 0.0, y: 0.0 }, view.clone()),
+                "unlocked".into() => (c::Point { x: 0.0, y: 0.0 }, view),
+            },
+        };        
+
+        layout.apply_view_transition(&switch);
+        assert_eq!(&layout.current_view, "locked");
+        layout.apply_view_transition(&unswitch);
+        assert_eq!(&layout.current_view, "unlocked");
+    }
+
+    #[test]
+    fn latch_twopop_layout() {
+        let switch = Action::LockView {
+            lock: "locked".into(),
+            unlock: "base".into(),
+            latches: true,
+            looks_locked_from: vec![],
+        };
+        
+        let switch_again = Action::LockView {
+            lock: "ĄĘ".into(),
+            unlock: "locked".into(),
+            latches: true,
+            looks_locked_from: vec![],
+        };
+        
+        let submit = Action::Erase;
+
+        let view = View::new(vec![(
+            0.0,
+            Row::new(vec![
+                (
+                    0.0,
+                    make_button_with_state(
+                        "switch".into(),
+                        make_state_with_action(switch.clone())
+                    ),
+                ),
+                (
+                    1.0,
+                    make_button_with_state(
+                        "submit".into(),
+                        make_state_with_action(submit.clone())
+                    ),
+                ),
+            ]),
+        )]);
+
+        let mut layout = Layout {
+            current_view: "base".into(),
+            view_latched: LatchedState::Not,
+            keymaps: Vec::new(),
+            kind: ArrangementKind::Base,
+            pressed_keys: HashSet::new(),
+            margins: Margins {
+                top: 0.0,
+                left: 0.0,
+                right: 0.0,
+                bottom: 0.0,
+            },
+            views: hashmap! {
+                // All can use the same structure.
+                // Switching doesn't depend on the view shape
+                // as long as the switching button is present.
+                "base".into() => (c::Point { x: 0.0, y: 0.0 }, view.clone()),
+                "locked".into() => (c::Point { x: 0.0, y: 0.0 }, view.clone()),
+                "ĄĘ".into() => (c::Point { x: 0.0, y: 0.0 }, view),
+            },
+        };        
+
+        // Latch twice, then Ąto-unlatch across 2 levels
+        layout.apply_view_transition(&switch);
+        println!("{:?}", layout.view_latched);
+        assert_eq!(&layout.current_view, "locked");
+        layout.apply_view_transition(&switch_again);
+        println!("{:?}", layout.view_latched);
+        assert_eq!(&layout.current_view, "ĄĘ");
+        layout.apply_view_transition(&submit);
+        println!("{:?}", layout.view_latched);
+        assert_eq!(&layout.current_view, "base");
+    }
+
     #[test]
     fn check_centering() {
         //    A B
@@ -1192,6 +1445,7 @@ mod test {
         ]);
         let layout = Layout {
             current_view: String::new(),
+            view_latched: LatchedState::Not,
             keymaps: Vec::new(),
             kind: ArrangementKind::Base,
             pressed_keys: HashSet::new(),

@@ -52,6 +52,8 @@ buttons:
             locking:
                 lock_view: "upper_accents"
                 unlock_view: "accents"
+                looks_locked_from:
+                    - "upper"
         outline: "altline"
         icon: "key-shift"
     BackSpace:
@@ -94,6 +96,8 @@ buttons:
             locking:
                 lock_view: "upper_accents"
                 unlock_view: "upper"
+                looks_locked_from:
+                    - "accents"
         outline: "altline"
         label: "ĄĘ"
     period:

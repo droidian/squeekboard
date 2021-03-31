@@ -10,7 +10,7 @@ pub struct KeySym(pub String);
 type View = String;
 
 /// Use to send modified keypresses
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Modifier {
     /// Control and Alt are the only modifiers
     /// which doesn't interfere with levels,
@@ -30,6 +30,11 @@ pub enum Action {
         lock: View,
         /// When unlocked by pressing it or emitting a key
         unlock: View,
+        /// Whether key has a latched state
+        /// that pops when another key is pressed.
+        latches: bool,
+        /// Should take on *locked* appearance whenever latch comes back to those views.
+        looks_locked_from: Vec<View>,
     },
     /// Hold this modifier for as long as the button is pressed
     ApplyModifier(Modifier),
@@ -49,14 +54,24 @@ pub enum Action {
 impl Action {
     pub fn is_locked(&self, view_name: &str) -> bool {
         match self {
-            Action::LockView { lock, unlock: _ } => lock == view_name,
+            Action::LockView { lock, unlock: _, latches: _, looks_locked_from: _ } => lock == view_name,
+            _ => false,
+        }
+    }
+    pub fn has_locked_appearance_from(&self, locked_view_name: &str) -> bool {
+        match self {
+            Action::LockView { lock: _, unlock: _, latches: _, looks_locked_from } => {
+                looks_locked_from.iter()
+                    .find(|view| locked_view_name == view.as_str())
+                    .is_some()
+            },
             _ => false,
         }
     }
     pub fn is_active(&self, view_name: &str) -> bool {
         match self {
             Action::SetView(view) => view == view_name,
-            Action::LockView { lock, unlock: _ } => lock == view_name,
+            Action::LockView { lock, unlock: _, latches: _, looks_locked_from: _ } => lock == view_name,
             _ => false,
         }
     }

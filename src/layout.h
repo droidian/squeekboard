@@ -26,13 +26,6 @@ struct squeek_layout_state {
 
 struct squeek_layout;
 
-EekBounds squeek_button_get_bounds(const struct squeek_button*);
-const char *squeek_button_get_label(const struct squeek_button*);
-const char *squeek_button_get_icon_name(const struct squeek_button*);
-const char *squeek_button_get_name(const struct squeek_button*);
-const char *squeek_button_get_outline_name(const struct squeek_button*);
-
-void squeek_button_print(const struct squeek_button* button);
 
 struct transformation squeek_layout_calculate_transformation(
         const struct squeek_layout *layout,
