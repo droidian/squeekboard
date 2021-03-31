@@ -50,7 +50,6 @@ pub mod c {
     #[derive(Copy, Clone)]
     pub struct EekGtkKeyboard(pub *const gtk_sys::GtkWidget);
 
-    #[no_mangle]
     extern "C" {
         #[allow(improper_ctypes)]
         pub fn eek_gtk_keyboard_emit_feedback(

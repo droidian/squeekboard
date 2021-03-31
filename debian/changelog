@@ -1,3 +1,63 @@
+squeekboard (1.12.0pureos0~amber0) amber-phone; urgency=medium
+
+  [ Dorota Czaplejewicz ]
+  * docs: Correct Cargo update instructions
+  * visibility: Centralize keyboard panel visibility policy and handling
+  * build: Fix release
+  * tests: Prefer the env var for finding test layouts
+  * tests: Explicitly pass source directory to tests
+  * debian: Build reproducibly
+  * tests: Allow legacy mode to have much longer tests.
+  * build: Enable unused warnings in C
+  * build: Enable wformat to remove warnings about missing wformat
+  * build: Fail on any C warnings when strict
+  * data: Made data flow in fallback clearer
+  * data: Flattened layout fallback function
+  * layouts: Use base as fallback for alternative layouts
+  * layouts: Simplify the main flow of source list
+  * tests: Add some description to the list of tested layouts
+  * layout_names: Unmess the list of builtin layouts
+  * dbus: Reset hints if text input missing
+  * visibility: Stop calling GTK functions from the visibility manager
+
+  [ Wannaphong Phatthiyaphaibun ]
+  * Add thai keyboard
+  * Update resources.rs
+  * Update meson.build
+  * escape " on thai keyboard
+
+  [ clonex10100 ]
+  * Added US Colemak Keyboard Layout
+
+  [ Henry-Nicolas Tourneur ]
+  * d/rules: fix an FTBFS on mips64el with GOT > 64kb
+  * d/rules: export RUSTFLAGS only on architecture that needs it
+  * d/rules: export RUSTFLAGS only on architecture that needs it
+
+  [ Jiří Stránský ]
+  * Add Czech keyboard layouts
+
+  [ Stefan Grotz ]
+  * Esperanto keyboard
+
+  [ Vladimir ]
+  * Bulgarian language keyboard layout
+
+  [ Vladimir Stoilov ]
+  * bulgarian add translation and to needed lists
+  * Fix bulgarian layout size
+
+  [ Andreas Rönnquist ]
+  * no: Use wide button switching between numbers, symbols and base
+
+  [ jranaraki ]
+  * Farsi/Persian keyboard layout
+  * Farsi/Persian keyboard layout
+  * Added requirements to resources.rs and meson.build
+  * Updated the layout to provide more convenient and faster typing experience
+
+ -- Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>  Sun, 10 Jan 2021 09:43:42 +0000
+
 squeekboard (1.11.1) amber-phone; urgency=medium
 
   [ Mark Müller ]

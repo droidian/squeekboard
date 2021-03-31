@@ -46,42 +46,71 @@ endforeach
 
 # The layout test is in the examples directory
 # due to the way Cargo builds executables
-# and the need to call it manually
+# and the need to call it manually.
+
+# This is the list of tested builtin layouts.
+# Please keep each block alphabetical!
+# Please keep shapes (with _) on the same line,
+# variants (with +) on separate lines.
 foreach layout : [
+    # This is the fallback layout,
+    # so stays first to make sure it never goes missing.
     'us', 'us_wide',
-    'br',
+
+    # Block: Languages
     'be', 'be_wide',
+    'bg',
+    'br',
+    'cz', 'cz_wide',
+    'cz+qwerty', 'cz+qwerty_wide',
     'de', 'de_wide',
     'dk',
+    'epo',
     'es',
+    'es+cat',
     'fi',
     'fr', 'fr_wide',
-    'it+fur',
     'gr',
+    'il',
+    'ir',
     'it',
+    'it+fur',
     'jp+kana','jp+kana_wide',
     'no',
-    'number',
     'pl', 'pl_wide',
     'ru',
     'se',
+    'th', 'th_wide',
     'ua',
-    'th',
-    'terminal', 'terminal_wide',
+    'us+colemak', 'us+colemak_wide',
+    'us+dvorak', 'us+dvorak_wide',
 
+    # Block: Not languages.
     'emoji',
+    'number',
+    'terminal', 'terminal_wide',
 ]
     extra = []
     if layout == 'emoji'
         extra += ['allow_missing_return']
     endif
-
+    
+    # Older Cargo seens to be sensitive to something
+    # about the RUST_FLAGS env var, and rebuilds all tests when it's set,
+    # increasing test time by 2 orders of magnitude.
+    # Let it have its way.
+    if get_option('legacy') == true
+        timeout = 300
+    else
+        timeout = 30
+    endif
     test(
         'test_layout_' + layout,
         cargo_script,
         args: ['run'] + cargo_build_flags
             + ['--example', 'test_layout', '--', layout]
             + extra,
+        timeout: timeout,
         workdir: meson.build_root(),
     )
 endforeach

@@ -8,6 +8,22 @@ ifeq ($(DEB_HOST_ARCH),mips64el)
  export RUSTFLAGS = -Ctarget-feature=+xgot
 endif
 
+# the below avoids an FTBFS on mips64el with a GOT > 64kb
+DEB_HOST_ARCH := $(shell dpkg-architecture -qDEB_HOST_ARCH)
+ifeq ($(DEB_HOST_ARCH),mips64el)
+ xgot = -Ctarget-feature=+xgot
+else
+ xgot = 
+endif
+
+# Don't use paths that may change between builds.
+# No need to care about $HOME
+# because Cargo will not place any source in ~/.cargo.
+# The build directory is a subdirectory of the source directory,
+# so it doesn't need to be explicitly taken care of.
+export RUSTFLAGS = --remap-path-prefix=$(CURDIR)=/remap-pwd $(xgot)
+
+
 distrel := $(shell lsb_release --codename --short)
 ifneq (,$(filter $(distrel),buster amber))
 	legacy = true

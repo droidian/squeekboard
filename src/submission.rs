@@ -24,6 +24,7 @@ use ::imservice;
 use ::imservice::IMService;
 use ::keyboard::{ KeyCode, KeyStateId, Modifiers, PressType };
 use ::layout;
+use ::ui_manager::VisibilityManager;
 use ::util::vec_remove;
 use ::vkeyboard;
 use ::vkeyboard::VirtualKeyboard;
@@ -38,13 +39,10 @@ pub mod c {
     use std::os::raw::c_void;
 
     use ::imservice::c::InputMethod;
+    use ::util::c::Wrapped;
     use ::vkeyboard::c::ZwpVirtualKeyboardV1;
 
     // The following defined in C
-
-    /// ServerContextService*
-    #[repr(transparent)]
-    pub struct UIManager(*const c_void);
 
     /// EekboardContextService*
     #[repr(transparent)]
@@ -55,12 +53,18 @@ pub mod c {
     fn submission_new(
         im: *mut InputMethod,
         vk: ZwpVirtualKeyboardV1,
-        state_manager: *const StateManager
+        state_manager: *const StateManager,
+        visibility_manager: Wrapped<VisibilityManager>,
     ) -> *mut Submission {
         let imservice = if im.is_null() {
             None
         } else {
-            Some(IMService::new(im, state_manager))
+            let visibility_manager = visibility_manager.clone_ref();
+            Some(IMService::new(
+                im,
+                state_manager,
+                Box::new(move |active| visibility_manager.borrow_mut().set_im_active(active)),
+            ))
         };
         // TODO: add vkeyboard too
         Box::<Submission>::into_raw(Box::new(
@@ -73,23 +77,6 @@ pub mod c {
                 keymap_idx: None,
             }
         ))
-    }
-
-    /// Use to initialize the UI reference
-    #[no_mangle]
-    pub extern "C"
-    fn submission_set_ui(submission: *mut Submission, ui_manager: *const UIManager) {
-        if submission.is_null() {
-            panic!("Null submission pointer");
-        }
-        let submission: &mut Submission = unsafe { &mut *submission };
-        if let Some(ref mut imservice) = &mut submission.imservice {
-            imservice.set_ui_manager(if ui_manager.is_null() {
-                None
-            } else {
-                Some(ui_manager)
-            })
-        };
     }
 
     #[no_mangle]
@@ -105,6 +92,18 @@ pub mod c {
         let submission: &mut Submission = unsafe { &mut *submission };
         let layout = unsafe { &*layout };
         submission.use_layout(layout, Timestamp(time));
+    }
+
+    #[no_mangle]
+    pub extern "C"
+    fn submission_hint_available(submission: *mut Submission) -> u8 {
+        if submission.is_null() {
+            panic!("Null submission pointer");
+        }
+        let submission: &mut Submission = unsafe { &mut *submission };
+        let active = submission.imservice.as_ref()
+            .map(|imservice| imservice.is_active());
+        (Some(true) == active) as u8
     }
 }
 
@@ -271,6 +270,7 @@ impl Submission {
             .map(|(_id, m)| match m {
                 Modifier::Control => Modifiers::CONTROL,
                 Modifier::Alt => Modifiers::MOD1,
+                Modifier::Mod4 => Modifiers::MOD4,
             })
             .fold(Modifiers::empty(), |m, n| m | n);
         self.virtual_keyboard.set_modifiers_state(raw_modifiers);

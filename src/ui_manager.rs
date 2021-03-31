@@ -10,9 +10,48 @@
 use std::cmp::min;
 use ::outputs::c::OutputHandle;
 
-mod c {
+pub mod c {
     use super::*;
+    use std::os::raw::c_void;
     use ::util::c::Wrapped;
+    
+    /// ServerContextService*
+    #[repr(transparent)]
+    pub struct UIManager(*const c_void);
+
+    extern "C" {
+        pub fn server_context_service_update_visible(imservice: *const UIManager, active: u32);
+        pub fn server_context_service_release_visibility(imservice: *const UIManager);
+    }
+
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_visman_new() -> Wrapped<VisibilityManager> {
+        Wrapped::new(VisibilityManager {
+            ui_manager: None,
+            visibility_state: VisibilityFactors {
+                im_active: false,
+                physical_keyboard_present: false,
+            }
+        })
+    }
+    
+    /// Use to initialize the UI reference
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_visman_set_ui(visman: Wrapped<VisibilityManager>, ui_manager: *const UIManager) {
+        let visman = visman.clone_ref();
+        let mut visman = visman.borrow_mut();
+        visman.set_ui_manager(Some(ui_manager))
+    }
+
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_visman_set_keyboard_present(visman: Wrapped<VisibilityManager>, present: u32) {
+        let visman = visman.clone_ref();
+        let mut visman = visman.borrow_mut();
+        visman.set_keyboard_present(present != 0)
+    }
 
     #[no_mangle]
     pub extern "C"
@@ -76,6 +115,134 @@ impl Manager {
             }),
             Some((scale, None)) => Some(360 / scale),
             None => None,
+        }
+    }
+}
+
+#[derive(PartialEq, Debug)]
+enum Visibility {
+    Hidden,
+    Visible,
+}
+
+#[derive(Debug)]
+enum VisibilityTransition {
+    /// Hide immediately
+    Hide,
+    /// Hide if no show request comes soon
+    Release,
+    /// Show instantly
+    Show,
+    /// Don't do anything
+    NoTransition,
+}
+
+/// Contains visibility policy
+#[derive(Clone, Debug)]
+struct VisibilityFactors {
+    im_active: bool,
+    physical_keyboard_present: bool,
+}
+
+impl VisibilityFactors {
+    /// Static policy.
+    /// Use when transitioning from an undefined state (e.g. no UI before).
+    fn desired(&self) -> Visibility {
+        match self {
+            VisibilityFactors {
+                im_active: true,
+                physical_keyboard_present: false,
+            } => Visibility::Visible,
+            _ => Visibility::Hidden,
+        }
+    }
+    /// Stateful policy
+    fn transition_to(&self, next: &Self) -> VisibilityTransition {
+        use self::Visibility::*;
+        let im_deactivation = self.im_active && !next.im_active;
+        match (self.desired(), next.desired(), im_deactivation) {
+            (Visible, Hidden, true) => VisibilityTransition::Release,
+            (Visible, Hidden, _) => VisibilityTransition::Hide,
+            (Hidden, Visible, _) => VisibilityTransition::Show,
+            _ => VisibilityTransition::NoTransition,
+        }
+    }
+}
+
+// Temporary struct for migration. Should be integrated with Manager eventually.
+pub struct VisibilityManager {
+    /// Owned reference. Be careful, it's shared with C at large
+    ui_manager: Option<*const c::UIManager>,
+    visibility_state: VisibilityFactors,
+}
+
+impl VisibilityManager {
+    fn set_ui_manager(&mut self, ui_manager: Option<*const c::UIManager>) {
+        let new = VisibilityManager {
+            ui_manager,
+            ..unsafe { self.clone() }
+        };
+        self.apply_changes(new);
+    }
+
+    fn apply_changes(&mut self, new: Self) {
+        if let Some(ui) = &new.ui_manager {
+            if self.ui_manager.is_none() {
+                // Previous state was never applied, so effectively undefined.
+                // Just apply the new one.
+                let new_state = new.visibility_state.desired();
+                unsafe {
+                    c::server_context_service_update_visible(
+                        *ui,
+                        (new_state == Visibility::Visible) as u32,
+                    );
+                }
+            } else {
+                match self.visibility_state.transition_to(&new.visibility_state) {
+                    VisibilityTransition::Hide => unsafe {
+                        c::server_context_service_update_visible(*ui, 0);
+                    },
+                    VisibilityTransition::Show => unsafe {
+                        c::server_context_service_update_visible(*ui, 1);
+                    },
+                    VisibilityTransition::Release => unsafe {
+                        c::server_context_service_release_visibility(*ui);
+                    },
+                    VisibilityTransition::NoTransition => {}
+                }
+            }
+        }
+        *self = new;
+    }
+
+    pub fn set_im_active(&mut self, im_active: bool) {
+        let new = VisibilityManager {
+            visibility_state: VisibilityFactors {
+                im_active,
+                ..self.visibility_state.clone()
+            },
+            ..unsafe { self.clone() }
+        };
+        self.apply_changes(new);
+    }
+
+    pub fn set_keyboard_present(&mut self, keyboard_present: bool) {
+        let new = VisibilityManager {
+            visibility_state: VisibilityFactors {
+                physical_keyboard_present: keyboard_present,
+                ..self.visibility_state.clone()
+            },
+            ..unsafe { self.clone() }
+        };
+        self.apply_changes(new);
+    }
+
+    /// The struct is not really safe to clone due to the ui_manager reference.
+    /// This is only a helper for getting desired visibility.
+    unsafe fn clone(&self) -> Self {
+        VisibilityManager {
+            ui_manager: self.ui_manager.clone(),
+            visibility_state: self.visibility_state.clone(),
         }
     }
 }

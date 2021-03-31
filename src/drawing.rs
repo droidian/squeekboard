@@ -36,7 +36,6 @@ mod c {
     pub struct GtkStyleContext(*const c_void);
 
 
-    #[no_mangle]
     extern "C" {
         #[allow(improper_ctypes)]
         pub fn eek_renderer_get_scale_factor(
