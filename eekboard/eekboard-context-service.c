@@ -128,30 +128,22 @@ settings_get_layout(GSettings *settings, char **type, char **layout)
 
 void
 eekboard_context_service_use_layout(EekboardContextService *context, struct squeek_layout_state *state, uint32_t timestamp) {
-    gchar *layout_name = state->overlay_name;
+    gchar *layout_name = state->layout_name;
+    gchar *overlay_name = state->overlay_name;
 
+    // try to get the best keyboard layout
     if (layout_name == NULL) {
-        layout_name = state->layout_name;
-
-        switch (state->purpose) {
-        case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_NUMBER:
-        case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_PHONE:
-            layout_name = "number";
-            break;
-        case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_TERMINAL:
-            layout_name = "terminal";
-            break;
-        default:
-            ;
-        }
-
-        if (layout_name == NULL) {
-            layout_name = "us";
-        }
+        layout_name = "us";
     }
 
+    // overlay is "Normal" for most layouts, we will only look for "terminal" in rust code.
+    // for now just avoid passing a null pointer
+    if (overlay_name == NULL) {
+        overlay_name = "Normal";    // fallback to Normal
+    }
+    
     // generic part follows
-    struct squeek_layout *layout = squeek_load_layout(layout_name, state->arrangement);
+    struct squeek_layout *layout = squeek_load_layout(layout_name, state->arrangement, state->purpose, overlay_name);
     LevelKeyboard *keyboard = level_keyboard_new(layout);
     // set as current
     LevelKeyboard *previous_keyboard = context->keyboard;

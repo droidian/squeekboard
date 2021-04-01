@@ -12,6 +12,7 @@ use std::io;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::vec::Vec;
+use std::convert::TryFrom;
 
 use xkbcommon::xkb;
 
@@ -27,6 +28,7 @@ use ::resources;
 use ::util::c::as_str;
 use ::util::hash_map_map;
 use ::xdg;
+use ::imservice::ContentPurpose;
 
 // traits, derives
 use serde::Deserialize;
@@ -42,25 +44,40 @@ pub mod c {
     #[no_mangle]
     pub extern "C"
     fn squeek_load_layout(
-        name: *const c_char,
-        type_: u32,
+        name: *const c_char,    // name of the keyboard
+        type_: u32,             // type like Wide
+        variant: u32,          // purpose variant like numeric, terminal...
+        overlay: *const c_char, // the overlay (looking for "terminal")
     ) -> *mut ::layout::Layout {
         let type_ = match type_ {
             0 => ArrangementKind::Base,
             1 => ArrangementKind::Wide,
             _ => panic!("Bad enum value"),
         };
+        
         let name = as_str(&name)
             .expect("Bad layout name")
             .expect("Empty layout name");
 
-        let (kind, layout) = load_layout_data_with_fallback(&name, type_);
+        let variant = ContentPurpose::try_from(variant)
+                    .or_print(
+                        logging::Problem::Warning,
+                        "Received invalid purpose value",
+                    )
+                    .unwrap_or(ContentPurpose::Normal);
+
+        let overlay_str = as_str(&overlay)
+                .expect("Bad overlay name")
+                .expect("Empty overlay name");
+
+        let (kind, layout) = load_layout_data_with_fallback(&name, type_, variant, &overlay_str);
         let layout = ::layout::Layout::new(layout, kind);
         Box::into_raw(Box::new(layout))
     }
 }
 
 const FALLBACK_LAYOUT_NAME: &str = "us";
+const FALLBACK_GENERIC_LAYOUT_NAME: &str = "terminal";
 
 #[derive(Debug)]
 pub enum LoadError {
@@ -105,6 +122,7 @@ type LayoutSource = (ArrangementKind, DataSource);
 fn list_layout_sources(
     name: &str,
     kind: ArrangementKind,
+    overlay: &str,
     keyboards_path: Option<PathBuf>,
 ) -> Vec<LayoutSource> {
     // Just a simplification of often called code.
@@ -175,7 +193,14 @@ fn list_layout_sources(
     };
 
     // No other choices left, so give anything.
-    add_by_kind(ret, FALLBACK_LAYOUT_NAME.into(), &kind)
+    let mut fallback=FALLBACK_LAYOUT_NAME;
+    match overlay {
+        "terminal" => fallback = FALLBACK_GENERIC_LAYOUT_NAME,
+        _          => fallback = FALLBACK_LAYOUT_NAME,
+    };
+
+    add_by_kind(ret, fallback.into(), &kind)
+
 }
 
 fn load_layout_data(source: DataSource)
@@ -202,12 +227,28 @@ fn load_layout_data(source: DataSource)
 fn load_layout_data_with_fallback(
     name: &str,
     kind: ArrangementKind,
+    purpose: ContentPurpose,
+    overlay: &str,
 ) -> (ArrangementKind, ::layout::LayoutData) {
+
+    // Build the path to the right keyboard layout subdirectory
     let path = env::var_os("SQUEEKBOARD_KEYBOARDSDIR")
         .map(PathBuf::from)
         .or_else(|| xdg::data_path("squeekboard/keyboards"));
     
-    for (kind, source) in list_layout_sources(name, kind, path) {
+    // prefix the layout name if we are showing a terminal specific layout
+    let layout_name = match overlay {
+        "Normal" => format!("{}", name),           // normal keyboard layouts
+        other    => format!("{}-{}", other, name), // terminal and catch-all
+    };
+
+    log_print!(
+        logging::Level::Debug, 
+        "load_layout_data_with_fallback() -> name:{}, purpose:{:?}, overlay:{}, layout_name:{}", 
+        name, purpose, overlay, &layout_name
+    );
+
+    for (kind, source) in list_layout_sources(&layout_name, kind, overlay, path) {
         let layout = load_layout_data(source.clone());
         match layout {
             Err(e) => match (e, source) {
@@ -940,7 +981,7 @@ mod tests {
     /// First fallback should be to builtin, not to FALLBACK_LAYOUT_NAME
     #[test]
     fn fallbacks_order() {
-        let sources = list_layout_sources("nb", ArrangementKind::Base, None);
+        let sources = list_layout_sources("nb", ArrangementKind::Base, "Normal", None);
         
         assert_eq!(
             sources,
@@ -957,7 +998,7 @@ mod tests {
     /// If layout contains a "+", it should reach for what's in front of it too.
     #[test]
     fn fallbacks_order_base() {
-        let sources = list_layout_sources("nb+aliens", ArrangementKind::Base, None);
+        let sources = list_layout_sources("nb+aliens", ArrangementKind::Base, "Normal", None);
 
         assert_eq!(
             sources,
@@ -971,8 +1012,24 @@ mod tests {
             )
         );
     }
-    
 
+    #[test]
+    fn fallbacks_terminal_order_base() {
+        let sources = list_layout_sources("terminal-nb+aliens", ArrangementKind::Base, "terminal", None);
+
+        assert_eq!(
+            sources,
+            vec!(
+                (ArrangementKind::Base, DataSource::Resource("terminal-nb+aliens".into())),
+                (ArrangementKind::Base, DataSource::Resource("terminal-nb".into())),
+                (
+                    ArrangementKind::Base,
+                    DataSource::Resource(FALLBACK_GENERIC_LAYOUT_NAME.into())
+                ),
+            )
+        );
+    }
+    
     #[test]
     fn unicode_keysym() {
         let keysym = xkb::keysym_from_name(
