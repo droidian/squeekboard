@@ -91,11 +91,11 @@ foreach layout : [
     'terminal/us_wide',
     
     # Block: Not languages.
-    'emoji',
-    'number',
+    'emoji/us',
+    'number/us',
 ]
     extra = []
-    if layout == 'emoji'
+    if layout.startswith('emoji/')
         extra += ['allow_missing_return']
     endif
     
