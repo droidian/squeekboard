@@ -83,16 +83,13 @@ const KEYBOARDS: &[(*const str, *const str)] = &[
     ("number", include_str!("../data/keyboards/number.yaml")),
 
     // Terminal
-    ("terminal-generic", include_str!("../data/keyboards/terminal/generic.yaml")),
-    ("terminal-generic_wide",   include_str!("../data/keyboards/terminal/generic_wide.yaml")),
+    ("terminal/fr", include_str!("../data/keyboards/terminal/fr.yaml")),
 
-    ("terminal-fr", include_str!("../data/keyboards/terminal/fr.yaml")),
-
-    ("terminal-us", include_str!("../data/keyboards/terminal/us.yaml")),
+    ("terminal/us", include_str!("../data/keyboards/terminal/us.yaml")),
+    ("terminal/us_wide",   include_str!("../data/keyboards/terminal/us_wide.yaml")),
 
     // Overlays
     ("emoji", include_str!("../data/keyboards/emoji.yaml")),
-    ("terminal", include_str!("../data/keyboards/terminal/generic.yaml")),
 ];
 
 pub fn get_keyboard(needle: &str) -> Option<&'static str> {
@@ -111,7 +108,6 @@ pub fn get_keyboard(needle: &str) -> Option<&'static str> {
 
 const OVERLAY_NAMES: &[*const str] = &[
     "emoji",
-    "terminal",
 ];
 
 pub fn get_overlays() -> Vec<&'static str> {

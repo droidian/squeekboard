@@ -86,9 +86,9 @@ foreach layout : [
     'us+dvorak', 'us+dvorak_wide',
 
     # Terminal keyboards
-    'terminal-generic', 'terminal-generic_wide',
-    'terminal-fr', 
-    'terminal-us',
+    'terminal/fr', 
+    'terminal/us',
+    'terminal/us_wide',
     
     # Block: Not languages.
     'emoji',
