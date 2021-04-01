@@ -80,19 +80,16 @@ const KEYBOARDS: &[(*const str, *const str)] = &[
     ("us+dvorak_wide", include_str!("../data/keyboards/us+dvorak_wide.yaml")),
 
     // Others
-    ("number", include_str!("../data/keyboards/number.yaml")),
+    ("number/us", include_str!("../data/keyboards/number/us.yaml")),
 
     // Terminal
-    ("terminal-generic", include_str!("../data/keyboards/terminal/generic.yaml")),
-    ("terminal-generic_wide",   include_str!("../data/keyboards/terminal/generic_wide.yaml")),
+    ("terminal/fr", include_str!("../data/keyboards/terminal/fr.yaml")),
 
-    ("terminal-fr", include_str!("../data/keyboards/terminal/fr.yaml")),
-
-    ("terminal-us", include_str!("../data/keyboards/terminal/us.yaml")),
+    ("terminal/us", include_str!("../data/keyboards/terminal/us.yaml")),
+    ("terminal/us_wide",   include_str!("../data/keyboards/terminal/us_wide.yaml")),
 
     // Overlays
-    ("emoji", include_str!("../data/keyboards/emoji.yaml")),
-    ("terminal", include_str!("../data/keyboards/terminal/generic.yaml")),
+    ("emoji/us", include_str!("../data/keyboards/emoji/us.yaml")),
 ];
 
 pub fn get_keyboard(needle: &str) -> Option<&'static str> {
@@ -175,7 +172,7 @@ mod test {
     #[test]
     fn check_overlays_present() {
         for name in get_overlays() {
-            assert!(get_keyboard(name).is_some());
+            assert!(get_keyboard(&format!("{}/us", name)).is_some());
         }
     }
 

@@ -86,16 +86,16 @@ foreach layout : [
     'us+dvorak', 'us+dvorak_wide',
 
     # Terminal keyboards
-    'terminal-generic', 'terminal-generic_wide',
-    'terminal-fr', 
-    'terminal-us',
+    'terminal/fr', 
+    'terminal/us',
+    'terminal/us_wide',
     
     # Block: Not languages.
-    'emoji',
-    'number',
+    'emoji/us',
+    'number/us',
 ]
     extra = []
-    if layout == 'emoji'
+    if layout.startswith('emoji/')
         extra += ['allow_missing_return']
     endif
     

@@ -77,7 +77,6 @@ pub mod c {
 }
 
 const FALLBACK_LAYOUT_NAME: &str = "us";
-const FALLBACK_GENERIC_LAYOUT_NAME: &str = "terminal";
 
 #[derive(Debug)]
 pub enum LoadError {
@@ -119,49 +118,60 @@ type LayoutSource = (ArrangementKind, DataSource);
 /// Lists possible sources, with 0 as the most preferred one
 /// Trying order: native lang of the right kind, native base,
 /// fallback lang of the right kind, fallback base
+/// The `purpose` argument is not ContentPurpose,
+/// but rather ContentPurpose and overlay in one.
 fn list_layout_sources(
     name: &str,
     kind: ArrangementKind,
-    overlay: &str,
+    purpose: &str,
     keyboards_path: Option<PathBuf>,
 ) -> Vec<LayoutSource> {
     // Just a simplification of often called code.
     let add_by_name = |
         mut ret: Vec<LayoutSource>,
+        purpose: &str,
         name: &str,
         kind: &ArrangementKind,
     | -> Vec<LayoutSource> {
+        let name = if purpose == "" { name.into() }
+            else { format!("{}/{}", purpose, name) };
+
         if let Some(path) = keyboards_path.clone() {
             ret.push((
                 kind.clone(),
                 DataSource::File(
-                    path.join(name.to_owned()).with_extension("yaml")
+                    path.join(name.clone())
+                        .with_extension("yaml")
                 )
             ))
         }
 
         ret.push((
             kind.clone(),
-            DataSource::Resource(name.into())
+            DataSource::Resource(name)
         ));
         ret
     };
 
     // Another grouping.
-    let add_by_kind = |ret, name: &str, kind| {
+    let add_by_kind = |ret, purpose: &str, name: &str, kind| {
         let ret = match kind {
             &ArrangementKind::Base => ret,
             kind => add_by_name(
                 ret,
+                purpose,
                 &name_with_arrangement(name.into(), kind),
                 kind,
             ),
         };
 
-        add_by_name(ret, name, &ArrangementKind::Base)
+        add_by_name(ret, purpose, name, &ArrangementKind::Base)
     };
 
-    fn name_with_arrangement(name: String, kind: &ArrangementKind) -> String {
+    fn name_with_arrangement(
+        name: String,
+        kind: &ArrangementKind,
+    ) -> String {
         match kind {    
             ArrangementKind::Base => name,
             ArrangementKind::Wide => name + "_wide",
@@ -171,7 +181,7 @@ fn list_layout_sources(
     let ret = Vec::new();
 
     // Name as given takes priority.
-    let ret = add_by_kind(ret, name, &kind);
+    let ret = add_by_kind(ret, purpose, name, &kind);
 
     // Then try non-alternative name if applicable (`us` for `us+colemak`).
     let ret = {
@@ -181,7 +191,7 @@ fn list_layout_sources(
                 // The name is already equal to base, so it was already added.
                 if base == name { ret }
                 else {
-                    add_by_kind(ret, base, &kind)
+                    add_by_kind(ret, purpose, base, &kind)
                 }
             },
             // The layout's base name starts with a "+". Weird but OK.
@@ -192,14 +202,7 @@ fn list_layout_sources(
         }
     };
 
-    // No other choices left, so give anything.
-    let mut fallback=FALLBACK_LAYOUT_NAME;
-    match overlay {
-        "terminal" => fallback = FALLBACK_GENERIC_LAYOUT_NAME,
-        _          => fallback = FALLBACK_LAYOUT_NAME,
-    };
-
-    add_by_kind(ret, fallback.into(), &kind)
+    add_by_kind(ret, purpose, FALLBACK_LAYOUT_NAME.into(), &kind)
 
 }
 
@@ -235,20 +238,14 @@ fn load_layout_data_with_fallback(
     let path = env::var_os("SQUEEKBOARD_KEYBOARDSDIR")
         .map(PathBuf::from)
         .or_else(|| xdg::data_path("squeekboard/keyboards"));
-    
-    // prefix the layout name if we are showing a terminal specific layout
-    let layout_name = match overlay {
-        "Normal" => format!("{}", name),           // normal keyboard layouts
-        other    => format!("{}-{}", other, name), // terminal and catch-all
-    };
 
     log_print!(
         logging::Level::Debug, 
         "load_layout_data_with_fallback() -> name:{}, purpose:{:?}, overlay:{}, layout_name:{}", 
-        name, purpose, overlay, &layout_name
+        name, purpose, overlay, &name
     );
 
-    for (kind, source) in list_layout_sources(&layout_name, kind, overlay, path) {
+    for (kind, source) in list_layout_sources(&name, kind, overlay, path) {
         let layout = load_layout_data(source.clone());
         match layout {
             Err(e) => match (e, source) {
@@ -981,7 +978,7 @@ mod tests {
     /// First fallback should be to builtin, not to FALLBACK_LAYOUT_NAME
     #[test]
     fn fallbacks_order() {
-        let sources = list_layout_sources("nb", ArrangementKind::Base, "Normal", None);
+        let sources = list_layout_sources("nb", ArrangementKind::Base, "", None);
         
         assert_eq!(
             sources,
@@ -998,7 +995,7 @@ mod tests {
     /// If layout contains a "+", it should reach for what's in front of it too.
     #[test]
     fn fallbacks_order_base() {
-        let sources = list_layout_sources("nb+aliens", ArrangementKind::Base, "Normal", None);
+        let sources = list_layout_sources("nb+aliens", ArrangementKind::Base, "", None);
 
         assert_eq!(
             sources,
@@ -1015,16 +1012,16 @@ mod tests {
 
     #[test]
     fn fallbacks_terminal_order_base() {
-        let sources = list_layout_sources("terminal-nb+aliens", ArrangementKind::Base, "terminal", None);
+        let sources = list_layout_sources("nb+aliens", ArrangementKind::Base, "terminal", None);
 
         assert_eq!(
             sources,
             vec!(
-                (ArrangementKind::Base, DataSource::Resource("terminal-nb+aliens".into())),
-                (ArrangementKind::Base, DataSource::Resource("terminal-nb".into())),
+                (ArrangementKind::Base, DataSource::Resource("terminal/nb+aliens".into())),
+                (ArrangementKind::Base, DataSource::Resource("terminal/nb".into())),
                 (
                     ArrangementKind::Base,
-                    DataSource::Resource(FALLBACK_GENERIC_LAYOUT_NAME.into())
+                    DataSource::Resource(format!("terminal/{}", FALLBACK_LAYOUT_NAME))
                 ),
             )
         );

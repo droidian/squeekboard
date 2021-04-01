@@ -139,7 +139,7 @@ eekboard_context_service_use_layout(EekboardContextService *context, struct sque
     // overlay is "Normal" for most layouts, we will only look for "terminal" in rust code.
     // for now just avoid passing a null pointer
     if (overlay_name == NULL) {
-        overlay_name = "Normal";    // fallback to Normal
+        overlay_name = "";    // fallback to Normal
     }
     
     // generic part follows
