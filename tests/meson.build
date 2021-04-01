@@ -85,10 +85,14 @@ foreach layout : [
     'us+colemak', 'us+colemak_wide',
     'us+dvorak', 'us+dvorak_wide',
 
+    # Terminal keyboards
+    'terminal-generic', 'terminal-generic_wide',
+    'terminal-fr', 
+    'terminal-us',
+    
     # Block: Not languages.
     'emoji',
     'number',
-    'terminal', 'terminal_wide',
 ]
     extra = []
     if layout == 'emoji'

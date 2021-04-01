@@ -1,40 +1,40 @@
 ---
 outlines:
-    default: { width: 35.33, height: 46 }
-    action:  { width: 59,    height: 46 }
-    altline: { width: 52.67, height: 46 }
-    wide: { width: 59, height: 46 }
-    spaceline: { width: 140, height: 46 }
-    special: { width: 44, height: 46 }
-    small: { width: 59, height: 22 }
+    default:   { width: 54,   height: 37 }
+    action:    { width: 90,   height: 37 }
+    altline:   { width: 81,   height: 37 }
+    wide:      { width: 90,   height: 37 }
+    spaceline: { width: 225,  height: 37 }
+    special:   { width: 54,   height: 37 }
+    small:     { width: 67.4, height: 22 }
 
 views:
     base:
-        - "Ctrl Alt ↑ ↓ ← →"
+        - "EscSmall TabSmall Ctrl Alt ↑ ↓ ← →"
         - "q w e r t y u i o p"
         - "a s d f g h j k l"
         - "Shift_L   z x c v b n m  BackSpace"
         - "show_numbers preferences      space        show_actions Return"
     upper:
-        - "Ctrl Alt PgUp PgDn Home End"
+        - "EscSmall TabSmall Ctrl Alt PgUp PgDn Home End"
         - "Q W E R T Y U I O P"
         - "A S D F G H J K L"
         - "Shift_L   Z X C V B N M  BackSpace"
         - "show_numbers preferences      space        show_actions Return"
     numbers:
-        - "Ctrl Alt ↑ ↓ ← →"
+        - "EscSmall TabSmall Ctrl Alt ↑ ↓ ← →"
         - "1 2 3 4 5 6 7 8 9 0"
         - "* # $ / & - _ + ( )"
         - "show_symbols   , \" ' colon ; ! ?  BackSpace"
         - "show_letters preferences         space        period Return"
     symbols:
-        - "Ctrl Alt ↑ ↓ ← →"
+        - "EscSmall TabSmall Ctrl Alt ↑ ↓ ← →"
         - "~ ` | · √ π τ ÷ × ¶"
         - "© ® £ € ¥ ^ ° @ { }"
         - "show_numbers_from_symbols   \\ % < > = [ ]  BackSpace"
         - "show_letters preferences         space        period Return"
     actions:
-        - "Ctrl Alt PgUp PgDn Home End"
+        - "EscSmall TabSmall Ctrl Alt PgUp PgDn Home End"
         - "F1  F2  F3  F4  F5  F6"
         - "F7  F8  F9  F10 F11 F12"
         - "Esc Tab Pause Insert Up Del"
@@ -132,9 +132,17 @@ buttons:
     Esc:
         outline: "action"
         keysym: "Escape"
+    EscSmall:
+        outline: "small"
+        keysym: "Escape"
+        label: "Esc"
     Tab:
         outline: "action"
         keysym: "Tab"
+    TabSmall:
+        outline: "small"
+        keysym: "Tab"
+        label: "Tab"
     Del:
         outline: "action"
         keysym: "Delete"
@@ -147,9 +155,6 @@ buttons:
     Pause:
         outline: "action"
         keysym: "Pause"
-    Menu:
-        outline: "action"
-        keysym: "Menu"
     Break:
         outline: "action"
         keysym: "Break"
@@ -201,4 +206,3 @@ buttons:
         modifier: "Alt"
         outline: "small"
         label: "Alt"
-

@@ -31,7 +31,7 @@ struct transformation squeek_layout_calculate_transformation(
         const struct squeek_layout *layout,
         double allocation_width, double allocation_size);
 
-struct squeek_layout *squeek_load_layout(const char *name, uint32_t type);
+struct squeek_layout *squeek_load_layout(const char *name, uint32_t type, uint32_t variant_type, const char *overlay_name);
 enum squeek_arrangement_kind squeek_layout_get_kind(const struct squeek_layout *);
 void squeek_layout_free(struct squeek_layout*);
 

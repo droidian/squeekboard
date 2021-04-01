@@ -82,11 +82,17 @@ const KEYBOARDS: &[(*const str, *const str)] = &[
     // Others
     ("number", include_str!("../data/keyboards/number.yaml")),
 
-    // layout+overlay
-    ("terminal", include_str!("../data/keyboards/terminal.yaml")),
-    ("terminal_wide", include_str!("../data/keyboards/terminal_wide.yaml")),
+    // Terminal
+    ("terminal-generic", include_str!("../data/keyboards/terminal/generic.yaml")),
+    ("terminal-generic_wide",   include_str!("../data/keyboards/terminal/generic_wide.yaml")),
+
+    ("terminal-fr", include_str!("../data/keyboards/terminal/fr.yaml")),
+
+    ("terminal-us", include_str!("../data/keyboards/terminal/us.yaml")),
+
     // Overlays
     ("emoji", include_str!("../data/keyboards/emoji.yaml")),
+    ("terminal", include_str!("../data/keyboards/terminal/generic.yaml")),
 ];
 
 pub fn get_keyboard(needle: &str) -> Option<&'static str> {
