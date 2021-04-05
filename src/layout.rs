@@ -621,12 +621,6 @@ pub enum LatchedState {
     Not,
 }
 
-impl LatchedState {
-    pub fn is_latched(&self) -> bool {
-        self != &LatchedState::Not
-    }
-}
-
 // TODO: split into sth like
 // Arrangement (views) + details (keymap) + State (keys)
 /// State of the UI, contains the backend as well
@@ -775,23 +769,6 @@ impl Layout {
                 f(offset, button);
             }
         }
-    }
-
-    pub fn get_locked_keys(&self) -> Vec<Rc<RefCell<KeyState>>> {
-        let mut out = Vec::new();
-        let view = self.get_current_view();
-        for (_, row) in view.get_rows() {
-            for (_, button) in &row.buttons {
-                let locked = {
-                    let state = RefCell::borrow(&button.state).clone();
-                    state.action.is_locked(&self.current_view)
-                };
-                if locked {
-                    out.push(button.state.clone());
-                }
-            }
-        }
-        out
     }
     
     fn apply_view_transition(
