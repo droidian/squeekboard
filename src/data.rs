@@ -239,13 +239,18 @@ fn load_layout_data_with_fallback(
         .map(PathBuf::from)
         .or_else(|| xdg::data_path("squeekboard/keyboards"));
 
-    log_print!(
-        logging::Level::Debug, 
-        "load_layout_data_with_fallback() -> name:{}, purpose:{:?}, overlay:{}, layout_name:{}", 
-        name, purpose, overlay, &name
-    );
+    let layout_purpose = match overlay {
+        "" => match purpose {
+            ContentPurpose::Number => "number",
+            ContentPurpose::Digits => "number",
+            ContentPurpose::Phone => "number",
+            ContentPurpose::Terminal => "terminal",
+            _ => "",
+        },
+        overlay => overlay,
+    };
 
-    for (kind, source) in list_layout_sources(&name, kind, overlay, path) {
+    for (kind, source) in list_layout_sources(&name, kind, layout_purpose, path) {
         let layout = load_layout_data(source.clone());
         match layout {
             Err(e) => match (e, source) {
