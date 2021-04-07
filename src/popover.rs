@@ -213,7 +213,16 @@ fn set_visible_layout(
     layout_id: LayoutId,
 ) {
     match layout_id {
-        LayoutId::System { kind, name } => set_layout(kind, name),
+        LayoutId::System { kind, name } => {
+            unsafe {
+                use std::ptr;
+                manager::c::eekboard_context_service_set_overlay(
+                    manager,
+                    ptr::null(),
+                );
+            }
+            set_layout(kind, name);
+        }
         LayoutId::Local(name) => {
             let name = CString::new(name.as_str()).unwrap();
             let name_ptr = name.as_ptr();
