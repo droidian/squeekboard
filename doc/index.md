@@ -6,6 +6,7 @@ Contents
 
 * [Tutorial](tutorial.md)
 * [Contributing](hacking.md)
+* [Switching views](views.md)
 
 Introduction
 ------------
@@ -20,6 +21,8 @@ Squeekboard allows user-provided keyboard layouts. They can be created without r
 Layouts are created using a text-based format, based on YAML.
 
 TODO: Provide a description of the format.
+
+Squeekboard layouts are separated into *views* and use a *room metaphor* to [switch views](views.md).
 
 Contributions
 -------------
