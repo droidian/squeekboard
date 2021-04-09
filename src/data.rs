@@ -587,7 +587,7 @@ fn create_action<H: logging::Handler>(
         Text(String),
         Keysym(String),
         Modifier(Modifier),
-    };
+    }
     
     let submission = match (
         &symbol_meta.action,

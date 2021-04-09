@@ -43,7 +43,7 @@ pub fn check_layout_file(path: &str) {
 fn check_sym_in_keymap(state: &xkb::State, sym_name: &str) -> bool {
     let sym = xkb::keysym_from_name(sym_name, xkb::KEYSYM_NO_FLAGS);
     if sym == xkb::KEY_NoSymbol {
-        panic!(format!("Entered invalid keysym: {}", sym_name));
+        panic!("Entered invalid keysym: {}", sym_name);
     }
     let map = state.get_keymap();
     let range = map.min_keycode()..=map.max_keycode();

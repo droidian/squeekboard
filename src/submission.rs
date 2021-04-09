@@ -149,7 +149,7 @@ impl Submission {
                 enum Outcome {
                     Submitted(Result<(), imservice::SubmitError>),
                     NotSubmitted,
-                };
+                }
 
                 let submit_outcome = match data {
                     SubmitData::Text(text) => {
