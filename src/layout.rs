@@ -600,7 +600,7 @@ impl View {
 }
 
 /// The physical characteristic of layout for the purpose of styling
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum ArrangementKind {
     Base = 0,
     Wide = 1,
