@@ -1,3 +1,9 @@
+squeekboard (1.13.0-1) experimental; urgency=medium
+
+  * New upstream version 1.13.0
+
+ -- Arnaud Ferraris <arnaud.ferraris@gmail.com>  Fri, 16 Apr 2021 20:44:19 +0200
+
 squeekboard (1.12.0-1) unstable; urgency=medium
 
   [ Henry-Nicolas Tourneur ]
