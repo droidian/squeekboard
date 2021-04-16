@@ -155,9 +155,6 @@ buttons:
     Pause:
         outline: "action"
         keysym: "Pause"
-    Menu:
-        outline: "action"
-        keysym: "Menu"
     Break:
         outline: "action"
         keysym: "Break"

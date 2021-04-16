@@ -19,7 +19,6 @@ pub mod c {
     #[repr(transparent)]
     pub struct UIManager(*const c_void);
 
-    #[no_mangle]
     extern "C" {
         pub fn server_context_service_update_visible(imservice: *const UIManager, active: u32);
         pub fn server_context_service_release_visibility(imservice: *const UIManager);

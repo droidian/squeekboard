@@ -67,9 +67,11 @@ foreach layout : [
     'dk',
     'epo',
     'es',
+    'es+cat',
     'fi',
     'fr', 'fr_wide',
     'gr',
+    'il',
     'ir',
     'it',
     'it+fur',
@@ -78,17 +80,22 @@ foreach layout : [
     'pl', 'pl_wide',
     'ru',
     'se',
-    'th',
+    'th', 'th_wide',
     'ua',
-    'us+colemak',
+    'us+colemak', 'us+colemak_wide',
+    'us+dvorak', 'us+dvorak_wide',
 
+    # Terminal keyboards
+    'terminal/fr', 
+    'terminal/us',
+    'terminal/us_wide',
+    
     # Block: Not languages.
-    'emoji',
-    'number',
-    'terminal', 'terminal_wide',
+    'emoji/us',
+    'number/us',
 ]
     extra = []
-    if layout == 'emoji'
+    if layout.startswith('emoji/')
         extra += ['allow_missing_return']
     endif
     

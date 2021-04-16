@@ -39,6 +39,7 @@ const KEYBOARDS: &[(*const str, *const str)] = &[
     ("epo", include_str!("../data/keyboards/epo.yaml")),
 
     ("es", include_str!("../data/keyboards/es.yaml")),
+    ("es+cat", include_str!("../data/keyboards/es+cat.yaml")),
 
     ("fi", include_str!("../data/keyboards/fi.yaml")),
 
@@ -47,6 +48,8 @@ const KEYBOARDS: &[(*const str, *const str)] = &[
 
     ("gr", include_str!("../data/keyboards/gr.yaml")),
 
+    ("il", include_str!("../data/keyboards/il.yaml")),
+    
     ("ir", include_str!("../data/keyboards/ir.yaml")),
     ("ir_wide", include_str!("../data/keyboards/ir_wide.yaml")),
 
@@ -66,19 +69,27 @@ const KEYBOARDS: &[(*const str, *const str)] = &[
     ("se", include_str!("../data/keyboards/se.yaml")),
 
     ("th", include_str!("../data/keyboards/th.yaml")),
+    ("th_wide", include_str!("../data/keyboards/th_wide.yaml")),
 
     ("ua", include_str!("../data/keyboards/ua.yaml")),
 
     ("us+colemak", include_str!("../data/keyboards/us+colemak.yaml")),
+    ("us+colemak_wide", include_str!("../data/keyboards/us+colemak_wide.yaml")),
+
+    ("us+dvorak", include_str!("../data/keyboards/us+dvorak.yaml")),
+    ("us+dvorak_wide", include_str!("../data/keyboards/us+dvorak_wide.yaml")),
 
     // Others
-    ("number", include_str!("../data/keyboards/number.yaml")),
+    ("number/us", include_str!("../data/keyboards/number/us.yaml")),
 
-    // layout+overlay
-    ("terminal", include_str!("../data/keyboards/terminal.yaml")),
-    ("terminal_wide", include_str!("../data/keyboards/terminal_wide.yaml")),
+    // Terminal
+    ("terminal/fr", include_str!("../data/keyboards/terminal/fr.yaml")),
+
+    ("terminal/us", include_str!("../data/keyboards/terminal/us.yaml")),
+    ("terminal/us_wide",   include_str!("../data/keyboards/terminal/us_wide.yaml")),
+
     // Overlays
-    ("emoji", include_str!("../data/keyboards/emoji.yaml")),
+    ("emoji/us", include_str!("../data/keyboards/emoji/us.yaml")),
 ];
 
 pub fn get_keyboard(needle: &str) -> Option<&'static str> {
@@ -114,6 +125,7 @@ const LAYOUT_NAMES: &[(*const str, *const str)] = &[
     ("en-US", include_str!("../data/langs/en-US.txt")),
     ("es-ES", include_str!("../data/langs/es-ES.txt")),
     ("fur-IT", include_str!("../data/langs/fur-IT.txt")),
+    ("he-IL", include_str!("../data/langs/he-IL.txt")),
     ("ja-JP", include_str!("../data/langs/ja-JP.txt")),
     ("pl-PL", include_str!("../data/langs/pl-PL.txt")),
     ("ru-RU", include_str!("../data/langs/ru-RU.txt")),
@@ -160,7 +172,7 @@ mod test {
     #[test]
     fn check_overlays_present() {
         for name in get_overlays() {
-            assert!(get_keyboard(name).is_some());
+            assert!(get_keyboard(&format!("{}/us", name)).is_some());
         }
     }
 

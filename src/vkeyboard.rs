@@ -37,7 +37,6 @@ pub mod c {
         }
     }
 
-    #[no_mangle]
     extern "C" {
         // From libc, to let KeyMap get deallocated.
         fn close(fd: u32);

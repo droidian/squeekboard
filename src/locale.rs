@@ -24,7 +24,6 @@ mod c {
     #[repr(C)]
     pub struct GnomeXkbInfo(*const c_void);
 
-    #[no_mangle]
     extern "C" {
         // from libc
         pub fn strcoll(cs: *const c_char, ct: *const c_char) -> c_int;
