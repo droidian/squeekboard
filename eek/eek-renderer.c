@@ -18,8 +18,6 @@
  * 02110-1301 USA
  */
 
-#include "config.h"
-
 #include <math.h>
 #include <string.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
@@ -32,10 +30,6 @@
 /* eek-keyboard-drawing.c */
 static void render_button_label (cairo_t *cr, GtkStyleContext *ctx,
                                                 const gchar *label, EekBounds bounds);
-
-void eek_render_button                         (EekRenderer *self,
-                                                cairo_t     *cr, const struct squeek_button *button,
-                                                gboolean     pressed, gboolean locked);
 
 static void
 render_outline (cairo_t     *cr,
@@ -60,21 +54,21 @@ render_outline (cairo_t     *cr,
         position.x, position.y, position.width, position.height);
 }
 
-static void render_button_in_context(gint scale_factor,
+/// Rust interface
+void eek_render_button_in_context(uint32_t scale_factor,
                                      cairo_t     *cr,
                                      GtkStyleContext *ctx,
-                                     const struct squeek_button *button) {
+                                     EekBounds bounds,
+                                     const char *icon_name,
+                                     const gchar *label) {
     /* blank background */
     cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 0.0);
     cairo_paint (cr);
 
-    EekBounds bounds = squeek_button_get_bounds(button);
     render_outline (cr, ctx, bounds);
     cairo_paint (cr);
 
     /* render icon (if any) */
-    const char *icon_name = squeek_button_get_icon_name(button);
-
     if (icon_name) {
         cairo_surface_t *icon_surface =
             eek_renderer_get_icon_surface (icon_name, 16, scale_factor);
@@ -104,25 +98,27 @@ static void render_button_in_context(gint scale_factor,
         }
     }
 
-    const gchar *label = squeek_button_get_label(button);
     if (label) {
-        render_button_label (cr, ctx, label, squeek_button_get_bounds(button));
+        render_button_label (cr, ctx, label, bounds);
     }
 }
 
-void
-eek_render_button (EekRenderer *self,
-            cairo_t     *cr,
-            const struct squeek_button *button,
-               gboolean     pressed,
-               gboolean     locked)
+/// Prepare context for drawing the button.
+/// The context MUST be released using the corresponing "put" procedure
+/// before drawing the next button.
+/// Interface for Rust.
+GtkStyleContext *
+eek_get_style_context_for_button (EekRenderer *self,
+                                  const char *name,
+                                  const char *outline_name,
+                                  const char *locked_class,
+               uint64_t     pressed)
 {
     GtkStyleContext *ctx = self->button_context;
     /* Set the name of the button on the widget path, using the name obtained
        from the button's symbol. */
     g_autoptr (GtkWidgetPath) path = NULL;
     path = gtk_widget_path_copy (gtk_style_context_get_path (ctx));
-    const char *name = squeek_button_get_name(button);
     gtk_widget_path_iter_set_name (path, -1, name);
 
     /* Update the style context with the updated widget path. */
@@ -131,19 +127,22 @@ eek_render_button (EekRenderer *self,
        (pressed) or normal. */
     gtk_style_context_set_state(ctx,
         pressed ? GTK_STATE_FLAG_ACTIVE : GTK_STATE_FLAG_NORMAL);
-    const char *outline_name = squeek_button_get_outline_name(button);
-    if (locked) {
-        gtk_style_context_add_class(ctx, "locked");
+    if (locked_class) {
+        gtk_style_context_add_class(ctx, locked_class);
     }
     gtk_style_context_add_class(ctx, outline_name);
+    return ctx;
+}
 
-    render_button_in_context(self->scale_factor, cr, ctx, button);
-
+/// Interface for Rust.
+void eek_put_style_context_for_button(GtkStyleContext *ctx,
+                                      const char *outline_name,
+                                      const char *locked_class) {
     // Save and restore functions don't work if gtk_render_* was used in between
     gtk_style_context_set_state(ctx, GTK_STATE_FLAG_NORMAL);
     gtk_style_context_remove_class(ctx, outline_name);
-    if (locked) {
-        gtk_style_context_remove_class(ctx, "locked");
+    if (locked_class) {
+        gtk_style_context_remove_class(ctx, locked_class);
     }
 }
 
@@ -194,22 +193,23 @@ render_button_label (cairo_t     *cr,
 // FIXME: Pass just the active modifiers instead of entire submission
 void
 eek_renderer_render_keyboard (EekRenderer *self,
+                              struct render_geometry geometry,
                               struct submission *submission,
                                    cairo_t     *cr,
                               LevelKeyboard *keyboard)
 {
-    g_return_if_fail (self->allocation_width > 0.0);
-    g_return_if_fail (self->allocation_height > 0.0);
+    g_return_if_fail (geometry.allocation_width > 0.0);
+    g_return_if_fail (geometry.allocation_height > 0.0);
 
     /* Paint the background covering the entire widget area */
     gtk_render_background (self->view_context,
                            cr,
                            0, 0,
-                           self->allocation_width, self->allocation_height);
+                           geometry.allocation_width, geometry.allocation_height);
 
     cairo_save(cr);
-    cairo_translate (cr, self->widget_to_layout.origin_x, self->widget_to_layout.origin_y);
-    cairo_scale (cr, self->widget_to_layout.scale, self->widget_to_layout.scale);
+    cairo_translate (cr, geometry.widget_to_layout.origin_x, geometry.widget_to_layout.origin_y);
+    cairo_scale (cr, geometry.widget_to_layout.scale, geometry.widget_to_layout.scale);
 
     squeek_draw_layout_base_view(keyboard->layout, self, cr);
     squeek_layout_draw_all_changed(keyboard->layout, self, cr, submission);
@@ -261,8 +261,6 @@ static void
 renderer_init (EekRenderer *self)
 {
     self->pcontext = NULL;
-    self->allocation_width = 0.0;
-    self->allocation_height = 0.0;
     self->scale_factor = 1;
 
     self->css_provider = squeek_load_style();
@@ -309,28 +307,29 @@ eek_renderer_new (LevelKeyboard  *keyboard,
     return renderer;
 }
 
-void
-eek_renderer_set_allocation_size (EekRenderer *renderer,
-                                  struct squeek_layout *layout,
+struct render_geometry
+eek_render_geometry_from_allocation_size (struct squeek_layout *layout,
                                   gdouble      width,
                                   gdouble      height)
 {
-    g_return_if_fail (width > 0.0 && height > 0.0);
-
-    renderer->allocation_width = width;
-    renderer->allocation_height = height;
-
-    renderer->widget_to_layout = squeek_layout_calculate_transformation(
-                layout,
-                renderer->allocation_width, renderer->allocation_height);
-
-    // This is where size-dependent surfaces would be released
+    struct render_geometry ret = {
+        .allocation_width = width,
+        .allocation_height = height,
+        .widget_to_layout = squeek_layout_calculate_transformation(
+            layout, width, height),
+    };
+    return ret;
 }
 
 void
 eek_renderer_set_scale_factor (EekRenderer *renderer, gint scale)
 {
     renderer->scale_factor = scale;
+}
+
+/// Rust interface.
+uint32_t eek_renderer_get_scale_factor(EekRenderer *renderer) {
+    return renderer->scale_factor;
 }
 
 cairo_surface_t *
@@ -355,9 +354,4 @@ eek_renderer_get_icon_surface (const gchar *icon_name,
         return NULL;
     }
     return surface;
-}
-
-struct transformation
-eek_renderer_get_transformation (EekRenderer *renderer) {
-    return renderer->widget_to_layout;
 }

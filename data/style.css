@@ -34,9 +34,14 @@ sq_button.wide {
     border-color: @borders; /* #3e3a44; */
 }
 
-sq_button.locked {
+sq_button.latched {
     background: @theme_fg_color; /*#ffffff;*/
     color: @theme_bg_color; /*#2b292f;*/
+}
+
+sq_button.locked {
+    background: @theme_fg_color; /*#ffffff;*/
+    color: mix(@theme_selected_bg_color, @theme_bg_color, 0.4); /*#2b292f;*/
 }
 
 sq_button.action {

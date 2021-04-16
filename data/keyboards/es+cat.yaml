@@ -1,5 +1,3 @@
-# Italian layout created by Antonio Pandolfo
-# 03 october 2019
 ---
 outlines:
     default: { width: 35.33, height: 52 }
@@ -11,28 +9,28 @@ outlines:
 views:
     base:
         - "q w e r t y u i o p"
-        - "a s d f g h j k l"
+        - "a s d f g h j k l ç"
         - "Shift_L   z x c v b n m  BackSpace"
-        - "show_numbers show_eschars preferences         space        , . Return"
+        - "show_numbers show_eschars preferences         space        ? period Return"
     upper:
         - "Q W E R T Y U I O P"
-        - "A S D F G H J K L"
+        - "A S D F G H J K L Ç"
         - "Shift_L   Z X C V B N M  BackSpace"
-        - "show_numbers show_eschars preferences         space        ? . Return"
+        - "show_numbers show_eschars preferences         space        ¿ period Return"
     numbers:
         - "1 2 3 4 5 6 7 8 9 0"
         - "@ # € % & - _ + ( )"
-        - "show_symbols   , \" ' : ; ! ?  BackSpace"
-        - "show_letters show_eschars preferences         space        ? . Return"
+        - "show_symbols   , \" ' colon ; ! = BackSpace"
+        - "show_letters show_eschars preferences         space        ? period Return"
     symbols:
         - "~ ` | · √ π τ ÷ × ¶"
         - "© ® £ $ ¥ ^ ° * { }"
         - "show_numbers   \\ / < > = [ ]  BackSpace"
-        - "show_letters show_eschars preferences         space        ? . Return"
+        - "show_letters show_eschars preferences         space        ? period Return"
     eschars:
         - "á é í ó ú Á É Í Ó Ú"
-        - "à è ì ò « » ù ! { }"
-        - "show_numbers   \\ / < > = [ ]  BackSpace"
+        - "à è ì ò ù À È Ì Ò Ù"
+        - "show_numbers ü ç ï Ü Ç Ï ¡  BackSpace"
         - "show_letters show_eschars preferences         space        « » Return"
 
 buttons:
@@ -56,11 +54,6 @@ buttons:
             set_view: "numbers"
         outline: "altline"
         label: "123"
-    show_numbers_from_symbols:
-        action:
-            set_view: "numbers"
-        outline: "altline"
-        label: "123"
     show_letters:
         action:
             set_view: "base"
@@ -73,15 +66,22 @@ buttons:
         label: "*/="
     show_eschars:
         action:
-            set_view: "eschars"
+            locking:
+                lock_view: "eschars"
+                unlock_view: "base"
         outline: "altline"
-        label: "àè"
+        label: "àÀ"
+
+    period:
+        outline: "default"
+        text: "."
     space:
         outline: "spaceline"
-        label: " "
         text: " "
     Return:
         outline: "altline"
         icon: "key-enter"
         keysym: "Return"
+    colon:
+        text: ":"
 

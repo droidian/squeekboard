@@ -32,9 +32,9 @@ pub mod c {
     #[repr(transparent)]
     pub struct InputMethod(*const c_void);
 
-    #[no_mangle]
     extern "C" {
         fn imservice_destroy_im(im: *mut c::InputMethod);
+
         #[allow(improper_ctypes)] // IMService will never be dereferenced in C
         pub fn imservice_connect_listeners(im: *mut InputMethod, imservice: *const IMService);
         pub fn eek_input_method_commit_string(im: *mut InputMethod, text: *const c_char);
@@ -148,6 +148,8 @@ pub mod c {
             active: imservice.current.active,
             ..IMProtocolState::default()
         };
+
+        imservice.serial += Wrapping(1u32);
 
         if active_changed {
             (imservice.active_callback)(imservice.current.active);
@@ -404,7 +406,6 @@ impl IMService {
                 unsafe {
                     c::eek_input_method_commit(self.im, self.serial.0)
                 }
-                self.serial += Wrapping(1u32);
                 Ok(())
             },
             false => Err(SubmitError::NotActive),

@@ -31,9 +31,14 @@ sq_button.wide {
     border-color: #3e3a44;
 }
 
-sq_button.locked {
+sq_button.latched {
     background: #ffffff;
     color: #2b292f;
+}
+
+sq_button.locked {
+    background: #ffffff;
+    color: #1c71d8;
 }
 
 sq_button.action {

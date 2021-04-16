@@ -1,3 +1,65 @@
+squeekboard (1.13.0pureos0~amber0) amber-phone; urgency=medium
+
+  [ Dorota Czaplejewicz ]
+  * layout: Latch keys when clicked twice
+  * layout: Add stateless view switching
+  * layout: Plug in stateless view switching
+  * layout: Remove the little abomination of view change promise
+  * view: Ąto-unlatching when multiple latching buttons pressed
+  * renderer: Bring button drawing closer to Rust
+  * ffi: Eliminate squeek_button and squeek_row
+  * imservice: Increment serials on receiving done, not sending commit
+  * input-method: Fix commit/done mixup in protocol text
+  * CI: fix xheck_tag to be compatible with Amber
+  * italian: Fix colon
+  * popover: Fix prematurely deallocated CString
+  * Rust: Remove unnecessary no_mangle statements to silence warnings
+  * renderer: Reduce reliance on knowing the transform
+  * renderer: Split mutable geometry and place it directly in GtkKeyboard
+  * Revert "moved data/langs/he_IL.txt -> data/langs/he-IL.txt to better conform with existing translations."
+  * layout: Make it possible to opt out of latching per-key
+  * renderer: Mark latched buttons differently than locked
+  * appearance: Colour latched/locked according to design
+  * docs: Describe view switching
+  * language-terminal: Place keyboards in a sub-path
+  * layout selection: Fix emoji and number
+  * rust: Fix compiler warnings
+  * layout: Take into account text purpose again
+  * layouts: Make selection testable
+  * layouts: Stop assuming that layout name always changes on switch
+  * Cargo: Version bump
+
+  [ J.D. Laub ]
+  * Add US Dvorak layout (and Colemak wide)
+  *     Add US Dvorak layout (and Colemak wide)
+
+  [ Jordi Masip ]
+  * Catalan keyboard layout
+
+  [ Myth ]
+  * Added hebrew keyboard layout
+
+  [ David96 ]
+  * Add Mod4 (Windows) key
+
+  [ Panawat Wong-klaew ]
+  * Add wide Thai keyboard layout
+
+  [ Guido Günther ]
+  * server-main: Add quit()
+  * server-main: Properly register to gnome-session (Closes: #274)
+
+  [ Kozova1 ]
+  * Added Hebrew translations for most layouts.
+  * moved data/langs/he_IL.txt -> data/langs/he-IL.txt to better conform with existing translations.
+  * Fixed Hebrew layout.
+  * moved data/langs/he_IL.txt -> data/langs/he-IL.txt to better conform with existing translations.
+
+  [ M33 ]
+  * Revert "Update tests/meson.build"
+
+ -- Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>  Mon, 12 Apr 2021 10:40:32 +0000
+
 squeekboard (1.12.0pureos0~amber0) amber-phone; urgency=medium
 
   [ Dorota Czaplejewicz ]

@@ -147,9 +147,6 @@ buttons:
     Pause:
         outline: "action"
         keysym: "Pause"
-    Menu:
-        outline: "action"
-        keysym: "Menu"
     Break:
         outline: "action"
         keysym: "Break"
@@ -201,4 +198,3 @@ buttons:
         modifier: "Alt"
         outline: "small"
         label: "Alt"
-

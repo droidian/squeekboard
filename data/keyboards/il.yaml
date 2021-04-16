@@ -1,0 +1,71 @@
+---
+outlines:
+    default: { width: 40, height: 60 }
+    altline: { width: 56, height: 60 }
+    wide: { width: 62, height: 60 }
+    spaceline: { width: 142, height: 60 }
+    special: { width: 44, height: 60 }
+
+views:
+    base:
+        - "' - ק  ר א ט ו ן ם פ"
+        - "ש ד ג כ ע י ח ל ך ף"
+        - "ז ס ב ה נ מ צ ת ץ  BackSpace"
+        - "show_numbers comma preferences         space        period Return"
+    numbers:
+        - "1 2 3 4 5 6 7 8 9 0"
+        - "@ # ₪ % & - _ + ( )"
+        - "show_symbols   , \" ' colon ; ! ?  BackSpace"
+        - "show_letters preferences         space        period Return"
+    symbols:
+        - "~ ` | · √ π τ ÷ × ¶"
+        - "© ® £ € $ ^ ° * { }"
+        - "show_numbers_from_symbols   \\ / < > = [ ]  BackSpace"
+        - "show_letters preferences         space        period Return"
+
+buttons:
+    BackSpace:
+        outline: "default"
+        icon: "edit-clear-symbolic"
+        action: erase
+    comma:
+        outline: "special"
+        text: ","
+        
+    preferences:
+        action: show_prefs
+        outline: "special"
+        icon: "keyboard-mode-symbolic"
+    show_numbers:
+        action:
+            set_view: "numbers"
+        outline: "wide"
+        label: "123"
+    show_numbers_from_symbols:
+        action:
+            set_view: "numbers"
+        outline: "altline"
+        label: "123"
+    show_letters:
+        action:
+            set_view: "base"
+        outline: "wide"
+        label: "ABC"
+    show_symbols:
+        action:
+            set_view: "symbols"
+        outline: "altline"
+        label: "*/="
+    period:
+        outline: "special"
+        text: "."
+    space:
+        outline: "spaceline"
+        text: " "
+    Return:
+        outline: "wide"
+        icon: "key-enter"
+        keysym: "Return"
+    colon:
+        text: ":"
+

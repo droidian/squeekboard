@@ -50,8 +50,15 @@ struct squeekboard {
 };
 
 
+GMainLoop *loop;
 static gboolean opt_system = FALSE;
 static gchar *opt_address = NULL;
+
+static void
+quit (void)
+{
+  g_main_loop_quit (loop);
+}
 
 // D-Bus
 
@@ -131,6 +138,67 @@ static const struct wl_registry_listener registry_listener = {
 #define SESSION_NAME "sm.puri.OSK0"
 
 GDBusProxy *_proxy = NULL;
+GDBusProxy *_client_proxy = NULL;
+gchar      *_client_path = NULL;
+
+
+static void
+send_quit_response (GDBusProxy  *proxy)
+{
+    g_debug ("Calling EndSessionResponse");
+    g_dbus_proxy_call (proxy, "EndSessionResponse",
+        g_variant_new ("(bs)", TRUE, ""), G_DBUS_CALL_FLAGS_NONE,
+        G_MAXINT, NULL, NULL, NULL);
+}
+
+static void
+unregister_client (void)
+{
+    g_autoptr (GError) error = NULL;
+
+    g_return_if_fail (G_IS_DBUS_PROXY (_proxy));
+    g_return_if_fail (_client_path != NULL);
+
+    g_debug ("Unregistering client");
+
+    g_dbus_proxy_call_sync (_proxy,
+			    "UnregisterClient",
+			    g_variant_new ("(o)", _client_path),
+			    G_DBUS_CALL_FLAGS_NONE,
+			    G_MAXINT,
+			    NULL,
+			    &error);
+
+    if (error) {
+        g_warning ("Failed to unregister client: %s", error->message);
+    }
+
+    g_clear_object (&_client_proxy);
+    g_clear_pointer (&_client_path, g_free);
+}
+
+static void client_proxy_signal (GDBusProxy  *proxy,
+				 const gchar *sender_name,
+				 const gchar *signal_name,
+				 GVariant    *parameters,
+				 gpointer     user_data)
+{
+    if (g_str_equal (signal_name, "QueryEndSession")) {
+        g_debug ("Received QueryEndSession");
+        send_quit_response (proxy);
+    } else if (g_str_equal (signal_name, "CancelEndSession")) {
+        g_debug ("Received CancelEndSession");
+    } else if (g_str_equal (signal_name, "EndSession")) {
+        g_debug ("Received EndSession");
+        send_quit_response (proxy);
+        unregister_client ();
+	quit ();
+    } else if (g_str_equal (signal_name, "Stop")) {
+        g_debug ("Received Stop");
+        unregister_client ();
+        quit ();
+    }
+}
 
 static void
 session_register(void) {
@@ -151,7 +219,8 @@ session_register(void) {
         return;
     }
 
-    g_dbus_proxy_call_sync(_proxy, "RegisterClient",
+    g_autoptr (GVariant) res = NULL;
+    res = g_dbus_proxy_call_sync(_proxy, "RegisterClient",
         g_variant_new("(ss)", SESSION_NAME, autostart_id),
         G_DBUS_CALL_FLAGS_NONE, 1000, NULL, &error);
     if (error) {
@@ -160,6 +229,22 @@ session_register(void) {
         g_clear_error(&error);
         return;
     }
+
+    g_variant_get (res, "(o)", &_client_path);
+    g_debug ("Registered client at '%s'", _client_path);
+
+    _client_proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SESSION,
+      0, NULL, "org.gnome.SessionManager", _client_path,
+      "org.gnome.SessionManager.ClientPrivate", NULL, &error);
+    if (error) {
+        g_warning ("Failed to get client proxy: %s", error->message);
+	g_clear_error (&error);
+	g_free (_client_path);
+	_client_path = NULL;
+	return;
+    }
+
+    g_signal_connect (_client_proxy, "g-signal", G_CALLBACK (client_proxy_signal), NULL);
 }
 
 int
@@ -307,8 +392,7 @@ main (int argc, char **argv)
 
     session_register();
 
-    GMainLoop *loop = g_main_loop_new (NULL, FALSE);
-
+    loop = g_main_loop_new (NULL, FALSE);
     g_main_loop_run (loop);
 
     if (connection) {
