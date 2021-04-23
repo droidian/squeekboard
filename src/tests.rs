@@ -1,6 +1,6 @@
 /*! Testing functionality */
 
-use ::data::Layout;
+use ::data::parsing::Layout;
 use ::logging;
 use xkbcommon::xkb;
 
