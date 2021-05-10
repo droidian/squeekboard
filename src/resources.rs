@@ -11,7 +11,7 @@ use std::iter::FromIterator;
 // and what a convenience layout. "_wide" is not a layout,
 // neither is "number"
 /// List of builtin layouts
-const KEYBOARDS: &[(*const str, *const str)] = &[
+static KEYBOARDS: &[(&'static str, &'static str)] = &[
     // layouts: us must be left as first, as it is the,
     // fallback layout.
     ("us", include_str!("../data/keyboards/us.yaml")),
@@ -93,34 +93,20 @@ const KEYBOARDS: &[(*const str, *const str)] = &[
 ];
 
 pub fn get_keyboard(needle: &str) -> Option<&'static str> {
-    // Need to dereference in unsafe code
-    // comparing *const str to &str will compare pointers
-    KEYBOARDS.iter()
-        .find(|(name, _)| {
-            let name: *const str = *name;
-            (unsafe { &*name }) == needle
-        })
-        .map(|(_, value)| {
-            let value: *const str = *value;
-            unsafe { &*value }
-        })
+    KEYBOARDS.iter().find(|(name, _)| *name == needle).map(|(_, layout)| *layout)
 }
 
-const OVERLAY_NAMES: &[*const str] = &[
+static OVERLAY_NAMES: &[&'static str] = &[
     "emoji",
     "terminal",
 ];
 
 pub fn get_overlays() -> Vec<&'static str> {
-    OVERLAY_NAMES.iter()
-        .map(|name| {
-            let name: *const str = *name;
-            unsafe { &*name }
-        }).collect()
+    OVERLAY_NAMES.to_vec()
 }
 
 /// Translations of the layout identifier strings
-const LAYOUT_NAMES: &[(*const str, *const str)] = &[
+static LAYOUT_NAMES: &[(&'static str, &'static str)] = &[
     ("de-DE", include_str!("../data/langs/de-DE.txt")),
     ("en-US", include_str!("../data/langs/en-US.txt")),
     ("es-ES", include_str!("../data/langs/es-ES.txt")),
@@ -135,14 +121,8 @@ pub fn get_layout_names(lang: &str)
     -> Option<HashMap<&'static str, Translation<'static>>>
 {
     let translations = LAYOUT_NAMES.iter()
-        .find(|(name, _data)| {
-            let name: *const str = *name;
-            (unsafe { &*name }) == lang
-        })
-        .map(|(_name, data)| {
-            let data: *const str = *data;
-            unsafe { &*data }
-        });
+        .find(|(name, _data)| *name == lang)
+        .map(|(_name, data)| *data);
     translations.map(make_mapping)
 }
 
