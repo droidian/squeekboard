@@ -34,7 +34,7 @@ if out_path:
     i = args.index(out_path)
     args.pop(i)    
 
-subprocess.run(['sh', "{}/cargo.sh".format(shlex.quote(source_dir.as_posix())), 'build']
+subprocess.run(['sh', "{}/cargo.sh".format(source_dir.as_posix()), 'build']
     + args,
     check=True)
 
@@ -43,7 +43,7 @@ if out_path:
     out_basename = out_path.name
     filename = filename or out_basename
     subprocess.run(['cp', '-a',
-        './{}/{}'.format(shlex.quote(binary_dir), shlex.quote(filename)),
+        './{}/{}'.format(binary_dir, filename),
         out_path],
         check=True)
 
