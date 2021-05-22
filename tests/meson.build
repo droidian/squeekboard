@@ -58,6 +58,7 @@ foreach layout : [
     'us', 'us_wide',
 
     # Block: Languages
+    'ara', 'ara_wide',
     'be', 'be_wide',
     'bg',
     'br',

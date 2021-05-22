@@ -18,6 +18,9 @@ static KEYBOARDS: &[(&'static str, &'static str)] = &[
     ("us_wide", include_str!("../data/keyboards/us_wide.yaml")),
 
     // Language layouts: keep alphabetical.
+    ("ara", include_str!("../data/keyboards/ara.yaml")),
+    ("ara_wide", include_str!("../data/keyboards/ara_wide.yaml")),
+
     ("be", include_str!("../data/keyboards/be.yaml")),
     ("be_wide", include_str!("../data/keyboards/be_wide.yaml")),
 
