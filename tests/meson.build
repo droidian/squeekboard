@@ -62,6 +62,7 @@ foreach layout : [
     'be', 'be_wide',
     'bg',
     'br',
+    'ch+fr',
     'cz', 'cz_wide',
     'cz+qwerty', 'cz+qwerty_wide',
     'de', 'de_wide',
