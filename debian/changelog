@@ -1,3 +1,11 @@
+squeekboard (1.14.0-1) experimental; urgency=medium
+
+  * New upstream version 1.14.0
+  * d/patches: drop upstreamed patch
+  * d/copyright: update copyright information
+
+ -- Arnaud Ferraris <arnaud.ferraris@collabora.com>  Wed, 02 Jun 2021 15:07:29 +0200
+
 squeekboard (1.13.0-1) experimental; urgency=medium
 
   * New upstream version 1.13.0
