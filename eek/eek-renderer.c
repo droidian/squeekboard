@@ -287,7 +287,7 @@ eek_renderer_new (LevelKeyboard  *keyboard,
     }
     gtk_style_context_add_provider (renderer->view_context,
         GTK_STYLE_PROVIDER(renderer->css_provider),
-        GTK_STYLE_PROVIDER_PRIORITY_USER);
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
     /* Create a style context for the buttons */
     path = gtk_widget_path_new();
@@ -303,7 +303,7 @@ eek_renderer_new (LevelKeyboard  *keyboard,
     gtk_style_context_set_state (renderer->button_context, GTK_STATE_FLAG_NORMAL);
     gtk_style_context_add_provider (renderer->button_context,
         GTK_STYLE_PROVIDER(renderer->css_provider),
-        GTK_STYLE_PROVIDER_PRIORITY_USER);
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
     return renderer;
 }
 
