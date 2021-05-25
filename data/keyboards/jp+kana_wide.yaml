@@ -438,7 +438,7 @@ buttons:
                 unlock_view: "カタカナ"
         outline: "altline"
         label: "。"
-    # Buttons for Latin charachters
+    # Buttons for Latin characters
     RSYM1:
         action:
             locking:

@@ -401,6 +401,7 @@ pub fn show(
         width: position.width.floor() as i32,
         height: position.width.floor() as i32,
     });
+    menu.set_constrain_to(gtk::PopoverConstraint::None);
 
     if let Some(current_layout) = get_current_layout(manager, &system_layouts) {
         let current_name_variant = choices.iter()

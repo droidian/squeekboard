@@ -1,3 +1,21 @@
+squeekboard (1.14.0pureos0~amber0) amber-phone; urgency=medium
+
+  [ Dorota Czaplejewicz ]
+  * data: Split into loading and parsing
+  * layout: Remove unused code
+  * build: Fix unnecessary shell quotes
+  * popover: Allow spanning outside panel area
+  * cargo: Update dependencies before release
+
+  [ undef ]
+  * Fix typos jp keyboard comments
+
+  [ anteater ]
+  * use the correct GtkStyleProviderPriority to indicate that the styles are provided by the application
+  * remove some unnecessary unsafe code
+
+ -- Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>  Sat, 15 May 2021 12:45:20 +0000
+
 squeekboard (1.13.0pureos0~amber0) amber-phone; urgency=medium
 
   [ Dorota Czaplejewicz ]
