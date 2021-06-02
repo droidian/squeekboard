@@ -68,7 +68,7 @@ License: GPL-3+
 
 Files: data/keyboards/fr.yaml
        data/keyboards/fr_wide.yaml
-       data/keyboards/terminal_wide.yaml
+       data/keyboards/terminal/us_wide.yaml
        debian/*
 Copyright: 2019 Purism SPC
            2020 Arnaud Ferraris <arnaud.ferraris@gmail.com>
@@ -139,10 +139,22 @@ Files: protocols/wlr-layer-shell-unstable-v1.xml
 Copyright: 2017 Drew DeVault
 License: X11
 
+Files: src/data/*
+Copyright: 2020-2021 Purism SPC
+License: GPL-3+
+
 Files: src/float_ord.rs
 Copyright: 2017 Michael Howell <michael@notriddle.com>
            2019 Purism SPC
 License: MIT or Apache-2.0
+
+Files: src/locale_config.rs
+Copyright: 2016-2019 Jan Hudec <bulb@ucw.cz>
+           2016 A.J. Gardner <aaron.j.gardner@gmail.com>
+           2019 Bastien Orivel <eijebong@bananium.fr>
+           2019 Igor Gnatenko <i.gnatenko.brain@gmail.com>
+           2019 Sophie Tauchert <999eagle@999eagle.moe>
+License: MIT
 
 Files: src/resources.rs
 Copyright: 2019 Andreas Rönnquist <andreas@ronnquist.net>
@@ -155,6 +167,15 @@ Copyright: 2010-2011 Daiki Ueno <ueno@unixuser.org>
            2010-2011 Red Hat, Inc.
            2019 Purism SPC
            2019 Squeekboard Contributors
+License: GPL-3+
+
+Files: src/style.rs
+Copyright: 2000 Red Hat, Inc.
+           2019 Purism SPC
+License: GPL-3+
+
+Files: src/ui_manager.*
+Copyright: 2020 Purism SPC
 License: GPL-3+
 
 Files: src/xdg.rs
