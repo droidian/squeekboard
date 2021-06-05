@@ -283,6 +283,10 @@ main (int argc, char **argv)
         g_error("No virtual keyboard manager Wayland global available.");
         exit(1);
     }
+    if (!instance.wayland.layer_shell) {
+        g_error("No layer shell global available.");
+        exit(1);
+    }
 
     if (!instance.wayland.input_method_manager) {
         g_warning("Wayland input method interface not available");
