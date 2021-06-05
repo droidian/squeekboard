@@ -8,19 +8,19 @@ outlines:
 
 views:
     base:
-        - "у е и ш щ к с д з ц б"
-        - "ь я а о ж г т н в м ч"
-        - "Shift_L ю й ъ ф х п р л BackSpace"
+        - "я в е р т ъ у и о п ю"
+        - "а с д ф г х й к л ш щ"
+        - "Shift_L з ь ц ж б н м ч BackSpace"
         - "show_numbers preferences         space   .    Return"
     upper:
-        - "У Е И Ш Щ К С Д З Ц Б"
-        - "Ь Я А О Ж Г Т Н В М Ч"
-        - "Shift_L Ю Й Ъ Ф Х П Р Л BackSpace"
+        - "Я В Е Р Т Ъ У И О П Ю"
+        - "А С Д Ф Г Х Й К Л Ш Щ"
+        - "Shift_L З Ь Ц Ж Б Н М Ч BackSpace"
         - "show_numbers preferences         space   ,    Return"
     numbers:
         - "1 2 3 4 5 6 7 8 9 0"
         - "@ # € % & - _ + ( )"
-        - "show_symbols , \" ' colon ; ! ? ѝ BackSpace"
+        - "show_symbols   , \" ' colon ; ! ?  BackSpace"
         - "show_letters preferences         space        Return"
     symbols:
         - "~ ` | · √ π τ ÷ × ¶"

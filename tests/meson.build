@@ -61,6 +61,7 @@ foreach layout : [
     'ara', 'ara_wide',
     'be', 'be_wide',
     'bg',
+    'bg+phonetic',
     'br',
     'ch+fr',
     'cz', 'cz_wide',
