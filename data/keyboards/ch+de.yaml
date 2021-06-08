@@ -1,5 +1,4 @@
-# Maintained by: Jordy Bossy <jordi@bossy.space>
-# and Patrick Jörg <patrickjoerg@gmx.ch>. No Copyright, enjoy!
+# Maintained by Patrick Jörg <patrickjoerg@gmx.ch>. No Copyright, enjoy!
 
 ---
 outlines:
@@ -14,27 +13,22 @@ views:
         - "q w e r t z u i o p ü"
         - "a s d f g h j k l ö ä"
         - "Shift_L   y x c v b n m  BackSpace"
-        - "show_numbers show_eschars preferences    '   space        , . Return"
+        - "show_numbers ? !  preferences    '   space        , . Return"
     upper:
         - "Q W E R T Z U I O P Ü"
         - "A S D F G H J K L Ö Ä"
         - "Shift_L   Y X C V B N M  BackSpace"
-        - "show_numbers show_eschars preferences    \"  space        , . Return"
+        - "show_numbers - _  preferences    \"  space        , . Return"
     numbers:      
         - "1 2 3 4 5 6 7 8 9 0"
-        - "@ * + - = ( ) ~ < > ? !"
+        - "@ * + - = ( ) ~ < >"
         - "show_symbols  # & / \\ √ ; : BackSpace"
-        - "show_letters show_eschars preferences    _   space        , . Return"
+        - "show_letters ? !  preferences    _   space        , . Return"
     symbols:
         - "€ $ £ ¥ % | § µ [ ]"
         - "© ® § ` ^ { } · ¡ ¿"
         - "show_numbers  « » ÷ × “ ” „ BackSpace"
-        - "show_letters show_eschars preferences    -   space        , . Return"
-    eschars:
-        - "à â ç é è ê î ô ù û"
-        - "À Â Ç É È Ê Î Ô Ù Û"
-        - "show_numbers  æ œ ä ë ï ö ü  BackSpace"
-        - "show_letters_from_accents preferences  ñ Ñ   space        ° ß Return"
+        - "show_letters  preferences    -   space        , . Return"
 
 buttons:
     Shift_L:
@@ -67,20 +61,6 @@ buttons:
             set_view: "symbols"
         outline: "altline"
         label: "*/="
-    show_eschars:
-        action:
-            locking:
-                lock_view: "eschars"
-                unlock_view: "base"
-        outline: "altline"
-        label: "âÂ"
-    show_letters_from_accents:
-        action:
-            locking:
-                lock_view: "eschars"
-                unlock_view: "base"
-        outline: "altline"
-        label: "âÂ"
     space:
         outline: "spaceline"
         label: " "
