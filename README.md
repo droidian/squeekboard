@@ -60,7 +60,7 @@ Squeekboard honors the gnome "screen-keyboard-enabled" setting. Either enable th
 $ gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true
 ```
 
-To make the keyboard show you can use either an application that does so automatically, like a text editor or `python3 ./tests/entry.py`, or you can manually trigger it with:
+To make the keyboard show you can use either an application that does so automatically, like a text editor or `python3 ./tools/entry.py`, or you can manually trigger it with:
 
 ```bash
 busctl call --user sm.puri.OSK0 /sm/puri/OSK0 sm.puri.OSK0 SetVisible b true
