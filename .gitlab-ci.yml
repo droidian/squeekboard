@@ -4,10 +4,6 @@ stages:
   - build
   - test
 
-.tags: &tags
-  tags:
-    - librem5
-
 before_script:
   - apt-get -y update
   - apt-get -y install wget ca-certificates gnupg
@@ -16,7 +12,6 @@ before_script:
   - apt-get -y update
 
 build_docs:
-  <<: *tags
   stage: build
   artifacts:
     paths:
@@ -27,8 +22,6 @@ build_docs:
       - ./doc/build.sh _build
 
 build_meson:
-  tags:
-    - librem5
   stage: build
   artifacts:
     paths:
@@ -40,8 +33,6 @@ build_meson:
     - ninja -C _build install
 
 build_deb:
-    tags:
-        - librem5
     stage: build
     artifacts:
       paths:
@@ -52,67 +43,15 @@ build_deb:
         - apt-get -y install devscripts
         - debuild -i -us -uc -b
         - cp ../*.deb .
-
-build_deb:amber:
-    image: pureos/amber
-    tags:
-        - librem5
-    stage: build
-    artifacts:
-      paths:
-        - "*.deb"
-    script:
-        - echo "deb http://ci.puri.sm/ scratch librem5" > /etc/apt/sources.list.d/ci.list
-        - apt-get -y update
-        - rm -f ../*.deb
-        - apt-get -y build-dep .
-        - apt-get -y install devscripts
-        - debuild -i -us -uc -b
-        - cp ../*.deb .
-
-build_deb:buster:
-    image: "debian:buster"
-    tags:
-        - librem5
-    stage: build
-    artifacts:
-      paths:
-        - "*.deb"
-    script:
-        - echo "deb http://ci.puri.sm/ scratch librem5" > /etc/apt/sources.list.d/ci.list
-        - apt-get -y update
-        - rm -f ../*.deb
-        - apt-get -y build-dep .
-        - apt-get -y install devscripts
-        - debuild -i -us -uc -b
-        - cp ../*.deb .
-
 
 build_deb:arm64:
     tags:
-        - librem5:arm64
+        - aarch64
     stage: build
     artifacts:
       paths:
         - "*.deb"
     script:
-        - rm -f ../*.deb
-        - apt-get -y build-dep .
-        - apt-get -y install devscripts
-        - debuild -i -us -uc -b
-        - cp ../*.deb .
-
-build_deb:arm64_buster:
-    image: "debian:buster"
-    tags:
-        - librem5:arm64
-    stage: build
-    artifacts:
-      paths:
-        - "*.deb"
-    script:
-        - echo "deb http://ci.puri.sm/ scratch librem5" > /etc/apt/sources.list.d/ci.list
-        - apt-get -y update
         - rm -f ../*.deb
         - apt-get -y build-dep .
         - apt-get -y install devscripts
@@ -120,7 +59,6 @@ build_deb:arm64_buster:
         - cp ../*.deb .
 
 test_lintian:
-    <<: *tags
     stage: test
     dependencies:
         - build_deb
@@ -129,8 +67,6 @@ test_lintian:
         - lintian *.deb
 
 test:
-  tags:
-    - librem5
   stage: test
   needs:
     - build_meson
@@ -142,7 +78,6 @@ test:
     - clang-tidy --checks=-clang-diagnostic-missing-braces,readability-braces-around-statements, --warnings-as-errors=readability-braces-around-statements -extra-arg=-Wno-unknown-warning-option ../src/*.c ../eek/*.c ../eekboard/*.c
 
 check_release:
-  <<: *tags
   stage: test
   only:
     refs:
