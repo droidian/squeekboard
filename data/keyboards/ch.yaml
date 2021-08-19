@@ -1,0 +1,93 @@
+# Maintained by: Jordy Bossy <jordi@bossy.space>
+# and Patrick Jörg <patrickjoerg@gmx.ch>. No Copyright, enjoy!
+
+---
+outlines:
+    default:   { width: 35.33, height: 52 }
+    altline:   { width: 48,    height: 52 }
+    wide:      { width: 59,    height: 52 }
+    spaceline: { width: 70,    height: 52 }
+    special:   { width: 28,    height: 52 }
+
+views:
+    base:
+        - "q w e r t z u i o p ü"
+        - "a s d f g h j k l ö ä"
+        - "Shift_L   y x c v b n m  BackSpace"
+        - "show_numbers show_eschars preferences    '   space        , . Return"
+    upper:
+        - "Q W E R T Z U I O P Ü"
+        - "A S D F G H J K L Ö Ä"
+        - "Shift_L   Y X C V B N M  BackSpace"
+        - "show_numbers show_eschars preferences    \"  space        , . Return"
+    numbers:      
+        - "1 2 3 4 5 6 7 8 9 0"
+        - "@ * + - = ( ) ~ < > ? !"
+        - "show_symbols  # & / \\ √ ; : BackSpace"
+        - "show_letters show_eschars preferences    _   space        , . Return"
+    symbols:
+        - "€ $ £ ¥ % | § µ [ ]"
+        - "© ® § ` ^ { } · ¡ ¿"
+        - "show_numbers  « » ÷ × “ ” „ BackSpace"
+        - "show_letters show_eschars preferences    -   space        , . Return"
+    eschars:
+        - "à â ç é è ê î ô ù û"
+        - "À Â Ç É È Ê Î Ô Ù Û"
+        - "show_numbers  æ œ ä ë ï ö ü  BackSpace"
+        - "show_letters_from_accents preferences  ñ Ñ   space        ° ß Return"
+
+buttons:
+    Shift_L:
+        action:
+            locking:
+                lock_view: "upper"
+                unlock_view: "base"
+        outline: "altline"
+        icon: "key-shift"
+    BackSpace:
+        outline: "altline"
+        icon: "edit-clear-symbolic"
+        action: erase
+    preferences:
+        action: "show_prefs"
+        outline: "special"
+        icon: "keyboard-mode-symbolic"
+    show_numbers:
+        action:
+            set_view: "numbers"
+        outline: "altline"
+        label: "123"
+    show_letters:
+        action:
+            set_view: "base"
+        outline: "altline"
+        label: "abc"
+    show_symbols:
+        action:
+            set_view: "symbols"
+        outline: "altline"
+        label: "*/="
+    show_eschars:
+        action:
+            locking:
+                lock_view: "eschars"
+                unlock_view: "base"
+        outline: "altline"
+        label: "âÂ"
+    show_letters_from_accents:
+        action:
+            locking:
+                lock_view: "eschars"
+                unlock_view: "base"
+        outline: "altline"
+        label: "âÂ"
+    space:
+        outline: "spaceline"
+        label: " "
+        text: " "
+    Return:
+        outline: "wide"
+        icon: "key-enter"
+        keysym: "Return"
+    "\"":
+        keysym: "quotedbl"

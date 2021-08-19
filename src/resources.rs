@@ -30,6 +30,9 @@ static KEYBOARDS: &[(&'static str, &'static str)] = &[
     ("br", include_str!("../data/keyboards/br.yaml")),
     
     ("ch+fr", include_str!("../data/keyboards/ch+fr.yaml")),
+    ("ch+de", include_str!("../data/keyboards/ch+de.yaml")),
+    ("ch", include_str!("../data/keyboards/ch.yaml")),
+    ("ch_wide", include_str!("../data/keyboards/ch_wide.yaml")),
 
     ("de", include_str!("../data/keyboards/de.yaml")),
     ("de_wide", include_str!("../data/keyboards/de_wide.yaml")),
