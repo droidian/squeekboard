@@ -66,6 +66,17 @@ To make the keyboard show you can use either an application that does so automat
 busctl call --user sm.puri.OSK0 /sm/puri/OSK0 sm.puri.OSK0 SetVisible b true
 ```
 
+### What the compositor has to support
+
+A compatible compositor has to support the protocols:
+
+- layer-shell
+- virtual-keyboard-v1
+
+It's strongly recommended to support:
+
+- input-method-v2
+
 Developing
 ----------
 
