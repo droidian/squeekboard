@@ -1,3 +1,9 @@
+squeekboard (1.14.0-2) unstable; urgency=medium
+
+  * Upload to unstable
+
+ -- Arnaud Ferraris <arnaud.ferraris@gmail.com>  Wed, 01 Sep 2021 12:41:53 +0200
+
 squeekboard (1.14.0-1) experimental; urgency=medium
 
   * New upstream version 1.14.0
