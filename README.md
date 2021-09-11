@@ -25,6 +25,11 @@ Features
 - Use Wayland input method protocol
 - Pick up DBus interface files from /usr/share
 
+Creating layouts
+-------------------
+
+If you want to work on layouts, check out the [guide](doc/tutorial.md).
+
 Building
 --------
 
