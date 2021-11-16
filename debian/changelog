@@ -1,3 +1,13 @@
+squeekboard (1.14.0-3) unstable; urgency=medium
+
+  * Team upload.
+  * d/patches: add fix_meson_ftbfs to fix an FTBFS
+    with meson 0.60 (Closes: #998576)
+  * d/patches: add fix_cargo_error.patch to fix an FTBFS
+    rust 1.54+ needs dependency versionning
+
+ -- Henry-Nicolas Tourneur <debian@nilux.be>  Tue, 16 Nov 2021 18:41:52 +0000
+
 squeekboard (1.14.0-2) unstable; urgency=medium
 
   * Upload to unstable
