@@ -1,0 +1,16 @@
+Author: Dorota Czaplejewicz
+Origin: https://gitlab.gnome.org/World/Phosh/squeekboard/-/merge_requests/479
+Description: Fixes an FTBFS with a meson 0.60
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/data/meson.build
++++ b/data/meson.build
+@@ -12,7 +12,7 @@ desktopconf.set('bindir', bindir)
+ 
+ desktop_file = 'sm.puri.Squeekboard.desktop'
+ 
+-i18n.merge_file('desktop',
++i18n.merge_file(
+     input: configure_file(
+       input: desktop_file + '.in.in',
+       output: desktop_file + '.in',
