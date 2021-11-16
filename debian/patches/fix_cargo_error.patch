@@ -1,0 +1,25 @@
+Author: Dorota Czaplejewicz
+Origin: https://gitlab.gnome.org/henry-nicolas/squeekboard/-/commit/9cd56185c59ace535a6af26384ef6beca4423816
+Description: Fixes an FTBFS when cargo has dependencies without any version set
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/Cargo.toml.in
++++ b/Cargo.toml.in
+@@ -23,14 +23,14 @@ rustc_less_1_36 = []
+ 
+ # Dependencies which don't change based on build flags
+ [dependencies.cairo-sys-rs]
+-version = ""
++version = "*"
+ 
+ [dependencies.glib-sys]
+-version = ""
++version = "*"
+ features = ["v2_44"]
+ 
+ [dependencies.gtk-sys]
+-version = ""
++version = "*"
+ features = ["v3_22"]
+ 
+ [dependencies]
