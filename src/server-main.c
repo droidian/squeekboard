@@ -82,7 +82,7 @@ on_name_lost (GDBusConnection *connection,
     (void)connection;
     (void)name;
     (void)user_data;
-    g_error("DBus unavailable, unclear how to continue.");
+    g_warning("DBus unavailable, unclear how to continue. Is Squeekboard already running?");
     exit (1);
 }
 
