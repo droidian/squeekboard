@@ -245,6 +245,32 @@ session_register(void) {
     g_signal_connect (_client_proxy, "g-signal", G_CALLBACK (client_proxy_signal), NULL);
 }
 
+
+static void
+phosh_theme_init (void)
+{
+    GtkSettings *gtk_settings;
+    const char *desktop;
+    gboolean phosh_session;
+    g_auto (GStrv) components = NULL;
+
+    desktop = g_getenv ("XDG_CURRENT_DESKTOP");
+    if (!desktop) {
+        return;
+    }
+
+    components = g_strsplit (desktop, ":", -1);
+    phosh_session = g_strv_contains ((const char * const *)components, "Phosh");
+
+    if (!phosh_session) {
+        return;
+    }
+
+    gtk_settings = gtk_settings_get_default ();
+    g_object_set (G_OBJECT (gtk_settings), "gtk-application-prefer-dark-theme", TRUE, NULL);
+}
+
+
 int
 main (int argc, char **argv)
 {
@@ -269,6 +295,8 @@ main (int argc, char **argv)
     }
 
     eek_init ();
+
+    phosh_theme_init ();
 
     // Set up Wayland
     gdk_set_allowed_backends ("wayland");
