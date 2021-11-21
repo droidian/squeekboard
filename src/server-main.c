@@ -250,6 +250,21 @@ session_register(void) {
 int
 main (int argc, char **argv)
 {
+    g_autoptr (GError) err = NULL;
+    g_autoptr(GOptionContext) opt_context = NULL;
+
+    const GOptionEntry options [] = {
+        { NULL, 0, 0, G_OPTION_ARG_NONE, NULL, NULL, NULL }
+    };
+    opt_context = g_option_context_new ("- A on screen keyboard");
+
+    g_option_context_add_main_entries (opt_context, options, NULL);
+    g_option_context_add_group (opt_context, gtk_get_option_group (TRUE));
+    if (!g_option_context_parse (opt_context, &argc, &argv, &err)) {
+        g_warning ("%s", err->message);
+        return 1;
+    }
+
     if (!gtk_init_check (&argc, &argv)) {
         g_printerr ("Can't init GTK\n");
         exit (1);
