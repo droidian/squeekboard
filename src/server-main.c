@@ -316,13 +316,10 @@ main (int argc, char **argv)
     // if text-input is used, as it can bring the keyboard in and out
 
     GDBusConnection *connection = NULL;
-    GError *error = NULL;
-    error = NULL;
-    connection = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
+    connection = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &err);
     if (connection == NULL) {
         g_printerr ("Can't connect to the bus: %s. "
-                    "Visibility switching unavailable.", error->message);
-        g_error_free (error);
+                    "Visibility switching unavailable.", err->message);
     }
     guint owner_id = 0;
     DBusHandler *service = NULL;
