@@ -51,8 +51,6 @@ struct squeekboard {
 
 
 GMainLoop *loop;
-static gboolean opt_system = FALSE;
-static gchar *opt_address = NULL;
 
 static void
 quit (void)
@@ -316,46 +314,15 @@ main (int argc, char **argv)
     // TODO: make dbus errors non-always-fatal
     // dbus is not strictly necessary for the useful operation
     // if text-input is used, as it can bring the keyboard in and out
-    GBusType bus_type;
-    if (opt_system) {
-        bus_type = G_BUS_TYPE_SYSTEM;
-    } else if (opt_address) {
-        bus_type = G_BUS_TYPE_NONE;
-    } else {
-        bus_type = G_BUS_TYPE_SESSION;
-    }
 
     GDBusConnection *connection = NULL;
     GError *error = NULL;
-    switch (bus_type) {
-    case G_BUS_TYPE_SYSTEM:
-    case G_BUS_TYPE_SESSION:
-        error = NULL;
-        connection = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
-        if (connection == NULL) {
-            g_printerr ("Can't connect to the bus: %s. "
-                        "Visibility switching unavailable.", error->message);
-            g_error_free (error);
-        }
-        break;
-    case G_BUS_TYPE_NONE:
-        error = NULL;
-        connection = g_dbus_connection_new_for_address_sync (opt_address,
-                                                             0,
-                                                             NULL,
-                                                             NULL,
-                                                             &error);
-        if (connection == NULL) {
-            g_printerr ("Can't connect to the bus at %s: %s\n",
-                        opt_address,
-                        error->message);
-            g_error_free (error);
-            exit (1);
-        }
-        break;
-    default:
-        g_assert_not_reached ();
-        break;
+    error = NULL;
+    connection = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
+    if (connection == NULL) {
+        g_printerr ("Can't connect to the bus: %s. "
+                    "Visibility switching unavailable.", error->message);
+        g_error_free (error);
     }
     guint owner_id = 0;
     DBusHandler *service = NULL;
