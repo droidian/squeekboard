@@ -38,6 +38,12 @@
 #include <gdk/gdkwayland.h>
 
 
+typedef enum _SqueekboardDebugFlags {
+    SQUEEKBOARD_DEBUG_FLAG_NONE = 0,
+    SQUEEKBOARD_DEBUG_FLAG_FORCE_SHOW = 1 << 0,
+} SqueekboardDebugFlags;
+
+
 /// Global application state
 struct squeekboard {
     struct squeek_wayland wayland; // Just hooks.
@@ -75,13 +81,16 @@ on_name_lost (GDBusConnection *connection,
               const gchar     *name,
               gpointer         user_data)
 {
+    SqueekboardDebugFlags *flags = user_data;
     // TODO: could conceivable continue working
     // if intrnal changes stop sending dbus changes
     (void)connection;
     (void)name;
     (void)user_data;
     g_warning("DBus unavailable, unclear how to continue. Is Squeekboard already running?");
-    exit (1);
+    if ((*flags & SQUEEKBOARD_DEBUG_FLAG_FORCE_SHOW) == 0) {
+        exit (1);
+    }
 }
 
 // Wayland
@@ -271,9 +280,33 @@ phosh_theme_init (void)
 }
 
 
+static GDebugKey debug_keys[] =
+{
+        { .key = "force-show",
+          .value = SQUEEKBOARD_DEBUG_FLAG_FORCE_SHOW,
+        },
+};
+
+
+static SqueekboardDebugFlags
+parse_debug_env (void)
+{
+    const char *debugenv;
+    SqueekboardDebugFlags flags = SQUEEKBOARD_DEBUG_FLAG_NONE;
+
+    debugenv = g_getenv("SQUEEKBOARD_DEBUG");
+    if (!debugenv) {
+        return flags;
+    }
+
+    return g_parse_debug_string(debugenv, debug_keys, G_N_ELEMENTS (debug_keys));
+}
+
+
 int
 main (int argc, char **argv)
 {
+    SqueekboardDebugFlags debug_flags = SQUEEKBOARD_DEBUG_FLAG_NONE;
     g_autoptr (GError) err = NULL;
     g_autoptr(GOptionContext) opt_context = NULL;
 
@@ -294,6 +327,7 @@ main (int argc, char **argv)
         exit (1);
     }
 
+    debug_flags = parse_debug_env ();
     eek_init ();
 
     phosh_theme_init ();
@@ -365,7 +399,7 @@ main (int argc, char **argv)
                                                  G_BUS_NAME_OWNER_FLAGS_NONE,
                                                  on_name_acquired,
                                                  on_name_lost,
-                                                 NULL,
+                                                 &debug_flags,
                                                  NULL);
         if (owner_id == 0) {
             g_printerr ("Can't own the name\n");
@@ -402,6 +436,10 @@ main (int argc, char **argv)
     eekboard_context_service_set_ui(instance.settings_context, instance.ui_context);
 
     session_register();
+
+    if (debug_flags & SQUEEKBOARD_DEBUG_FLAG_FORCE_SHOW) {
+        server_context_service_force_show_keyboard (ui_context);
+    }
 
     loop = g_main_loop_new (NULL, FALSE);
     g_main_loop_run (loop);
