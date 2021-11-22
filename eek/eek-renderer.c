@@ -266,7 +266,7 @@ on_gtk_theme_name_changed (GtkSettings *settings, gpointer foo, EekRenderer *sel
   g_autofree char *name = NULL;
 
   g_object_get (settings, "gtk-theme-name", &name, NULL);
-  g_warning ("GTK theme: %s", name);
+  g_debug ("GTK theme: %s", name);
 
   gtk_style_context_remove_provider_for_screen (gdk_screen_get_default (),
                                                 GTK_STYLE_PROVIDER (self->css_provider));
