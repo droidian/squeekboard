@@ -18,6 +18,8 @@
  * 02110-1301 USA
  */
 
+#define G_LOG_DOMAIN "squeekboard-eek-renderer"
+
 #include <math.h>
 #include <string.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
@@ -112,7 +114,7 @@ eek_get_style_context_for_button (EekRenderer *self,
                                   const char *name,
                                   const char *outline_name,
                                   const char *locked_class,
-               uint64_t     pressed)
+                                  uint64_t     pressed)
 {
     GtkStyleContext *ctx = self->button_context;
     /* Set the name of the button on the widget path, using the name obtained
@@ -257,11 +259,48 @@ static GType button_type(void) {
     return type;
 }
 
+
+static void
+on_gtk_theme_name_changed (GtkSettings *settings, gpointer foo, EekRenderer *self)
+{
+  g_autofree char *name = NULL;
+
+  g_object_get (settings, "gtk-theme-name", &name, NULL);
+  g_warning ("GTK theme: %s", name);
+
+  gtk_style_context_remove_provider_for_screen (gdk_screen_get_default (),
+                                                GTK_STYLE_PROVIDER (self->css_provider));
+  gtk_style_context_remove_provider (self->button_context,
+                                     GTK_STYLE_PROVIDER(self->css_provider));
+  gtk_style_context_remove_provider (self->view_context,
+                                     GTK_STYLE_PROVIDER(self->css_provider));
+
+  g_set_object (&self->css_provider, squeek_load_style());
+
+  gtk_style_context_add_provider_for_screen (gdk_screen_get_default (),
+                                             GTK_STYLE_PROVIDER (self->css_provider),
+                                             GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+  gtk_style_context_add_provider (self->button_context,
+                                  GTK_STYLE_PROVIDER(self->css_provider),
+                                  GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+  gtk_style_context_add_provider (self->view_context,
+                                  GTK_STYLE_PROVIDER(self->css_provider),
+                                  GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+}
+
+
 static void
 renderer_init (EekRenderer *self)
 {
     self->pcontext = NULL;
     self->scale_factor = 1;
+
+    GtkSettings *gtk_settings;
+
+    gtk_settings = gtk_settings_get_default ();
+
+    g_signal_connect (gtk_settings, "notify::gtk-theme-name",
+                      G_CALLBACK (on_gtk_theme_name_changed), self);
 
     self->css_provider = squeek_load_style();
 }
