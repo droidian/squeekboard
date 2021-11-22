@@ -18,6 +18,8 @@
  * 02110-1301 USA
  */
 
+#define G_LOG_DOMAIN "squeekboard-eek-renderer"
+
 #include <math.h>
 #include <string.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
