@@ -114,7 +114,7 @@ eek_get_style_context_for_button (EekRenderer *self,
                                   const char *name,
                                   const char *outline_name,
                                   const char *locked_class,
-               uint64_t     pressed)
+                                  uint64_t     pressed)
 {
     GtkStyleContext *ctx = self->button_context;
     /* Set the name of the button on the widget path, using the name obtained
