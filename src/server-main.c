@@ -1,10 +1,10 @@
-/* 
+/*
  * Copyright (C) 2010-2011 Daiki Ueno <ueno@unixuser.org>
  * Copyright (C) 2010-2011 Red Hat, Inc.
  * Copyright (C) 2018-2019 Purism SPC
  * SPDX-License-Identifier: GPL-3.0+
  * Author: Guido Günther <agx@sigxcpu.org>
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -51,8 +51,6 @@ struct squeekboard {
 
 
 GMainLoop *loop;
-static gboolean opt_system = FALSE;
-static gchar *opt_address = NULL;
 
 static void
 quit (void)
@@ -247,15 +245,58 @@ session_register(void) {
     g_signal_connect (_client_proxy, "g-signal", G_CALLBACK (client_proxy_signal), NULL);
 }
 
+
+static void
+phosh_theme_init (void)
+{
+    GtkSettings *gtk_settings;
+    const char *desktop;
+    gboolean phosh_session;
+    g_auto (GStrv) components = NULL;
+
+    desktop = g_getenv ("XDG_CURRENT_DESKTOP");
+    if (!desktop) {
+        return;
+    }
+
+    components = g_strsplit (desktop, ":", -1);
+    phosh_session = g_strv_contains ((const char * const *)components, "Phosh");
+
+    if (!phosh_session) {
+        return;
+    }
+
+    gtk_settings = gtk_settings_get_default ();
+    g_object_set (G_OBJECT (gtk_settings), "gtk-application-prefer-dark-theme", TRUE, NULL);
+}
+
+
 int
 main (int argc, char **argv)
 {
+    g_autoptr (GError) err = NULL;
+    g_autoptr(GOptionContext) opt_context = NULL;
+
+    const GOptionEntry options [] = {
+        { NULL, 0, 0, G_OPTION_ARG_NONE, NULL, NULL, NULL }
+    };
+    opt_context = g_option_context_new ("- A on screen keyboard");
+
+    g_option_context_add_main_entries (opt_context, options, NULL);
+    g_option_context_add_group (opt_context, gtk_get_option_group (TRUE));
+    if (!g_option_context_parse (opt_context, &argc, &argv, &err)) {
+        g_warning ("%s", err->message);
+        return 1;
+    }
+
     if (!gtk_init_check (&argc, &argv)) {
         g_printerr ("Can't init GTK\n");
         exit (1);
     }
 
     eek_init ();
+
+    phosh_theme_init ();
 
     // Set up Wayland
     gdk_set_allowed_backends ("wayland");
@@ -301,46 +342,12 @@ main (int argc, char **argv)
     // TODO: make dbus errors non-always-fatal
     // dbus is not strictly necessary for the useful operation
     // if text-input is used, as it can bring the keyboard in and out
-    GBusType bus_type;
-    if (opt_system) {
-        bus_type = G_BUS_TYPE_SYSTEM;
-    } else if (opt_address) {
-        bus_type = G_BUS_TYPE_NONE;
-    } else {
-        bus_type = G_BUS_TYPE_SESSION;
-    }
 
     GDBusConnection *connection = NULL;
-    GError *error = NULL;
-    switch (bus_type) {
-    case G_BUS_TYPE_SYSTEM:
-    case G_BUS_TYPE_SESSION:
-        error = NULL;
-        connection = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
-        if (connection == NULL) {
-            g_printerr ("Can't connect to the bus: %s. "
-                        "Visibility switching unavailable.", error->message);
-            g_error_free (error);
-        }
-        break;
-    case G_BUS_TYPE_NONE:
-        error = NULL;
-        connection = g_dbus_connection_new_for_address_sync (opt_address,
-                                                             0,
-                                                             NULL,
-                                                             NULL,
-                                                             &error);
-        if (connection == NULL) {
-            g_printerr ("Can't connect to the bus at %s: %s\n",
-                        opt_address,
-                        error->message);
-            g_error_free (error);
-            exit (1);
-        }
-        break;
-    default:
-        g_assert_not_reached ();
-        break;
+    connection = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &err);
+    if (connection == NULL) {
+        g_printerr ("Can't connect to the bus: %s. "
+                    "Visibility switching unavailable.", err->message);
     }
     guint owner_id = 0;
     DBusHandler *service = NULL;
