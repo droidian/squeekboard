@@ -228,6 +228,8 @@ eek_renderer_free (EekRenderer        *self)
     g_object_unref(self->css_provider);
     g_object_unref(self->view_context);
     g_object_unref(self->button_context);
+    g_clear_signal_handler (&self->theme_name_id, gtk_settings_get_default());
+
     // this is where renderer-specific surfaces would be released
 
     free(self);
@@ -266,7 +268,7 @@ on_gtk_theme_name_changed (GtkSettings *settings, gpointer foo, EekRenderer *sel
   g_autofree char *name = NULL;
 
   g_object_get (settings, "gtk-theme-name", &name, NULL);
-  g_warning ("GTK theme: %s", name);
+  g_debug ("GTK theme: %s", name);
 
   gtk_style_context_remove_provider_for_screen (gdk_screen_get_default (),
                                                 GTK_STYLE_PROVIDER (self->css_provider));
@@ -299,8 +301,8 @@ renderer_init (EekRenderer *self)
 
     gtk_settings = gtk_settings_get_default ();
 
-    g_signal_connect (gtk_settings, "notify::gtk-theme-name",
-                      G_CALLBACK (on_gtk_theme_name_changed), self);
+    self->theme_name_id = g_signal_connect (gtk_settings, "notify::gtk-theme-name",
+                                            G_CALLBACK (on_gtk_theme_name_changed), self);
 
     self->css_provider = squeek_load_style();
 }
