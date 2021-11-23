@@ -71,6 +71,16 @@ To make the keyboard show you can use either an application that does so automat
 busctl call --user sm.puri.OSK0 /sm/puri/OSK0 sm.puri.OSK0 SetVisible b true
 ```
 
+Environment Variables
+---------------------
+
+Besides the environment variables supported by GTK and [GLib](https://docs.gtk.org/glib/running.html) applications
+squeekboard honors the `SQUEEKBOARD_DEBUG` environment variable which can
+contain a comma separated list of:
+
+- `force-show` : Show squeekboard on startup independent of any gsettings or compositor requests
+- `gtk-inspector`: Spawn [gtk-inspector](https://wiki.gnome.org/Projects/GTK/Inspector)
+
 ### What the compositor has to support
 
 A compatible compositor has to support the protocols:
