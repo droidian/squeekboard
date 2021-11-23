@@ -40,7 +40,8 @@
 
 typedef enum _SqueekboardDebugFlags {
     SQUEEKBOARD_DEBUG_FLAG_NONE = 0,
-    SQUEEKBOARD_DEBUG_FLAG_FORCE_SHOW = 1 << 0,
+    SQUEEKBOARD_DEBUG_FLAG_FORCE_SHOW    = 1 << 0,
+    SQUEEKBOARD_DEBUG_FLAG_GTK_INSPECTOR = 1 << 1,
 } SqueekboardDebugFlags;
 
 
@@ -285,6 +286,9 @@ static GDebugKey debug_keys[] =
         { .key = "force-show",
           .value = SQUEEKBOARD_DEBUG_FLAG_FORCE_SHOW,
         },
+        { .key = "gtk-inspector",
+          .value = SQUEEKBOARD_DEBUG_FLAG_GTK_INSPECTOR,
+        },
 };
 
 
@@ -439,6 +443,9 @@ main (int argc, char **argv)
 
     if (debug_flags & SQUEEKBOARD_DEBUG_FLAG_FORCE_SHOW) {
         server_context_service_force_show_keyboard (ui_context);
+    }
+    if (debug_flags & SQUEEKBOARD_DEBUG_FLAG_GTK_INSPECTOR) {
+        gtk_window_set_interactive_debugging (TRUE);
     }
 
     loop = g_main_loop_new (NULL, FALSE);
