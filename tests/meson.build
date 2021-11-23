@@ -93,6 +93,7 @@ foreach layout : [
 
     # Terminal keyboards
     'terminal/fr', 
+    'terminal/fr_wide', 
     'terminal/us',
     'terminal/us_wide',
     
