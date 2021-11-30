@@ -168,9 +168,9 @@ fn get_directory_string(
         None => match content_purpose {
             ContentPurpose::Number => Special("number"),
             ContentPurpose::Digits => Special("number"),
-            ContentPurpose::Pin => Special("number"),
             ContentPurpose::Phone => Special("number"),
             ContentPurpose::Terminal => Special("terminal"),
+            ContentPurpose::Pin => Special("pin"),
             _ => Default,
         },
         Some(overlay) => Special(overlay),
