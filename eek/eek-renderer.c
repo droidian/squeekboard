@@ -315,6 +315,7 @@ eek_renderer_new (LevelKeyboard  *keyboard,
     renderer_init(renderer);
     renderer->pcontext = pcontext;
     g_object_ref (renderer->pcontext);
+    const char *purpose_class = "normal";
 
     /* Create a style context for the layout */
     GtkWidgetPath *path = gtk_widget_path_new();
@@ -336,6 +337,55 @@ eek_renderer_new (LevelKeyboard  *keyboard,
     if (squeek_layout_get_kind(keyboard->layout) == ARRANGEMENT_KIND_WIDE) {
         gtk_widget_path_iter_add_class(path, -1, "wide");
     }
+    /* Add style classes based on purpose */
+    switch (squeek_layout_get_purpose (keyboard->layout)) {
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_NORMAL:
+        purpose_class = "normal";
+        break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_ALPHA:
+        purpose_class = "alpha";
+        break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_DIGITS:
+        purpose_class = "digits";
+        break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_NUMBER:
+        purpose_class = "number";
+        break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_PHONE:
+        purpose_class = "phone";
+        break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_URL:
+        purpose_class = "url";
+        break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_EMAIL:
+        purpose_class = "email";
+        break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_NAME:
+        purpose_class = "name";
+        break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_PASSWORD:
+        purpose_class = "password";
+        break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_PIN:
+        purpose_class = "pin";
+        break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_DATE:
+        purpose_class = "date";
+        break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_TIME:
+        purpose_class = "time";
+        break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_DATETIME:
+        purpose_class = "datetime";
+        break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_TERMINAL:
+        purpose_class = "terminal";
+        break;
+    default:
+        g_warning ("Unknown input purpose %d", squeek_layout_get_purpose(keyboard->layout));
+    }
+    gtk_widget_path_iter_add_class(path, -1, purpose_class);
+
     gtk_widget_path_append_type(path, button_type());
     renderer->button_context = gtk_style_context_new ();
     gtk_style_context_set_path(renderer->button_context, path);
