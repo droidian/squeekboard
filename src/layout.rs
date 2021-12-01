@@ -32,6 +32,8 @@ use ::manager;
 use ::submission::{ Submission, SubmitData, Timestamp };
 use ::util::find_max_double;
 
+use ::imservice::ContentPurpose;
+
 // Traits
 use std::borrow::Borrow;
 use ::logging::Warn;
@@ -181,6 +183,13 @@ pub mod c {
     fn squeek_layout_get_kind(layout: *const Layout) -> u32 {
         let layout = unsafe { &*layout };
         layout.kind.clone() as u32
+    }
+
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_layout_get_purpose(layout: *const Layout) -> u32 {
+        let layout = unsafe { &*layout };
+        layout.purpose.clone() as u32
     }
 
     #[no_mangle]
@@ -627,6 +636,7 @@ pub enum LatchedState {
 pub struct Layout {
     pub margins: Margins,
     pub kind: ArrangementKind,
+    pub purpose: ContentPurpose,
     pub current_view: String,
 
     // If current view is latched,
@@ -676,7 +686,7 @@ impl fmt::Display for NoSuchView {
 // The usage of &mut on Rc<RefCell<KeyState>> doesn't mean anything special.
 // Cloning could also be used.
 impl Layout {
-    pub fn new(data: LayoutData, kind: ArrangementKind) -> Layout {
+    pub fn new(data: LayoutData, kind: ArrangementKind, purpose: ContentPurpose) -> Layout {
         Layout {
             kind,
             current_view: "base".to_owned(),
@@ -685,6 +695,7 @@ impl Layout {
             keymaps: data.keymaps,
             pressed_keys: HashSet::new(),
             margins: data.margins,
+            purpose,
         }
     }
 
@@ -1194,6 +1205,7 @@ mod test {
                 "base".into() => (c::Point { x: 0.0, y: 0.0 }, view.clone()),
                 "locked".into() => (c::Point { x: 0.0, y: 0.0 }, view),
             },
+            purpose: ContentPurpose::Normal,
         };
 
         // Basic cycle
@@ -1270,7 +1282,8 @@ mod test {
                 "locked".into() => (c::Point { x: 0.0, y: 0.0 }, view.clone()),
                 "unlocked".into() => (c::Point { x: 0.0, y: 0.0 }, view),
             },
-        };        
+            purpose: ContentPurpose::Normal,
+        };
 
         layout.apply_view_transition(&switch);
         assert_eq!(&layout.current_view, "locked");
@@ -1336,7 +1349,8 @@ mod test {
                 "locked".into() => (c::Point { x: 0.0, y: 0.0 }, view.clone()),
                 "ĄĘ".into() => (c::Point { x: 0.0, y: 0.0 }, view),
             },
-        };        
+            purpose: ContentPurpose::Normal,
+        };
 
         // Latch twice, then Ąto-unlatch across 2 levels
         layout.apply_view_transition(&switch);
@@ -1436,6 +1450,7 @@ mod test {
             views: hashmap! {
                 String::new() => (c::Point { x: 0.0, y: 0.0 }, view),
             },
+            purpose: ContentPurpose::Normal,
         };
         assert_eq!(
             layout.calculate_inner_size(),

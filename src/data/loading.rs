@@ -61,7 +61,7 @@ pub mod c {
         };
 
         let (kind, layout) = load_layout_data_with_fallback(&name, type_, variant, overlay_str);
-        let layout = ::layout::Layout::new(layout, kind);
+        let layout = ::layout::Layout::new(layout, kind, variant);
         Box::into_raw(Box::new(layout))
     }
 }
