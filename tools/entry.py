@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 
 import gi
+import random
 import sys
 gi.require_version('Gtk', '3.0')
+gi.require_version('GLib', '2.0')
 
 from gi.repository import Gtk
+from gi.repository import GLib
 
 try:
     terminal = [("Terminal", Gtk.InputPurpose.TERMINAL)]
@@ -46,6 +49,25 @@ class App(Gtk.Application):
         ("OSK provided", Gtk.InputHints.INHIBIT_OSK)
     ]
 
+    def on_purpose_toggled(self, btn, entry):
+        purpose = Gtk.InputPurpose.PIN if btn.get_active() else Gtk.InputPurpose.PASSWORD
+        entry.set_input_purpose(purpose)
+
+    def on_timeout(self, e):
+        r = random.randint(0, len(self.purposes) - 1)
+        (_, purpose) = self.purposes[r]
+        print(f"Setting {purpose}")
+        e.set_input_purpose(purpose)
+        return True
+
+    def add_random (self, grid):
+        l = Gtk.Label(label="Random")
+        e = Gtk.Entry(hexpand=True)
+        e.set_input_purpose(Gtk.InputPurpose.FREE_FORM)
+        grid.attach(l, 0, len(self.purposes), 1, 1)
+        grid.attach(e, 1, len(self.purposes), 1, 1)
+        GLib.timeout_add_seconds (3, self.on_timeout, e)
+
     def do_activate(self):
         w = Gtk.ApplicationWindow(application=self)
         w.set_default_size (300, 500)
@@ -55,6 +77,7 @@ class App(Gtk.Application):
         def add_hint(entry, hint):
             entry.set_input_hints(hint)
         purpose_grid = new_grid(self.purposes, add_purpose)
+        self.add_random(purpose_grid)
         hint_grid = new_grid(self.hints, add_hint)
 
         purpose_scroll = Gtk.ScrolledWindow()
