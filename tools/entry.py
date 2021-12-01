@@ -14,6 +14,8 @@ except AttributeError:
 
 def new_grid(items, set_type):
     grid = Gtk.Grid(orientation='vertical', column_spacing=8, row_spacing=8)
+    grid.props.margin = 6
+
     i = 0
     for text, value in items:
         l = Gtk.Label(label=text)
