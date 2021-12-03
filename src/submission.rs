@@ -19,12 +19,13 @@
 
 use std::collections::HashSet;
 use std::ffi::CString;
+
+use crate::vkeyboard::c::ZwpVirtualKeyboardV1;
 use ::action::Modifier;
 use ::imservice;
 use ::imservice::IMService;
 use ::keyboard::{ KeyCode, KeyStateId, Modifiers, PressType };
 use ::layout;
-use ::ui_manager::VisibilityManager;
 use ::util::vec_remove;
 use ::vkeyboard;
 use ::vkeyboard::VirtualKeyboard;
@@ -35,51 +36,11 @@ use std::iter::FromIterator;
 /// Gathers stuff defined in C or called by C
 pub mod c {
     use super::*;
-    
-    use std::os::raw::c_void;
 
-    use ::imservice::c::InputMethod;
-    use ::util::c::Wrapped;
-    use ::vkeyboard::c::ZwpVirtualKeyboardV1;
-
-    // The following defined in C
-
-    /// EekboardContextService*
-    #[repr(transparent)]
-    pub struct StateManager(*const c_void);
+    use crate::util::c::Wrapped;
 
     pub type Submission = Wrapped<super::Submission>;
     
-    #[no_mangle]
-    pub extern "C"
-    fn submission_new(
-        im: *mut InputMethod,
-        vk: ZwpVirtualKeyboardV1,
-        state_manager: *const StateManager,
-        visibility_manager: Wrapped<VisibilityManager>,
-    ) -> Submission {
-        let imservice = if im.is_null() {
-            None
-        } else {
-            let visibility_manager = visibility_manager.clone_ref();
-            Some(IMService::new(
-                im,
-                state_manager,
-                Box::new(move |active| visibility_manager.borrow_mut().set_im_active(active)),
-            ))
-        };
-        // TODO: add vkeyboard too
-        Wrapped::new(
-            super::Submission {
-                imservice,
-                modifiers_active: Vec::new(),
-                virtual_keyboard: VirtualKeyboard(vk),
-                pressed: Vec::new(),
-                keymap_fds: Vec::new(),
-                keymap_idx: None,
-            }
-        )
-    }
 
     #[no_mangle]
     pub extern "C"
@@ -131,6 +92,17 @@ pub enum SubmitData<'a> {
 }
 
 impl Submission {
+    pub fn new(vk: ZwpVirtualKeyboardV1, imservice: Option<Box<IMService>>) -> Self {
+        Submission {
+            imservice,
+            modifiers_active: Vec::new(),
+            virtual_keyboard: VirtualKeyboard(vk),
+            pressed: Vec::new(),
+            keymap_fds: Vec::new(),
+            keymap_idx: None,
+        }
+    }
+
     /// Sends a submit text event if possible;
     /// otherwise sends key press and makes a note of it
     pub fn handle_press(

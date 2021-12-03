@@ -19,9 +19,10 @@
 #ifndef DBUS_H_
 #define DBUS_H_ 1
 
-#include "animation.h"
-
 #include "sm.puri.OSK0.h"
+
+// From main.h
+struct squeek_state_manager;
 
 G_BEGIN_DECLS
 
@@ -41,12 +42,12 @@ typedef struct _DBusHandler
     char *object_path;
 
     /// Forward incoming events there
-    struct squeek_animation_visibility_manager *animman; // shared reference
+    struct squeek_state_manager *state_manager; // shared reference
 } DBusHandler;
 
 DBusHandler * dbus_handler_new      (GDBusConnection *connection,
                                              const gchar     *object_path,
-                                     struct squeek_animation_visibility_manager *animman);
+                                     struct squeek_state_manager *state_manager);
 
 void dbus_handler_destroy(DBusHandler*);
 G_END_DECLS

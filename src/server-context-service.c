@@ -42,7 +42,7 @@ struct _ServerContextService {
     struct submission *submission; // unowned
     struct squeek_layout_state *layout;
     struct ui_manager *manager; // unowned
-    struct vis_manager *vis_manager; // owned
+    struct squeek_state_manager *state_manager; // shared reference
 
     PhoshLayerSurface *window;
     GtkWidget *widget; // nullable
@@ -203,6 +203,7 @@ make_widget (ServerContextService *self)
     gtk_widget_show_all(self->widget);
 }
 
+// Called from rust
 void
 server_context_service_real_show_keyboard (ServerContextService *self)
 {
@@ -215,17 +216,13 @@ server_context_service_real_show_keyboard (ServerContextService *self)
     gtk_widget_show (GTK_WIDGET(self->window));
 }
 
+// Called from rust
 void
 server_context_service_real_hide_keyboard (ServerContextService *self)
 {
-    gtk_widget_hide (GTK_WIDGET(self->window));
-}
-
-static void
-server_context_service_set_physical_keyboard_present (ServerContextService *self, gboolean physical_keyboard_present)
-{
-    g_return_if_fail (SERVER_IS_CONTEXT_SERVICE (self));
-    squeek_visman_set_keyboard_present(self->vis_manager, physical_keyboard_present);
+    if (self->window) {
+	    gtk_widget_hide (GTK_WIDGET(self->window));
+    }
 }
 
 static void
@@ -238,7 +235,7 @@ server_context_service_set_property (GObject      *object,
 
     switch (prop_id) {
     case PROP_ENABLED:
-        server_context_service_set_physical_keyboard_present (self, !g_value_get_boolean (value));
+        squeek_state_send_keyboard_present(self->state_manager, !g_value_get_boolean (value));
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -321,14 +318,20 @@ init (ServerContextService *self) {
 }
 
 ServerContextService *
-server_context_service_new (EekboardContextService *self, struct submission *submission, struct squeek_layout_state *layout, struct ui_manager *uiman, struct vis_manager *visman)
+server_context_service_new (EekboardContextService *self, struct submission *submission, struct squeek_layout_state *layout, struct ui_manager *uiman,  struct squeek_state_manager *state_manager)
 {
     ServerContextService *ui = g_object_new (SERVER_TYPE_CONTEXT_SERVICE, NULL);
     ui->submission = submission;
     ui->state = self;
     ui->layout = layout;
     ui->manager = uiman;
-    ui->vis_manager = visman;
+    ui->state_manager = state_manager;
     init(ui);
     return ui;
+}
+
+// Used from Rust
+void server_context_service_set_hint_purpose(ServerContextService *self, uint32_t hint,
+                                              uint32_t purpose) {
+    eekboard_context_service_set_hint_purpose(self->state, hint, purpose);
 }

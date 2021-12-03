@@ -19,7 +19,9 @@
 #include "config.h"
 
 #include "dbus.h"
+#include "main.h"
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <gio/gio.h>
 
@@ -53,9 +55,9 @@ handle_set_visible(SmPuriOSK0 *object, GDBusMethodInvocation *invocation,
     DBusHandler *service = user_data;
 
     if (arg_visible) {
-        squeek_animation_visibility_manager_send_claim_visible (service->animman);
+        squeek_state_send_force_visible (service->state_manager);
     } else {
-        squeek_animation_visibility_manager_send_force_hide (service->animman);
+        squeek_state_send_force_hidden(service->state_manager);
     }
 
     sm_puri_osk0_complete_set_visible(object, invocation);
@@ -65,12 +67,12 @@ handle_set_visible(SmPuriOSK0 *object, GDBusMethodInvocation *invocation,
 DBusHandler *
 dbus_handler_new (GDBusConnection *connection,
                       const gchar     *object_path,
-                  struct squeek_animation_visibility_manager *animman)
+                  struct squeek_state_manager *state_manager)
 {
     DBusHandler *self = calloc(1, sizeof(DBusHandler));
     self->object_path = g_strdup(object_path);
     self->connection = connection;
-    self->animman = animman;
+    self->state_manager = state_manager;
 
     self->dbus_interface = sm_puri_osk0_skeleton_new();
     g_signal_connect(self->dbus_interface, "handle-set-visible",
