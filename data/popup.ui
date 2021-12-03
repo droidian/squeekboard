@@ -1,19 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.22.1 -->
+<!-- Currently only serves translations until we make popover.rs use it -->
 <interface>
-  <requires lib="gtk+" version="3.16"/>
-  <object class="GtkPopoverMenu" id="main_menu">
-    <property name="can_focus">False</property>
-    <child>
-      <object class="GtkBox" id="box">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="orientation">vertical</property>
-      </object>
-      <packing>
-        <property name="submenu">main</property>
-        <property name="position">1</property>
-      </packing>
-    </child>
-  </object>
+  <menu>
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Keyboard Settings</attribute>
+        <attribute name="action">settings</attribute>
+      </item>
+    </section>
+  </menu>
 </interface>
