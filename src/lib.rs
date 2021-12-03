@@ -19,6 +19,7 @@ extern crate xkbcommon;
 mod logging;
 
 mod action;
+mod animation;
 pub mod data;
 mod drawing;
 pub mod float_ord;
