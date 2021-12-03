@@ -91,6 +91,12 @@ static KEYBOARDS: &[(&'static str, &'static str)] = &[
     ("us+dvorak", include_str!("../data/keyboards/us+dvorak.yaml")),
     ("us+dvorak_wide", include_str!("../data/keyboards/us+dvorak_wide.yaml")),
 
+    // Email
+    ("email/us", include_str!("../data/keyboards/email/us.yaml")),
+
+    // URL
+    ("url/us", include_str!("../data/keyboards/url/us.yaml")),
+
     // Others
     ("number/us", include_str!("../data/keyboards/number/us.yaml")),
     ("pin/us", include_str!("../data/keyboards/pin/us.yaml")),
