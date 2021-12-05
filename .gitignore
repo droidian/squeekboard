@@ -1,4 +1,6 @@
 _build
+po/squeekboard.pot
+po/*.mo
 TAGS
 tags
 vgdump
