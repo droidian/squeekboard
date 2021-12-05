@@ -59,13 +59,15 @@ $ cd ../build/
 $ src/squeekboard
 ```
 
+Squeekboard's panel will appear whenever a compatible application requests an input method. Click a text field in any GTK application, like `python3 ./tools/entry.py`.
+
 Squeekboard honors the gnome "screen-keyboard-enabled" setting. Either enable this through gnome-settings under accessibility or run:
 
 ```bash
 $ gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true
 ```
 
-To make the keyboard show you can use either an application that does so automatically, like a text editor or `python3 ./tools/entry.py`, or you can manually trigger it with:
+Alternatively, force panel visibility manually with:
 
 ```bash
 busctl call --user sm.puri.OSK0 /sm/puri/OSK0 sm.puri.OSK0 SetVisible b true
