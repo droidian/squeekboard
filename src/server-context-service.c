@@ -199,8 +199,7 @@ make_window (ServerContextService *self)
     // or for hacks with regular windows.
     gtk_widget_set_can_focus (GTK_WIDGET(self->window), FALSE);
     g_object_set (G_OBJECT(self->window), "accept_focus", FALSE, NULL);
-    gtk_window_set_title (GTK_WINDOW(self->window),
-                          _("Squeekboard"));
+    gtk_window_set_title (GTK_WINDOW(self->window), "Squeekboard");
     gtk_window_set_icon_name (GTK_WINDOW(self->window), "squeekboard");
     gtk_window_set_keep_above (GTK_WINDOW(self->window), TRUE);
 }
