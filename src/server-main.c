@@ -25,10 +25,12 @@
 
 #include "config.h"
 
+#include "animation.h"
 #include "eek/eek.h"
 #include "eekboard/eekboard-context-service.h"
 #include "dbus.h"
 #include "layout.h"
+#include "main.h"
 #include "outputs.h"
 #include "submission.h"
 #include "server-context-service.h"
@@ -375,6 +377,11 @@ main (int argc, char **argv)
         g_warning("Wayland input method interface not available");
     }
 
+
+    struct channel ui_channel = main_loop_channel_new();
+
+    struct squeek_animation_visibility_manager *animman = squeek_animation_visibility_manager_new(ui_channel.sender);
+
     instance.ui_manager = squeek_uiman_new();
 
     instance.settings_context = eekboard_context_service_new(&instance.layout_choice);
@@ -394,7 +401,7 @@ main (int argc, char **argv)
     guint owner_id = 0;
     DBusHandler *service = NULL;
     if (connection) {
-        service = dbus_handler_new(connection, DBUS_SERVICE_PATH);
+        service = dbus_handler_new(connection, DBUS_SERVICE_PATH, animman);
 
         if (service == NULL) {
             g_printerr ("Can't create dbus server\n");
@@ -415,7 +422,7 @@ main (int argc, char **argv)
         }
     }
 
-    struct vis_manager *vis_manager = squeek_visman_new();
+    struct vis_manager *vis_manager = squeek_visman_new(animman);
 
     instance.submission = get_submission(instance.wayland.input_method_manager,
                                          instance.wayland.virtual_keyboard_manager,
@@ -435,13 +442,9 @@ main (int argc, char **argv)
         g_error("Could not initialize GUI");
         exit(1);
     }
-    instance.ui_context = ui_context;
-    squeek_visman_set_ui(vis_manager, instance.ui_context);
 
-    if (instance.dbus_handler) {
-        dbus_handler_set_ui_context(instance.dbus_handler, instance.ui_context);
-    }
-    eekboard_context_service_set_ui(instance.settings_context, instance.ui_context);
+    instance.ui_context = ui_context;
+    register_ui_loop_handler(ui_channel.receiver, instance.ui_context, instance.dbus_handler);
 
     session_register();
 

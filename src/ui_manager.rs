@@ -5,44 +5,40 @@
 /*! Centrally manages the shape of the UI widgets, and the choice of layout.
  * 
  * Coordinates this based on information collated from all possible sources.
+ * 
+ * Somewhat obsoleted by the `animation` module
+ * (except keyboard presence calculation),
+ * and could be folded into that tracker loop as another piece of state.
  */
 
+use crate::animation::{
+    ThreadLoopDriver as Receiver,
+    Event as ReceiverMessage,
+};
+use crate::logging;
 use std::cmp::min;
 use ::outputs::c::OutputHandle;
 
+
+use crate::logging::Warn;
+
+
 pub mod c {
     use super::*;
-    use std::os::raw::c_void;
     use ::util::c::Wrapped;
+
+    use ::util::CloneOwned;
     
-    /// ServerContextService*
-    #[repr(transparent)]
-    pub struct UIManager(*const c_void);
-
-    extern "C" {
-        pub fn server_context_service_update_visible(imservice: *const UIManager, active: u32);
-        pub fn server_context_service_release_visibility(imservice: *const UIManager);
-    }
-
     #[no_mangle]
     pub extern "C"
-    fn squeek_visman_new() -> Wrapped<VisibilityManager> {
+    fn squeek_visman_new(receiver: Wrapped<Receiver>) -> Wrapped<VisibilityManager> {
         Wrapped::new(VisibilityManager {
-            ui_manager: None,
+            receiver: receiver.clone_owned(),
             visibility_state: VisibilityFactors {
                 im_active: false,
                 physical_keyboard_present: false,
             }
         })
-    }
-    
-    /// Use to initialize the UI reference
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_visman_set_ui(visman: Wrapped<VisibilityManager>, ui_manager: *const UIManager) {
-        let visman = visman.clone_ref();
-        let mut visman = visman.borrow_mut();
-        visman.set_ui_manager(Some(ui_manager))
     }
 
     #[no_mangle]
@@ -169,48 +165,24 @@ impl VisibilityFactors {
     }
 }
 
-// Temporary struct for migration. Should be integrated with Manager eventually.
 pub struct VisibilityManager {
-    /// Owned reference. Be careful, it's shared with C at large
-    ui_manager: Option<*const c::UIManager>,
+    /// Forward changes there.
+    receiver: Receiver,
     visibility_state: VisibilityFactors,
 }
 
 impl VisibilityManager {
-    fn set_ui_manager(&mut self, ui_manager: Option<*const c::UIManager>) {
-        let new = VisibilityManager {
-            ui_manager,
-            ..unsafe { self.clone() }
-        };
-        self.apply_changes(new);
-    }
-
     fn apply_changes(&mut self, new: Self) {
-        if let Some(ui) = &new.ui_manager {
-            if self.ui_manager.is_none() {
-                // Previous state was never applied, so effectively undefined.
-                // Just apply the new one.
-                let new_state = new.visibility_state.desired();
-                unsafe {
-                    c::server_context_service_update_visible(
-                        *ui,
-                        (new_state == Visibility::Visible) as u32,
-                    );
-                }
-            } else {
-                match self.visibility_state.transition_to(&new.visibility_state) {
-                    VisibilityTransition::Hide => unsafe {
-                        c::server_context_service_update_visible(*ui, 0);
-                    },
-                    VisibilityTransition::Show => unsafe {
-                        c::server_context_service_update_visible(*ui, 1);
-                    },
-                    VisibilityTransition::Release => unsafe {
-                        c::server_context_service_release_visibility(*ui);
-                    },
-                    VisibilityTransition::NoTransition => {}
-                }
-            }
+        let request = match self.visibility_state.transition_to(&new.visibility_state) {
+            VisibilityTransition::Hide => Some(ReceiverMessage::ForceHide),
+            VisibilityTransition::Show => Some(ReceiverMessage::ClaimVisible),
+            VisibilityTransition::Release => Some(ReceiverMessage::ReleaseVisible),
+            VisibilityTransition::NoTransition => None,
+        };
+        
+        if let Some(request) = request {
+            new.receiver.send(request)
+                .or_warn(&mut logging::Print, logging::Problem::Warning, "Can't send to animation manager");
         }
         *self = new;
     }
@@ -237,11 +209,10 @@ impl VisibilityManager {
         self.apply_changes(new);
     }
 
-    /// The struct is not really safe to clone due to the ui_manager reference.
     /// This is only a helper for getting desired visibility.
     unsafe fn clone(&self) -> Self {
         VisibilityManager {
-            ui_manager: self.ui_manager.clone(),
+            receiver: self.receiver.clone(),
             visibility_state: self.visibility_state.clone(),
         }
     }

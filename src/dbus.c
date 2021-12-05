@@ -44,11 +44,6 @@ dbus_handler_destroy(DBusHandler *service)
         service->introspection_data = NULL;
     }
 
-    if (service->context) {
-        g_signal_handlers_disconnect_by_data (service->context, service);
-        service->context = NULL;
-    }
-
     free(service);
 }
 
@@ -57,38 +52,25 @@ handle_set_visible(SmPuriOSK0 *object, GDBusMethodInvocation *invocation,
                    gboolean arg_visible, gpointer user_data) {
     DBusHandler *service = user_data;
 
-    if (service->context) {
-        if (arg_visible) {
-            server_context_service_force_show_keyboard (service->context);
-        } else {
-            server_context_service_hide_keyboard (service->context);
-        }
+    if (arg_visible) {
+        squeek_animation_visibility_manager_send_claim_visible (service->animman);
+    } else {
+        squeek_animation_visibility_manager_send_force_hide (service->animman);
     }
+
     sm_puri_osk0_complete_set_visible(object, invocation);
     return TRUE;
 }
 
-static void on_visible(DBusHandler *service,
-                       GParamSpec *pspec,
-                       ServerContextService *context)
-{
-    (void)pspec;
-    gboolean visible;
-
-    g_return_if_fail (SERVER_IS_CONTEXT_SERVICE (context));
-
-    g_object_get (context, "visible", &visible, NULL);
-
-    sm_puri_osk0_set_visible(service->dbus_interface, visible);
-}
-
 DBusHandler *
 dbus_handler_new (GDBusConnection *connection,
-                      const gchar     *object_path)
+                      const gchar     *object_path,
+                  struct squeek_animation_visibility_manager *animman)
 {
     DBusHandler *self = calloc(1, sizeof(DBusHandler));
     self->object_path = g_strdup(object_path);
     self->connection = connection;
+    self->animman = animman;
 
     self->dbus_interface = sm_puri_osk0_skeleton_new();
     g_signal_connect(self->dbus_interface, "handle-set-visible",
@@ -109,16 +91,9 @@ dbus_handler_new (GDBusConnection *connection,
     return self;
 }
 
-void
-dbus_handler_set_ui_context(DBusHandler *service,
-                             ServerContextService *context)
+// Exported to Rust
+void dbus_handler_set_visible(DBusHandler *service,
+                       uint8_t visible)
 {
-    g_return_if_fail (!service->context);
-
-    service->context = context;
-
-    g_signal_connect_swapped (service->context,
-                              "notify::visible",
-                              G_CALLBACK(on_visible),
-                              service);
+    sm_puri_osk0_set_visible(service->dbus_interface, visible);
 }

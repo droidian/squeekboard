@@ -23,7 +23,6 @@ pub mod c {
 
     use std::os::raw::{c_char, c_void};
 
-    pub use ::ui_manager::c::UIManager;
     pub use ::submission::c::StateManager;
 
     // The following defined in C
@@ -153,14 +152,14 @@ pub mod c {
 
         if active_changed {
             (imservice.active_callback)(imservice.current.active);
-        }
-        if imservice.current.active {
-            unsafe {
-                eekboard_context_service_set_hint_purpose(
-                    imservice.state_manager,
-                    imservice.current.content_hint.bits(),
-                    imservice.current.content_purpose.clone() as u32,
-                );
+            if imservice.current.active {
+                unsafe {
+                    eekboard_context_service_set_hint_purpose(
+                        imservice.state_manager,
+                        imservice.current.content_hint.bits(),
+                        imservice.current.content_purpose.clone() as u32,
+                    );
+                }
             }
         }
     }
