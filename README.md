@@ -1,7 +1,7 @@
-*squeekboard* - a Wayland virtual keyboard
+*squeekboard* - a Wayland on-screen keyboard
 ========================================
 
-*Squeekboard* is a virtual keyboard supporting Wayland, built primarily for the *Librem 5* phone.
+*Squeekboard* is a keyboard-shaped input method supporting Wayland, built primarily for the *Librem 5* phone.
 
 It squeaks because some Rust got inside.
 
@@ -11,7 +11,7 @@ Features
 ### Present
 
 - GTK3
-- Custom yaml-defined keyboards
+- Custom yaml-defined layouts
 - DBus interface to show and hide
 - Use Wayland input method protocol to show and hide
 - Use Wayland virtual keyboard protocol
