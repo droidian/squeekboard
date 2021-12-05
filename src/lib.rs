@@ -11,7 +11,6 @@ extern crate gtk_sys;
 #[allow(unused_imports)]
 #[macro_use] // only for tests
 extern crate maplit;
-extern crate regex;
 extern crate serde;
 extern crate xkbcommon;
 
