@@ -100,6 +100,7 @@ foreach layout : [
     # Block: Not languages.
     'emoji/us',
     'number/us',
+    'pin/us',
 ]
     extra = []
     if layout.startswith('emoji/')

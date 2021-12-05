@@ -1,0 +1,6 @@
+/* Theme independent style */
+
+sq_view.pin sq_button {
+    border-radius: 0px;
+    margin: 1px 1px 1px 1px;
+}
