@@ -90,6 +90,15 @@ Layouts can be selected using the GNOME Settings application.
 $ gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'us'), ('xkb', 'de')]"
 ```
 
+### Environment Variables
+
+Besides the environment variables supported by GTK and [GLib](https://docs.gtk.org/glib/running.html) applications
+squeekboard honors the `SQUEEKBOARD_DEBUG` environment variable which can
+contain a comma separated list of:
+
+- `force-show` : Show squeekboard on startup independent of any gsettings or compositor requests
+- `gtk-inspector`: Spawn [gtk-inspector](https://wiki.gnome.org/Projects/GTK/Inspector)
+
 Coding
 ------
 
