@@ -40,7 +40,7 @@ See `.gitlab-ci.yml` or run `apt-get build-dep .`
 ### Build from git repo
 
 ```bash
-$ git clone https://source.puri.sm/Librem5/squeekboard.git
+$ git clone https://gitlab.gnome.org/World/Phosh/squeekboard.git
 $ cd squeekboard
 $ mkdir _build
 $ meson _build/
