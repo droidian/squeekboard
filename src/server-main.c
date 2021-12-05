@@ -326,6 +326,10 @@ main (int argc, char **argv)
         return 1;
     }
 
+    textdomain (GETTEXT_PACKAGE);
+    bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+    bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+
     if (!gtk_init_check (&argc, &argv)) {
         g_printerr ("Can't init GTK\n");
         exit (1);
