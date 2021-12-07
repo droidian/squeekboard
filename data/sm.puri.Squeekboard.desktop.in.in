@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=Squeekboard
-GenericName=Squeekboard Virtual Keyboard
-Comment=Virtual Keyboard
+GenericName=On Screen Keyboard
+Comment=An on screen virtual keyboard
 Exec=@bindir@/squeekboard
 Terminal=false
 Type=Application
