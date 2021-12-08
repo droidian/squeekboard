@@ -1,7 +1,7 @@
-*squeekboard* - a Wayland virtual keyboard
+*squeekboard* - a Wayland on-screen keyboard
 ========================================
 
-*Squeekboard* is a virtual keyboard supporting Wayland, built primarily for the *Librem 5* phone.
+*Squeekboard* is a keyboard-shaped input method supporting Wayland, built primarily for the *Librem 5* phone.
 
 It squeaks because some Rust got inside.
 
@@ -11,18 +11,17 @@ Features
 ### Present
 
 - GTK3
-- Custom yaml-defined keyboards
+- Custom keyboard layouts defined in yaml
+- Input purpose dependent keyboard layouts
 - DBus interface to show and hide
-- Use Wayland input method protocol to show and hide
+- Use Wayland input method protocol to submit text
 - Use Wayland virtual keyboard protocol
-
-### Temporarily dropped
-
-- A settings interface
 
 ### TODO
 
-- Use Wayland input method protocol
+- Text prediction/correction
+- Use preedit
+- Submit actions like "next field" using a future Wayland protocol
 - Pick up DBus interface files from /usr/share
 
 Creating layouts
@@ -40,7 +39,7 @@ See `.gitlab-ci.yml` or run `apt-get build-dep .`
 ### Build from git repo
 
 ```bash
-$ git clone https://source.puri.sm/Librem5/squeekboard.git
+$ git clone https://gitlab.gnome.org/World/Phosh/squeekboard.git
 $ cd squeekboard
 $ mkdir _build
 $ meson _build/
@@ -59,27 +58,19 @@ $ cd ../build/
 $ src/squeekboard
 ```
 
+Squeekboard's panel will appear whenever a compatible application requests an input method. Click a text field in any GTK application, like `python3 ./tools/entry.py`.
+
 Squeekboard honors the gnome "screen-keyboard-enabled" setting. Either enable this through gnome-settings under accessibility or run:
 
 ```bash
 $ gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true
 ```
 
-To make the keyboard show you can use either an application that does so automatically, like a text editor or `python3 ./tools/entry.py`, or you can manually trigger it with:
+Alternatively, force panel visibility manually with:
 
 ```bash
 busctl call --user sm.puri.OSK0 /sm/puri/OSK0 sm.puri.OSK0 SetVisible b true
 ```
-
-Environment Variables
----------------------
-
-Besides the environment variables supported by GTK and [GLib](https://docs.gtk.org/glib/running.html) applications
-squeekboard honors the `SQUEEKBOARD_DEBUG` environment variable which can
-contain a comma separated list of:
-
-- `force-show` : Show squeekboard on startup independent of any gsettings or compositor requests
-- `gtk-inspector`: Spawn [gtk-inspector](https://wiki.gnome.org/Projects/GTK/Inspector)
 
 ### What the compositor has to support
 
