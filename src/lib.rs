@@ -26,7 +26,6 @@ pub mod imservice;
 mod keyboard;
 mod layout;
 mod locale;
-mod locale_config;
 mod manager;
 mod outputs;
 mod popover;
