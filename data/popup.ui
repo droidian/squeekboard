@@ -1,7 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Currently only serves translations until we make popover.rs use it -->
 <interface>
-  <menu>
+  <menu id="app-menu">
+    <item>
+      <attribute name="label" translatable="yes">Emoji</attribute>
+      <attribute name="action">layout</attribute>
+      <attribute name="target">emoji</attribute>
+    </item>
+    <item>
+      <attribute name="label" translatable="yes">Terminal</attribute>
+      <attribute name="action">layout</attribute>
+      <attribute name="target">terminal</attribute>
+    </item>
     <section>
       <item>
         <attribute name="label" translatable="yes">Keyboard Settings</attribute>
