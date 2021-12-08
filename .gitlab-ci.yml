@@ -78,7 +78,8 @@ test_lintian:
 test:
   stage: test
   needs:
-    - build_meson
+    - job: build_meson
+      artifacts: true
   script:
     - apt-get -y build-dep .
     - apt-get -y install clang-tidy
