@@ -66,8 +66,9 @@ build_deb:arm64:
 
 test_lintian:
   stage: test
-  dependencies:
-    - build_deb
+  needs:
+    - job: build_deb
+      artifacts: true
   script:
     - apt-get -y install lintian
     - lintian *.deb
