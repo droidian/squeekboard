@@ -17,9 +17,9 @@ build_docs:
     paths:
       - _build
   script:
-      - apt-get -y install python3-pip python3-sphinx
-      - pip3 install recommonmark
-      - ./doc/build.sh _build
+    - apt-get -y install python3-pip python3-sphinx
+    - pip3 install recommonmark
+    - ./doc/build.sh _build
   except:
     variables:
       - $PKG_ONLY == "1"
@@ -42,33 +42,37 @@ build_deb:
   stage: build
   artifacts:
     paths:
-      - "*.deb"
+      - '*.deb'
   script:
-      - rm -f ../*.deb
-      - apt-get -y build-dep .
-      - apt-get -y install devscripts
-      - REV=$(git log -1 --format=%h)
-      - VER=$(dpkg-parsechangelog -SVersion)
-      - 'DEBFULLNAME="Librem5 CI" EMAIL="librem5-builds@lists.community.puri.sm" dch -v"$VER+librem5ci$CI_PIPELINE_ID.$REV" "$MSG"'
-      - debuild -i -us -uc -b
-      - cp ../*.deb .
+    - rm -f ../*.deb
+    - apt-get -y build-dep .
+    - apt-get -y install devscripts
+    - REV=$(git log -1 --format=%h)
+    - VER=$(dpkg-parsechangelog -SVersion)
+    - DEBFULLNAME="Librem5 CI"
+    - EMAIL="librem5-builds@lists.community.puri.sm"
+    - dch -v"$VER+librem5ci$CI_PIPELINE_ID.$REV" "$MSG"
+    - debuild -i -us -uc -b
+    - cp ../*.deb .
 
 build_deb:arm64:
   tags:
-      - aarch64
+    - aarch64
   stage: build
   artifacts:
     paths:
-      - "*.deb"
+      - '*.deb'
   script:
-      - rm -f ../*.deb
-      - apt-get -y build-dep .
-      - apt-get -y install devscripts
-      - REV=$(git log -1 --format=%h)
-      - VER=$(dpkg-parsechangelog -SVersion)
-      - 'DEBFULLNAME="Librem5 CI" EMAIL="librem5-builds@lists.community.puri.sm" dch -v"$VER+librem5ci$CI_PIPELINE_ID.$REV" "$MSG"'
-      - debuild -i -us -uc -b
-      - cp ../*.deb .
+    - rm -f ../*.deb
+    - apt-get -y build-dep .
+    - apt-get -y install devscripts
+    - REV=$(git log -1 --format=%h)
+    - VER=$(dpkg-parsechangelog -SVersion)
+    - DEBFULLNAME="Librem5 CI"
+    - EMAIL="librem5-builds@lists.community.puri.sm"
+    - dch -v"$VER+librem5ci$CI_PIPELINE_ID.$REV" "$MSG"
+    - debuild -i -us -uc -b
+    - cp ../*.deb .
 
 test_lintian:
   stage: test
