@@ -91,6 +91,7 @@ test:
 
 check_release:
   stage: test
+  needs: []
   only:
     refs:
       - master
