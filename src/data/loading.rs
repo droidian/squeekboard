@@ -166,11 +166,13 @@ fn get_directory_string(
 
     let layout_purpose = match overlay {
         None => match content_purpose {
-            ContentPurpose::Number => Special("number"),
+            ContentPurpose::Email => Special("email"),
             ContentPurpose::Digits => Special("number"),
+            ContentPurpose::Number => Special("number"),
             ContentPurpose::Phone => Special("number"),
-            ContentPurpose::Terminal => Special("terminal"),
             ContentPurpose::Pin => Special("pin"),
+            ContentPurpose::Terminal => Special("terminal"),
+            ContentPurpose::Url => Special("url"),
             _ => Default,
         },
         Some(overlay) => Special(overlay),
