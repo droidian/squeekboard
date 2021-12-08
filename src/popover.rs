@@ -239,8 +239,7 @@ fn translate_layout_names(layouts: &Vec<LayoutId>) -> Vec<OwnedTranslation> {
             LayoutId::Local(name) => Status::Remaining(name.clone()),
         });
 
-    // Non-xkb layouts and weird xkb layouts
-    // still need to be looked up in the internal database.
+    // Weird xkb layouts still need to be looked up in the internal database.
     let builtin_translations = system_locale()
         .map(|locale|
             locale.tags_for("messages")
@@ -251,10 +250,6 @@ fn translate_layout_names(layouts: &Vec<LayoutId>) -> Vec<OwnedTranslation> {
         .or_print(logging::Problem::Surprise, "No locale detected")
         .and_then(|lang| {
             resources::get_layout_names(lang.as_str())
-                .or_print(
-                    logging::Problem::Surprise,
-                    &format!("No translations for locale {}", lang),
-                )
         });
 
     match builtin_translations {
