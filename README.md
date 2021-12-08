@@ -11,18 +11,17 @@ Features
 ### Present
 
 - GTK3
-- Custom yaml-defined layouts
+- Custom keyboard layouts defined in yaml
+- Input purpose dependent keyboard layouts
 - DBus interface to show and hide
-- Use Wayland input method protocol to show and hide
+- Use Wayland input method protocol to submit text
 - Use Wayland virtual keyboard protocol
-
-### Temporarily dropped
-
-- A settings interface
 
 ### TODO
 
-- Use Wayland input method protocol
+- Text prediction/correction
+- Use preedit
+- Submit actions like "next field" using a future Wayland protocol
 - Pick up DBus interface files from /usr/share
 
 Creating layouts
