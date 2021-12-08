@@ -3,7 +3,6 @@ cz Česká
 cz+qwerty Česká (QWERTY)
 de Německá
 dk Dánská
-emoji Emoji
 es Španělská
 fi Finská
 fr Francouzská
@@ -15,7 +14,6 @@ no Norská
 pl Polská
 ru Ruská
 se Švédská
-terminal Terminál
 th Thajská
 ua Ukrajinská
 us Anglická (USA)

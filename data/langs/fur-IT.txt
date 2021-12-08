@@ -13,6 +13,5 @@ no Norvegjês
 pl Polac
 ru Rus
 se Svedês
-terminal Terminâl
 ua Ucrain
 us American (USA)

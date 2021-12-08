@@ -127,13 +127,9 @@ pub fn get_overlays() -> Vec<&'static str> {
 
 /// Translations of the layout identifier strings
 static LAYOUT_NAMES: &[(&'static str, &'static str)] = &[
-    ("de-DE", include_str!("../data/langs/de-DE.txt")),
-    ("en-US", include_str!("../data/langs/en-US.txt")),
     ("es-ES", include_str!("../data/langs/es-ES.txt")),
     ("fur-IT", include_str!("../data/langs/fur-IT.txt")),
     ("he-IL", include_str!("../data/langs/he-IL.txt")),
-    ("ja-JP", include_str!("../data/langs/ja-JP.txt")),
-    ("pl-PL", include_str!("../data/langs/pl-PL.txt")),
     ("ru-RU", include_str!("../data/langs/ru-RU.txt")),
 ];
 
