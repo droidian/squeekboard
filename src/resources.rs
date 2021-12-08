@@ -2,11 +2,6 @@
  * This could be done using GResource, but that would need additional work.
  */
 
-use std::collections::HashMap;
-use ::locale::Translation;
-
-use std::iter::FromIterator;
-
 // TODO: keep a list of what is a language layout,
 // and what a convenience layout. "_wide" is not a layout,
 // neither is "number"
@@ -125,42 +120,6 @@ pub fn get_overlays() -> Vec<&'static str> {
     OVERLAY_NAMES.to_vec()
 }
 
-/// Translations of the layout identifier strings
-static LAYOUT_NAMES: &[(&'static str, &'static str)] = &[
-    ("es-ES", include_str!("../data/langs/es-ES.txt")),
-    ("fur-IT", include_str!("../data/langs/fur-IT.txt")),
-    ("he-IL", include_str!("../data/langs/he-IL.txt")),
-    ("ru-RU", include_str!("../data/langs/ru-RU.txt")),
-];
-
-pub fn get_layout_names(lang: &str)
-    -> Option<HashMap<&'static str, Translation<'static>>>
-{
-    let translations = LAYOUT_NAMES.iter()
-        .find(|(name, _data)| *name == lang)
-        .map(|(_name, data)| *data);
-    translations.map(make_mapping)
-}
-
-fn parse_line(line: &str) -> Option<(&str, Translation)> {
-    let comment = line.trim().starts_with("#");
-    if comment {
-        None
-    } else {
-        let mut iter = line.splitn(2, " ");
-        let name = iter.next().unwrap();
-        // will skip empty and unfinished lines
-        iter.next().map(|tr| (name, Translation(tr.trim())))
-    }
-}
-
-fn make_mapping(data: &str) -> HashMap<&str, Translation> {
-    HashMap::from_iter(
-        data.split("\n")
-            .filter_map(parse_line)
-    )
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -170,33 +129,5 @@ mod test {
         for name in get_overlays() {
             assert!(get_keyboard(&format!("{}/us", name)).is_some());
         }
-    }
-
-    #[test]
-    fn mapping_line() {
-        assert_eq!(
-            Some(("name", Translation("translation"))),
-            parse_line("name translation")
-        );
-    }
-
-    #[test]
-    fn mapping_bad() {
-        assert_eq!(None, parse_line("bad"));
-    }
-
-    #[test]
-    fn mapping_empty() {
-        assert_eq!(None, parse_line(""));
-    }
-
-    #[test]
-    fn mapping_comment() {
-        assert_eq!(None, parse_line("# comment"));
-    }
-
-    #[test]
-    fn mapping_comment_offset() {
-        assert_eq!(None, parse_line("  # comment"));
     }
 }
