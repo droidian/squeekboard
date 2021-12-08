@@ -326,7 +326,7 @@ pub fn show(
         }
     });
 
-    let builder = gtk::Builder::new_from_resource("/sm/puri/squeekboard/popup.ui");
+    let builder = gtk::Builder::new_from_resource("/sm/puri/squeekboard/popover.ui");
     let model: gio::Menu = builder.get_object("app-menu").unwrap();
 
     for (tr, l) in human_names.iter().rev() {

@@ -4,7 +4,7 @@
    <file compressed="true">common.css</file>
    <file compressed="true">style.css</file>
    <file compressed="true">style-Adwaita:dark.css</file>
-   <file compressed="true" preprocess="xml-stripblanks">popup.ui</file>
+   <file compressed="true" preprocess="xml-stripblanks">popover.ui</file>
    <file>icons/key-enter.svg</file>
    <file>icons/key-shift.svg</file>
    <file>icons/keyboard-mode-symbolic.svg</file>
