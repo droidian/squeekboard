@@ -93,7 +93,17 @@ test:
     - apt-get -y build-dep .
     - apt-get -y install clang-tidy
     - ninja -C _build test
-    - tools/style-check _build
+    - tools/style-check_build _build
+  except:
+    variables:
+      - $PKG_ONLY == "1"
+
+test_style:
+  stage: test
+  needs: []
+  script:
+    - apt-get -y build-dep .
+    - tools/style-check_source
   except:
     variables:
       - $PKG_ONLY == "1"
