@@ -120,6 +120,16 @@ User interface modules should:
 
 ### Style
 
+Note that some portions, like the .gitlab-ci.yml file have accummulated enough style/whitespace conflicts that an enforced style checker is now applied.
+
+To fix your contributions before submitting a change, use:
+
+```
+./tools/style-check_source --apply
+```
+
+* * *
+
 Code submitted should roughly match the style of surrounding code. Things that will *not* be accepted are ones that often lead to errors:
 
 - skipping brackets `{}` after every `if()`, `else`, and similar ([SCI CERT C: EXP19-C](https://wiki.sei.cmu.edu/confluence/display/c/EXP19-C.+Use+braces+for+the+body+of+an+if%2C+for%2C+or+while+statement))
