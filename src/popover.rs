@@ -5,9 +5,7 @@ use gtk;
 use std::ffi::CString;
 use std::cmp::Ordering;
 use ::layout::c::{ Bounds, EekGtkKeyboard };
-use ::locale;
-use ::locale::{ OwnedTranslation, Translation, compare_current_locale };
-use ::locale_config::system_locale;
+use ::locale::{ OwnedTranslation, compare_current_locale };
 use ::logging;
 use ::manager;
 use ::resources;
@@ -20,10 +18,9 @@ use gio::SimpleActionExt;
 use glib::translate::FromGlibPtrNone;
 use glib::variant::ToVariant;
 #[cfg(not(feature = "gtk_v0_5"))]
-use gtk::BuilderExtManual;
+use gtk::prelude::*;
 use gtk::PopoverExt;
 use gtk::WidgetExt;
-use std::io::Write;
 use ::logging::Warn;
 
 mod c {
@@ -109,46 +106,6 @@ mod variants {
             }
         }
     }
-}
-
-fn make_menu_builder(inputs: Vec<(&str, OwnedTranslation)>) -> gtk::Builder {
-    let mut xml: Vec<u8> = Vec::new();
-    writeln!(
-        xml,
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<interface>
-  <menu id=\"app-menu\">
-    <section>"
-    ).unwrap();
-    for (input_name, translation) in inputs {
-        writeln!(
-            xml,
-            "
-        <item>
-            <attribute name=\"label\" translatable=\"yes\">{}</attribute>
-            <attribute name=\"action\">layout</attribute>
-            <attribute name=\"target\">{}</attribute>
-        </item>",
-            translation.0,
-            input_name,
-        ).unwrap();
-    }
-    writeln!(
-        xml,
-        "
-    </section>
-    <section>
-        <item>
-            <attribute name=\"label\" translatable=\"yes\">Keyboard Settings</attribute>
-            <attribute name=\"action\">settings</attribute>
-        </item>
-    </section>
-  </menu>
-</interface>"
-    ).unwrap();
-    gtk::Builder::new_from_string(
-        &String::from_utf8(xml).expect("Bad menu definition")
-    )
 }
 
 fn get_settings(schema_name: &str) -> Option<gio::Settings> {
@@ -250,13 +207,8 @@ fn get_current_layout(
 /// Translates all provided layout names according to current locale,
 /// for the purpose of display (i.e. errors will be caught and reported)
 fn translate_layout_names(layouts: &Vec<LayoutId>) -> Vec<OwnedTranslation> {
-    // This procedure is rather ugly...
-    // Xkb lookup *must not* be applied to non-system layouts,
-    // so both translators can't be merged into one lookup table,
-    // therefore must be done in two steps.
-    // `XkbInfo` being temporary also means
-    // that its return values must be copied,
-    // forcing the use of `OwnedTranslation`.
+    // `XkbInfo` being temporary means that its return values must be
+    // copied, forcing the use of `OwnedTranslation`.
     enum Status {
         /// xkb names should get all translated here
         Translated(OwnedTranslation),
@@ -265,7 +217,7 @@ fn translate_layout_names(layouts: &Vec<LayoutId>) -> Vec<OwnedTranslation> {
     }
 
     // Attempt to take all xkb names from gnome-desktop's xkb info.
-    let xkb_translator = locale::XkbInfo::new();
+    let xkb_translator = ::locale::XkbInfo::new();
 
     let translated_names = layouts.iter()
         .map(|id| match id {
@@ -277,49 +229,15 @@ fn translate_layout_names(layouts: &Vec<LayoutId>) -> Vec<OwnedTranslation> {
                         &format!("No display name for xkb layout {}", name),
                     ).unwrap_or_else(|| Status::Remaining(name.clone()))
             },
-            LayoutId::Local(name) => Status::Remaining(name.clone()),
+            LayoutId::Local (_) => unreachable!(),
         });
 
-    // Non-xkb layouts and weird xkb layouts
-    // still need to be looked up in the internal database.
-    let builtin_translations = system_locale()
-        .map(|locale|
-            locale.tags_for("messages")
-                .next().unwrap() // guaranteed to exist
-                .as_ref()
-                .to_owned()
-        )
-        .or_print(logging::Problem::Surprise, "No locale detected")
-        .and_then(|lang| {
-            resources::get_layout_names(lang.as_str())
-                .or_print(
-                    logging::Problem::Surprise,
-                    &format!("No translations for locale {}", lang),
-                )
-        });
-
-    match builtin_translations {
-        Some(translations) => {
-            translated_names
-                .map(|status| match status {
-                    Status::Remaining(name) => {
-                        translations.get(name.as_str())
-                            .unwrap_or(&Translation(name.as_str()))
-                            .to_owned()
-                    },
-                    Status::Translated(t) => t,
-                })
-                .collect()
-        },
-        None => {
-            translated_names
-                .map(|status| match status {
-                    Status::Remaining(name) => OwnedTranslation(name),
-                    Status::Translated(t) => t,
-                })
-                .collect()
-        },
-    }
+    translated_names
+        .map(|status| match status {
+            Status::Remaining(name) => OwnedTranslation(name),
+            Status::Translated(t) => t,
+        })
+        .collect()
 }
 
 pub fn show(
@@ -350,12 +268,12 @@ pub fn show(
         .chain(overlay_layouts)
         .collect();
 
-    let translated_names = translate_layout_names(&all_layouts);
-    
-    // sorted collection of human and machine names
+    let translated_names = translate_layout_names(&system_layouts);
+
+    // sorted collection of language layouts
     let mut human_names: Vec<(OwnedTranslation, LayoutId)> = translated_names
         .into_iter()
-        .zip(all_layouts.clone().into_iter())
+        .zip(system_layouts.clone().into_iter())
         .collect();
 
     human_names.sort_unstable_by(|(tr_a, layout_a), (tr_b, layout_b)| {
@@ -367,32 +285,14 @@ pub fn show(
         }
     });
 
-    // GVariant doesn't natively support `enum`s,
-    // so the `choices` vector will serve as a lookup table.
-    let choices_with_translations: Vec<(String, (OwnedTranslation, LayoutId))>
-        = human_names.into_iter()
-            .enumerate()
-                .map(|(i, human_entry)| {(
-                    format!("{}_{}", i, human_entry.1.get_name()),
-                    human_entry,
-                )}).collect();
+    let builder = gtk::Builder::new_from_resource("/sm/puri/squeekboard/popover.ui");
+    let model: gio::Menu = builder.get_object("app-menu").unwrap();
 
-
-    let builder = make_menu_builder(
-        choices_with_translations.iter()
-            .map(|(id, (translation, _))| (id.as_str(), (*translation).clone()))
-            .collect()
-    );
-
-    let choices: Vec<(String, LayoutId)>
-        = choices_with_translations.into_iter()
-            .map(|(id, (_tr, layout))| (id, layout))
-            .collect();
-
-    // Much more debuggable to populate the model & menu
-    // from a string representation
-    // than add items imperatively
-    let model: gio::MenuModel = builder.get_object("app-menu").unwrap();
+    for (tr, l) in human_names.iter().rev() {
+        let detailed_action = format!("layout::{}", l.get_name());
+        let item = gio::MenuItem::new(Some(&tr.0), Some(detailed_action.as_str()));
+        model.prepend_item (&item);
+    }
 
     let menu = gtk::Popover::new_from_model(Some(&window), &model);
     menu.set_pointing_to(&gtk::Rectangle {
@@ -403,32 +303,36 @@ pub fn show(
     });
     menu.set_constrain_to(gtk::PopoverConstraint::None);
 
+    let action_group = gio::SimpleActionGroup::new();
+
     if let Some(current_layout) = get_current_layout(manager, &system_layouts) {
-        let current_name_variant = choices.iter()
+        let current_layout_name = all_layouts.iter()
             .find(
-                |(_id, layout)| layout == &current_layout
+                |l| l.get_name() == current_layout.get_name()
             ).unwrap()
-            .0.to_variant();
+            .get_name();
+        log_print!(logging::Level::Debug, "Current Layout {}", current_layout_name);
 
         let layout_action = gio::SimpleAction::new_stateful(
             "layout",
-            Some(current_name_variant.type_()),
-            &current_name_variant,
+            Some(current_layout_name.to_variant().type_()),
+            &current_layout_name.to_variant()
         );
 
         let menu_inner = menu.clone();
         layout_action.connect_change_state(move |_action, state| {
             match state {
                 Some(v) => {
+                    log_print!(logging::Level::Debug, "Selected layout {}", v);
                     v.get::<String>()
                         .or_print(
                             logging::Problem::Bug,
                             &format!("Variant is not string: {:?}", v)
                         )
                         .map(|state| {
-                            let (_id, layout) = choices.iter()
+                            let layout = all_layouts.iter()
                                 .find(
-                                    |choices| state == choices.0
+                                    |choices| state == choices.get_name()
                                 ).unwrap();
                             set_visible_layout(
                                 manager,
@@ -443,19 +347,17 @@ pub fn show(
             };
             menu_inner.popdown();
         });
-
-        let settings_action = gio::SimpleAction::new("settings", None);
-        settings_action.connect_activate(move |_, _| {
-            let s = CString::new("region").unwrap();
-            unsafe { c::popover_open_settings_panel(s.as_ptr()) };
-        });
-
-        let action_group = gio::SimpleActionGroup::new();
         action_group.add_action(&layout_action);
-        action_group.add_action(&settings_action);
-
-        menu.insert_action_group("popup", Some(&action_group));
     };
+
+    let settings_action = gio::SimpleAction::new("settings", None);
+    settings_action.connect_activate(move |_, _| {
+        let s = CString::new("region").unwrap();
+        unsafe { c::popover_open_settings_panel(s.as_ptr()) };
+    });
+    action_group.add_action(&settings_action);
+
+    menu.insert_action_group("popup", Some(&action_group));
 
     menu.bind_model(Some(&model), Some("popup"));
     menu.popup();
