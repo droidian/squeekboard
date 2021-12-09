@@ -360,5 +360,8 @@ pub fn show(
     menu.insert_action_group("popup", Some(&action_group));
 
     menu.bind_model(Some(&model), Some("popup"));
-    menu.popup();
+    glib::idle_add_local(move || {
+        menu.popup();
+        Continue(false)
+    });
 }
