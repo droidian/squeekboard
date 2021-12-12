@@ -7,7 +7,7 @@ use ::action::{ Action, Modifier };
 use ::keyboard;
 use ::layout::{ Button, Label, LatchedState, Layout };
 use ::layout::c::{ Bounds, EekGtkKeyboard, Point };
-use ::submission::Submission;
+use ::submission::c::Submission as CSubmission;
 
 use glib::translate::FromGlibPtrNone;
 use gtk::WidgetExt;
@@ -76,10 +76,11 @@ mod c {
         layout: *mut Layout,
         renderer: EekRenderer,
         cr: *mut cairo_sys::cairo_t,
-        submission: *const Submission,
+        submission: CSubmission,
     ) {
         let layout = unsafe { &mut *layout };
-        let submission = unsafe { &*submission };
+        let submission = submission.clone_ref();
+        let submission = submission.borrow();
         let cr = unsafe { cairo::Context::from_raw_none(cr) };
         let active_modifiers = submission.get_active_modifiers();
 

@@ -48,6 +48,8 @@ pub mod c {
     #[repr(transparent)]
     pub struct StateManager(*const c_void);
 
+    pub type Submission = Wrapped<super::Submission>;
+    
     #[no_mangle]
     pub extern "C"
     fn submission_new(
@@ -55,7 +57,7 @@ pub mod c {
         vk: ZwpVirtualKeyboardV1,
         state_manager: *const StateManager,
         visibility_manager: Wrapped<VisibilityManager>,
-    ) -> *mut Submission {
+    ) -> Submission {
         let imservice = if im.is_null() {
             None
         } else {
@@ -67,8 +69,8 @@ pub mod c {
             ))
         };
         // TODO: add vkeyboard too
-        Box::<Submission>::into_raw(Box::new(
-            Submission {
+        Wrapped::new(
+            super::Submission {
                 imservice,
                 modifiers_active: Vec::new(),
                 virtual_keyboard: VirtualKeyboard(vk),
@@ -76,31 +78,27 @@ pub mod c {
                 keymap_fds: Vec::new(),
                 keymap_idx: None,
             }
-        ))
+        )
     }
 
     #[no_mangle]
     pub extern "C"
     fn submission_use_layout(
-        submission: *mut Submission,
+        submission: Submission,
         layout: *const layout::Layout,
         time: u32,
     ) {
-        if submission.is_null() {
-            panic!("Null submission pointer");
-        }
-        let submission: &mut Submission = unsafe { &mut *submission };
+        let submission = submission.clone_ref();
+        let mut submission = submission.borrow_mut();
         let layout = unsafe { &*layout };
         submission.use_layout(layout, Timestamp(time));
     }
 
     #[no_mangle]
     pub extern "C"
-    fn submission_hint_available(submission: *mut Submission) -> u8 {
-        if submission.is_null() {
-            panic!("Null submission pointer");
-        }
-        let submission: &mut Submission = unsafe { &mut *submission };
+    fn submission_hint_available(submission: Submission) -> u8 {
+        let submission = submission.clone_ref();
+        let submission = submission.borrow();
         let active = submission.imservice.as_ref()
             .map(|imservice| imservice.is_active());
         (Some(true) == active) as u8

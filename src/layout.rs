@@ -44,6 +44,7 @@ pub mod c {
 
     use gtk_sys;
     use std::os::raw::c_void;
+    use crate::submission::c::Submission as CSubmission;
 
     use std::ops::{ Add, Sub };
 
@@ -207,7 +208,7 @@ pub mod c {
         pub extern "C"
         fn squeek_layout_release(
             layout: *mut Layout,
-            submission: *mut Submission,
+            submission: CSubmission,
             widget_to_layout: Transformation,
             time: u32,
             manager: manager::c::Manager,
@@ -215,7 +216,8 @@ pub mod c {
         ) {
             let time = Timestamp(time);
             let layout = unsafe { &mut *layout };
-            let submission = unsafe { &mut *submission };
+            let submission = submission.clone_ref();
+            let mut submission = submission.borrow_mut();
             let ui_backend = UIBackend {
                 widget_to_layout,
                 keyboard: ui_keyboard,
@@ -227,7 +229,7 @@ pub mod c {
                 let key: &Rc<RefCell<KeyState>> = key.borrow();
                 seat::handle_release_key(
                     layout,
-                    submission,
+                    &mut submission,
                     Some(&ui_backend),
                     time,
                     Some(manager),
@@ -242,18 +244,19 @@ pub mod c {
         pub extern "C"
         fn squeek_layout_release_all_only(
             layout: *mut Layout,
-            submission: *mut Submission,
+            submission: CSubmission,
             time: u32,
         ) {
             let layout = unsafe { &mut *layout };
-            let submission = unsafe { &mut *submission };
+            let submission = submission.clone_ref();
+            let mut submission = submission.borrow_mut();
             // The list must be copied,
             // because it will be mutated in the loop
             for key in layout.pressed_keys.clone() {
                 let key: &Rc<RefCell<KeyState>> = key.borrow();
                 seat::handle_release_key(
                     layout,
-                    submission,
+                    &mut submission,
                     None, // don't update UI
                     Timestamp(time),
                     None, // don't switch layouts
@@ -266,14 +269,15 @@ pub mod c {
         pub extern "C"
         fn squeek_layout_depress(
             layout: *mut Layout,
-            submission: *mut Submission,
+            submission: CSubmission,
             x_widget: f64, y_widget: f64,
             widget_to_layout: Transformation,
             time: u32,
             ui_keyboard: EekGtkKeyboard,
         ) {
             let layout = unsafe { &mut *layout };
-            let submission = unsafe { &mut *submission };
+            let submission = submission.clone_ref();
+            let mut submission = submission.borrow_mut();
             let point = widget_to_layout.forward(
                 Point { x: x_widget, y: y_widget }
             );
@@ -284,7 +288,7 @@ pub mod c {
             if let Some(state) = state {
                 seat::handle_press_key(
                     layout,
-                    submission,
+                    &mut submission,
                     Timestamp(time),
                     &state,
                 );
@@ -303,7 +307,7 @@ pub mod c {
         pub extern "C"
         fn squeek_layout_drag(
             layout: *mut Layout,
-            submission: *mut Submission,
+            submission: CSubmission,
             x_widget: f64, y_widget: f64,
             widget_to_layout: Transformation,
             time: u32,
@@ -312,7 +316,8 @@ pub mod c {
         ) {
             let time = Timestamp(time);
             let layout = unsafe { &mut *layout };
-            let submission = unsafe { &mut *submission };
+            let submission = submission.clone_ref();
+            let mut submission = submission.borrow_mut();
             let ui_backend = UIBackend {
                 widget_to_layout,
                 keyboard: ui_keyboard,
@@ -340,7 +345,7 @@ pub mod c {
                     } else {
                         seat::handle_release_key(
                             layout,
-                            submission,
+                            &mut submission,
                             Some(&ui_backend),
                             time,
                             Some(manager),
@@ -351,7 +356,7 @@ pub mod c {
                 if !found {
                     seat::handle_press_key(
                         layout,
-                        submission,
+                        &mut submission,
                         time,
                         &state,
                     );
@@ -365,7 +370,7 @@ pub mod c {
                     let key: &Rc<RefCell<KeyState>> = wrapped_key.borrow();
                     seat::handle_release_key(
                         layout,
-                        submission,
+                        &mut submission,
                         Some(&ui_backend),
                         time,
                         Some(manager),
