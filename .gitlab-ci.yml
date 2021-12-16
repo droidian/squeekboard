@@ -1,122 +1,124 @@
-image: $CI_REGISTRY/world/phosh/phosh/debian:v0.0.20211208
+image: debian:bullseye
 
 stages:
-  - build
-  - test
+- build
+- test
 
 before_script:
-  - apt-get -y update
-  - apt-get -y install ca-certificates
+- apt-get -y update
+- apt-get -y install wget ca-certificates gnupg
+- echo "deb [trusted=yes] http://ci.puri.sm/ bullseyeci main" > /etc/apt/sources.list.d/ci.list
+- wget -O- https://ci.puri.sm/ci-repo.key | apt-key add -
+- apt-get -y update
 
 build_docs:
   stage: build
   artifacts:
     paths:
-      - _build
+    - _build
   script:
-    - apt-get -y install python3-pip python3-sphinx
-    - pip3 install recommonmark
-    - ./doc/build.sh _build
+  - apt-get -y install python3-pip python3-sphinx
+  - pip3 install recommonmark
+  - ./doc/build.sh _build
   except:
     variables:
-      - $PKG_ONLY == "1"
+    - $PKG_ONLY == "1"
 
 build_meson:
   stage: build
   artifacts:
     paths:
-      - _build
+    - _build
     expire_in: 3h
   script:
-    - apt-get -y build-dep .
-    - meson . _build/ -Ddepdatadir=/usr/share --werror
-    - ninja -C _build install
+  - apt-get -y build-dep .
+  - meson . _build/ -Ddepdatadir=/usr/share --werror
+  - ninja -C _build install
   except:
     variables:
-      - $PKG_ONLY == "1"
+    - $PKG_ONLY == "1"
 
 build_deb:
   stage: build
   artifacts:
     paths:
-      - '*.deb'
+    - '*.deb'
   script:
-    - rm -f ../*.deb
-    - apt-get -y build-dep .
-    - apt-get -y install devscripts
-    - REV=$(git log -1 --format=%h)
-    - VER=$(dpkg-parsechangelog -SVersion)
-    - DEBFULLNAME="Librem5 CI"
-    - EMAIL="librem5-builds@lists.community.puri.sm"
-    - dch -v"$VER+librem5ci$CI_PIPELINE_ID.$REV" "$MSG"
-    - debuild -i -us -uc -b
-    - cp ../*.deb .
+  - rm -f ../*.deb
+  - apt-get -y build-dep .
+  - apt-get -y install devscripts
+  - REV=$(git log -1 --format=%h)
+  - VER=$(dpkg-parsechangelog -SVersion)
+  - DEBFULLNAME="Librem5 CI"
+  - EMAIL="librem5-builds@lists.community.puri.sm"
+  - dch -v"$VER+librem5ci$CI_PIPELINE_ID.$REV" "$MSG"
+  - debuild -i -us -uc -b
+  - cp ../*.deb .
 
 build_deb:arm64:
-  image: debian:bookworm
   tags:
-    - aarch64
+  - aarch64
   stage: build
   artifacts:
     paths:
-      - '*.deb'
+    - '*.deb'
   script:
-    - rm -f ../*.deb
-    - apt-get -y build-dep .
-    - apt-get -y install devscripts
-    - REV=$(git log -1 --format=%h)
-    - VER=$(dpkg-parsechangelog -SVersion)
-    - DEBFULLNAME="Librem5 CI"
-    - EMAIL="librem5-builds@lists.community.puri.sm"
-    - dch -v"$VER+librem5ci$CI_PIPELINE_ID.$REV" "$MSG"
-    - debuild -i -us -uc -b
-    - cp ../*.deb .
+  - rm -f ../*.deb
+  - apt-get -y build-dep .
+  - apt-get -y install devscripts
+  - REV=$(git log -1 --format=%h)
+  - VER=$(dpkg-parsechangelog -SVersion)
+  - DEBFULLNAME="Librem5 CI"
+  - EMAIL="librem5-builds@lists.community.puri.sm"
+  - dch -v"$VER+librem5ci$CI_PIPELINE_ID.$REV" "$MSG"
+  - debuild -i -us -uc -b
+  - cp ../*.deb .
 
 test_lintian:
   stage: test
   needs:
-    - job: build_deb
-      artifacts: true
+  - job: build_deb
+    artifacts: true
   script:
-    - apt-get -y install lintian
-    - lintian *.deb
+  - apt-get -y install lintian
+  - lintian *.deb
   except:
     variables:
-      - $PKG_ONLY == "1"
+    - $PKG_ONLY == "1"
 
 test:
   stage: test
   needs:
-    - job: build_meson
-      artifacts: true
+  - job: build_meson
+    artifacts: true
   script:
-    - apt-get -y build-dep .
-    - apt-get -y install clang-tidy
-    - ninja -C _build test
-    - tools/style-check_build _build
+  - apt-get -y build-dep .
+  - apt-get -y install clang-tidy
+  - ninja -C _build test
+  - tools/style-check_build _build
   except:
     variables:
-      - $PKG_ONLY == "1"
+    - $PKG_ONLY == "1"
 
 test_style:
   stage: test
   needs: []
   script:
-    - apt-get -y build-dep .
-    - tools/style-check_source
+  - apt-get -y build-dep .
+  - tools/style-check_source
   except:
     variables:
-      - $PKG_ONLY == "1"
+    - $PKG_ONLY == "1"
 
 check_release:
   stage: test
   needs: []
   only:
     refs:
-      - master
+    - master
   script:
-    - apt-get -y install git python3
-    - (head -n 1 ./debian/changelog && git tag) | ./debian/check_release.py
+  - apt-get -y install git python3
+  - (head -n 1 ./debian/changelog && git tag) | ./debian/check_release.py
   except:
     variables:
-      - $PKG_ONLY == "1"
+    - $PKG_ONLY == "1"
