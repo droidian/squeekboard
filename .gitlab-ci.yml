@@ -1,4 +1,4 @@
-image: debian:bullseye
+image: $CI_REGISTRY/world/phosh/phosh/debian:v0.0.20211208
 
 stages:
   - build
@@ -6,10 +6,7 @@ stages:
 
 before_script:
   - apt-get -y update
-  - apt-get -y install wget ca-certificates gnupg
-  - echo "deb [trusted=yes] http://ci.puri.sm/ bullseyeci main" > /etc/apt/sources.list.d/ci.list
-  - wget -O- https://ci.puri.sm/ci-repo.key | apt-key add -
-  - apt-get -y update
+  - apt-get -y install ca-certificates
 
 build_docs:
   stage: build
@@ -56,6 +53,7 @@ build_deb:
     - cp ../*.deb .
 
 build_deb:arm64:
+  image: debian:bookworm
   tags:
     - aarch64
   stage: build
