@@ -76,8 +76,9 @@ build_deb:arm64:
 
 test_lintian:
   stage: test
-  dependencies:
-    - build_deb
+  needs:
+    - job: build_deb
+      artifacts: true
   script:
     - apt-get -y install lintian
     - lintian *.deb
@@ -88,7 +89,8 @@ test_lintian:
 test:
   stage: test
   needs:
-    - build_meson
+    - job: build_meson
+      artifacts: true
   script:
     - apt-get -y build-dep .
     - apt-get -y install clang-tidy
@@ -110,6 +112,7 @@ test_style:
 
 check_release:
   stage: test
+  needs: []
   only:
     refs:
       - master
