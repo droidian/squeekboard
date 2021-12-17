@@ -25,6 +25,7 @@ def dump(yaml, yml):
 with open(path) as f:
     contents = f.read()
     yaml = YAML()
+    yaml.indent(offset=2, sequence=4)
     yml = yaml.load(contents)
     formatted = dump(yaml, yml)
     well_formatted = formatted == contents
