@@ -56,6 +56,13 @@ render_outline (cairo_t     *cr,
         position.x, position.y, position.width, position.height);
 }
 
+float get_scale(cairo_t *cr) {
+    double width = 1;
+    double height = 1;
+    cairo_user_to_device_distance (cr, &width, &height);
+    return width;
+}
+
 /// Rust interface
 void eek_render_button_in_context(uint32_t scale_factor,
                                      cairo_t     *cr,
@@ -72,16 +79,17 @@ void eek_render_button_in_context(uint32_t scale_factor,
 
     /* render icon (if any) */
     if (icon_name) {
+        int context_scale = ceil (get_scale (cr));
         cairo_surface_t *icon_surface =
-            eek_renderer_get_icon_surface (icon_name, 16, scale_factor);
+            eek_renderer_get_icon_surface (icon_name, 16, scale_factor * context_scale);
         if (icon_surface) {
-            gint width = cairo_image_surface_get_width (icon_surface);
-            gint height = cairo_image_surface_get_height (icon_surface);
+            double width = cairo_image_surface_get_width (icon_surface);
+            double height = cairo_image_surface_get_height (icon_surface);
 
             cairo_save (cr);
             cairo_translate (cr,
-                             (bounds.width - (double)width / scale_factor) / 2,
-                             (bounds.height - (double)height / scale_factor) / 2);
+                             (bounds.width - width / (scale_factor * context_scale)) / 2,
+                             (bounds.height - height / (scale_factor * context_scale)) / 2);
             cairo_rectangle (cr, 0, 0, width, height);
             cairo_clip (cr);
             /* Draw the shape of the icon using the foreground color */
