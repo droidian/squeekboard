@@ -29,6 +29,7 @@
 #include "eekboard/eekboard-context-service.h"
 #include "dbus.h"
 #include "layout.h"
+#include "main.h"
 #include "outputs.h"
 #include "submission.h"
 #include "server-context-service.h"
@@ -45,15 +46,18 @@ typedef enum _SqueekboardDebugFlags {
 } SqueekboardDebugFlags;
 
 
-/// Global application state
+/// Some state, some IO components, all mixed together.
+/// Better move what's possible to state::Application,
+/// or secondary data structures of the same general shape.
 struct squeekboard {
     struct squeek_wayland wayland; // Just hooks.
     DBusHandler *dbus_handler; // Controls visibility of the OSK.
     EekboardContextService *settings_context; // Gsettings hooks.
     ServerContextService *ui_context; // mess, includes the entire UI
-    struct submission *submission; // Wayland text input handling.
-    struct squeek_layout_state layout_choice; // Currently wanted layout.
-    struct ui_manager *ui_manager; // UI shape tracker/chooser. TODO: merge with layuot choice
+    /// Currently wanted layout. TODO: merge into state::Application
+    struct squeek_layout_state layout_choice;
+    /// UI shape tracker/chooser. TODO: merge into state::Application
+    struct ui_manager *ui_manager;
 };
 
 
@@ -280,6 +284,21 @@ phosh_theme_init (void)
     g_object_set (G_OBJECT (gtk_settings), "gtk-application-prefer-dark-theme", TRUE, NULL);
 }
 
+/// Create Rust objects in one go,
+/// to avoid crossing the language barrier and losing type information
+static struct rsobjects create_rsobjects(struct zwp_input_method_manager_v2 *immanager,
+                                         struct zwp_virtual_keyboard_manager_v1 *vkmanager,
+                                         struct wl_seat *seat) {
+    struct zwp_input_method_v2 *im = NULL;
+    if (immanager) {
+        im = zwp_input_method_manager_v2_get_input_method(immanager, seat);
+    }
+    struct zwp_virtual_keyboard_v1 *vk = NULL;
+    if (vkmanager) {
+        vk = zwp_virtual_keyboard_manager_v1_create_virtual_keyboard(vkmanager, seat);
+    }
+    return squeek_rsobjects_new(im, vk);
+}
 
 static GDebugKey debug_keys[] =
 {
@@ -375,6 +394,10 @@ main (int argc, char **argv)
         g_warning("Wayland input method interface not available");
     }
 
+    struct rsobjects rsobjects = create_rsobjects(instance.wayland.input_method_manager,
+        instance.wayland.virtual_keyboard_manager,
+        instance.wayland.seat);
+
     instance.ui_manager = squeek_uiman_new();
 
     instance.settings_context = eekboard_context_service_new(&instance.layout_choice);
@@ -394,7 +417,7 @@ main (int argc, char **argv)
     guint owner_id = 0;
     DBusHandler *service = NULL;
     if (connection) {
-        service = dbus_handler_new(connection, DBUS_SERVICE_PATH);
+        service = dbus_handler_new(connection, DBUS_SERVICE_PATH, rsobjects.state_manager);
 
         if (service == NULL) {
             g_printerr ("Can't create dbus server\n");
@@ -415,41 +438,29 @@ main (int argc, char **argv)
         }
     }
 
-    struct vis_manager *vis_manager = squeek_visman_new();
-
-    instance.submission = get_submission(instance.wayland.input_method_manager,
-                                         instance.wayland.virtual_keyboard_manager,
-                                         vis_manager,
-                                         instance.wayland.seat,
-                                         instance.settings_context);
-
-    eekboard_context_service_set_submission(instance.settings_context, instance.submission);
+    eekboard_context_service_set_submission(instance.settings_context, rsobjects.submission);
 
     ServerContextService *ui_context = server_context_service_new(
                 instance.settings_context,
-                instance.submission,
+                rsobjects.submission,
                 &instance.layout_choice,
                 instance.ui_manager,
-                vis_manager);
+                rsobjects.state_manager);
     if (!ui_context) {
         g_error("Could not initialize GUI");
         exit(1);
     }
-    instance.ui_context = ui_context;
-    squeek_visman_set_ui(vis_manager, instance.ui_context);
 
-    if (instance.dbus_handler) {
-        dbus_handler_set_ui_context(instance.dbus_handler, instance.ui_context);
-    }
-    eekboard_context_service_set_ui(instance.settings_context, instance.ui_context);
+    instance.ui_context = ui_context;
+    register_ui_loop_handler(rsobjects.receiver, instance.ui_context, instance.dbus_handler);
 
     session_register();
 
-    if (debug_flags & SQUEEKBOARD_DEBUG_FLAG_FORCE_SHOW) {
-        server_context_service_force_show_keyboard (ui_context);
-    }
     if (debug_flags & SQUEEKBOARD_DEBUG_FLAG_GTK_INSPECTOR) {
         gtk_window_set_interactive_debugging (TRUE);
+    }
+    if (debug_flags & SQUEEKBOARD_DEBUG_FLAG_FORCE_SHOW) {
+        squeek_state_send_force_visible (rsobjects.state_manager);
     }
 
     loop = g_main_loop_new (NULL, FALSE);
