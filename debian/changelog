@@ -1,3 +1,134 @@
+squeekboard (1.15.0-1) experimental; urgency=medium
+
+  [ Khaled Eldoheiri ]
+  * Introduce Arabic keyboard layout
+
+  [ Dorota Czaplejewicz ]
+  * Docs: Release procedure
+  * build: Fix "any" dependency versioning
+  * readme: Mention the layout guide
+  * dbus: Hint that maybe squeekboard is running
+  * readme: Change self-reference to repo to gnome
+  * docs: Move env vars section to debugging
+  * readme: Clarify basic running steps
+  * readme: Put emphasis on being an input method
+  * readme: Update features
+  * ci: Use cached artifacts in the test
+  * ci: Move release test to the start
+  * ci: Start lintian test right after deb build
+  * ci: Add git revision and CI pipeline number to .deb artifacts
+  * ci: Use bookworm image
+  * ci: Reformat yaml file
+  * ci: Include pre-build style check
+  * popover: Fix reentrancy problem
+  * submission: Wrap the structure in a safe wrapper
+  * util: Add ArcWrapped
+  * animation: Prototype a way of handling state and applying it separately
+  * state: Connect the animation state machine to the rest
+  * event_loop: Separate and use for physical keyboard presence
+  * Revert "util: Add ArcWrapped"
+  * Revert "ci: Use bookworm image"
+  * ci: Fix formatting
+  * ci: Make indentation close to original again
+  * cargo: version bump
+
+  [ Jordi ]
+  * Introduce Swiss French keyboard layout
+  * improve accents layout behavior and code cleaning
+
+  [ Plamen Stoev ]
+  * Rename bg to bg+phonetic
+  * Add 'bg' layout
+  * Translate more layout names in Bulgarian
+
+  [ William Wold ]
+  * Show error when Layer Shell is not supported
+  * Update entry.py file path in readme
+  * Update zwp_text_input_v3 (comment changes only)
+  * Update zwp_input_method_v2
+
+  [ Patrick Jörg ]
+  * Introduce Swiss German keyboard layout
+  * Introducing ch+de layout and modified ch.yaml fallback
+  * Added ch_wide
+
+  [ ZenWalker ]
+  * layersurface: avoid duplicate assignment
+
+  [ T. Zack Crawford ]
+  * Update tutorial.md to clarify steps in creating a custom layout
+
+  [ Guido Günther ]
+  * gitlab-ci: Adjust CI tags
+  * gitlab-ci: Drop build for outdated distributions
+  * data: Fix build with meson 0.60.0
+  * main: Remove trailing whitespace
+  * main: Honor --help and -h
+  * eek-renderer: Add log domain
+  * eek-renderer: Fix indentation
+  * eek-renderer: Honor theme changes (Closes: #296)
+  * main: Drop broken support G_BUS_TYPE_SYSTEM
+  * main: Avoid two error variables in the same function
+  * main: Use dark theme when run in a Phosh session (Closes: #242)
+  * gtk-keyboard: Don't set variable to NULL twice in a row
+  * renderer: Use `g_debug ()`
+  * main: Add debug flag to always show squeekboard on start
+  * renderer: Disconnect theme change signal handler
+  * main: Add debug flag to show GTK inspector
+  * README: Document SQUEEKBOARD_DEBUG environment variable
+  * Move style-check to separate script
+  * Honor input-purpose PIN
+  * entry: Use a scrolled window
+  * entry: Set a margin on the grids
+  * entry: Add a random text entry field
+  * imservice: Invoke eekboard_context_service_set_hint_purpose unconditionally
+    (Closes: #311)
+  * langs: Don't use empty translation file (Closes: #313)
+  * Initialize gettext
+  * Reuse the unused popover ui file for i18n (Closes: #315)
+  * po: Add German translation
+  * gresources: Drop popup.ui
+  * Revert "gresources: Drop popup.ui"
+  * gitlab-ci: Add PKG_ONLY
+  * layout: Drop trailing whitespace
+  * Use special pin keyboard
+  * layout: Keep content purpose around
+  * renderer: Set style class based on input purpose
+  * pin: Use less margin
+  * debian: Install translations
+  * debian: Switch to dh 13
+  * debian: Install desktop file
+  * eekboard-context-service: Don't translate property names
+  * server-context-servide: Don't translate application name
+  * data: Make generic name truly generic
+  * po: Add desktop file to translatable files
+  * Add URL and EMail keyboard variants for us (Closes: #65)
+  * gitignore: Drop zanata dir
+  * gitignore: Ignore generated po files
+  * popover: Move Emoji and Terminal to ui file
+  * popover: Add translator notes
+  * popover: Make the ui file match the code file name
+  * Remove emoji and terminal from translations
+  * popover: Don't complain about missing translations
+  * Drop custom translation handling
+  * Drop locale_config
+  * Remove custom translations
+
+  [ PhilProg ]
+  * Add documentation about compositors
+
+  [ Norayr Chilingarian ]
+  * armenian typewriter and phonetic keyboards.
+  * armenian layout also added to meson.build etc.
+
+  [ Arnaud Ferraris ]
+  * resources: add wide FR terminal keyboard
+
+  [ Sebastian Krzyszkowiak ]
+  * renderer: Take context scale into account when drawing icons (Closes: #139)
+
+ -- Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>  Sun, 19 Dec 2021 14:11:06 +0000
+
 squeekboard (1.14.0pureos0~amber0) amber-phone; urgency=medium
 
   [ Dorota Czaplejewicz ]
