@@ -1,7 +1,9 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# Swedish translations for squeekboard package.
+# Copyright (C) 2021 THE squeekboard'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the squeekboard package.
+# Automatically generated, 2021.
+#
+# Luna Jernberg <droidbittin@gmail.com>, 2021.
 #
 msgid ""
 msgstr ""
