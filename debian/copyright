@@ -1,7 +1,7 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: squeekboard
 Upstream-Contact: Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>
-Source: https://source.puri.sm/Librem5/squeekboard
+Source: https://gitlab.gnome.org/World/Phosh/squeekboard
 
 Files: *
 Copyright: 2010-2011 Daiki Ueno <ueno@unixuser.org>

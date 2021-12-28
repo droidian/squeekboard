@@ -33,7 +33,7 @@ Build-Depends:
  rustc,
  wayland-protocols (>= 1.14),
 Standards-Version: 4.5.0
-Homepage: https://source.puri.sm/Librem5/squeekboard
+Homepage: https://gitlab.gnome.org/World/Phosh/squeekboard
 Vcs-Browser: https://salsa.debian.org/DebianOnMobile-team/squeekboard
 Vcs-Git: https://salsa.debian.org/DebianOnMobile-team/squeekboard.git
 Rules-Requires-Root: no
