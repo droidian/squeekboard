@@ -1,2 +1,0 @@
-emoji emoji
-terminal terminal

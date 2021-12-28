@@ -1,0 +1,70 @@
+# Maintained by: Khaled Eldoheiri <khalid@kdehairy.com>
+---
+outlines:
+    default: { width: 32.66, height: 52 }
+    altline: { width: 48.99, height: 52 }
+    wide: { width: 62, height: 52 }
+    spaceline: { width: 195.96, height: 52 }
+    special: { width: 35.66, height: 52 }
+
+views:
+    base:
+        - "ذ ض ص ث ق ف غ ع خ ح ج"
+        - "ش س ي ب ل ا ت ن م ك ط"
+        - "Shift_L ء ؤ ر ة و ز ظ د BackSpace"
+        - "show_numbers preferences         space        . Return"
+    extra:
+        - "ذ ض ص ث ق لإ إ ع خ ح ج"
+        - "ش س ى ب لأ أ ت ن م ك ط"
+        - "Shift_L ئ لآ لا ه آ ز ظ د BackSpace"
+        - "show_numbers preferences         space        . Return"
+    numbers:
+        - "1 2 3 4 5 6 7 8 9 0"
+        - "@ # € % & - _ + ( )"
+        - "show_symbols   ، \" ' : ؛ ! ؟  BackSpace"
+        - "show_letters preferences         space        . Return"
+    symbols:
+        - "~ ` | · √ π τ ÷ × ¶"
+        - "© ® £ € ¥ ^ ° * { }"
+        - "show_numbers   \\ / < > = [ ]  BackSpace"
+        - "show_letters preferences         space        . Return"
+
+buttons:
+    Shift_L:
+        action:
+            locking:
+                lock_view: "extra"
+                unlock_view: "base"
+        outline: "altline"
+        icon: "key-shift"
+    BackSpace:
+        outline: "altline"
+        icon: "edit-clear-symbolic"
+        action: "erase"
+    preferences:
+        action: "show_prefs"
+        outline: "special"
+        icon: "keyboard-mode-symbolic"
+    show_numbers:
+        action:
+            set_view: "numbers"
+        outline: "altline"
+        label: "123"
+    show_letters:
+        action:
+            set_view: "base"
+        outline: "altline"
+        label: "ض"
+    show_symbols:
+        action:
+            set_view: "symbols"
+        outline: "altline"
+        label: "*/="
+    space:
+        outline: "spaceline"
+        label: " "
+        text: " "
+    Return:
+        outline: "altline"
+        icon: "key-enter"
+        keysym: "Return"

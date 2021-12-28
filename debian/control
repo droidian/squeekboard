@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>
 Build-Depends:
  cargo,
- debhelper (>= 10),
+ debhelper-compat (= 13),
  meson (>=0.51.0),
  ninja-build,
  pkg-config,
@@ -27,6 +27,7 @@ Build-Depends:
  libwayland-dev (>= 1.16),
  lsb-release,
  python3,
+ python3-ruamel.yaml,
  rustc,
  wayland-protocols (>= 1.14),
 Standards-Version: 4.1.3

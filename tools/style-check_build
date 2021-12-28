@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# Enforces style check for the C parts of the project.
+
+if [ -z "$1" ]; then
+    echo "Please pass build directory to check."
+    exit 1
+fi
+
+cd "$1"
+
+clang-tidy --checks=-clang-diagnostic-missing-braces,readability-braces-around-statements, \
+           --warnings-as-errors=readability-braces-around-statements \
+           -extra-arg=-Wno-unknown-warning-option \
+           ../src/*.c ../eek/*.c ../eekboard/*.c

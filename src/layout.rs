@@ -1,17 +1,17 @@
 /*!
  * Layout-related data.
- * 
+ *
  * The `View` contains `Row`s and each `Row` contains `Button`s.
  * They carry data relevant to their positioning only,
  * except the Button, which also carries some data
  * about its appearance and function.
- * 
+ *
  * The layout is determined bottom-up, by measuring `Button` sizes,
  * deriving `Row` sizes from them, and then centering them within the `View`.
- * 
+ *
  * That makes the `View` position immutable,
  * and therefore different than the other positions.
- * 
+ *
  * Note that it might be a better idea
  * to make `View` position depend on its contents,
  * and let the renderer scale and center it within the widget.
@@ -32,6 +32,8 @@ use ::manager;
 use ::submission::{ Submission, SubmitData, Timestamp };
 use ::util::find_max_double;
 
+use ::imservice::ContentPurpose;
+
 // Traits
 use std::borrow::Borrow;
 use ::logging::Warn;
@@ -42,6 +44,7 @@ pub mod c {
 
     use gtk_sys;
     use std::os::raw::c_void;
+    use crate::submission::c::Submission as CSubmission;
 
     use std::ops::{ Add, Sub };
 
@@ -64,7 +67,7 @@ pub mod c {
         pub x: f64,
         pub y: f64,
     }
-    
+
     impl Add for Point {
         type Output = Self;
         fn add(self, other: Self) -> Self {
@@ -81,7 +84,7 @@ pub mod c {
             }
         }
     }
-    
+
     impl Sub<&Point> for Point {
         type Output = Point;
         fn sub(self, other: &Point) -> Point {
@@ -152,14 +155,14 @@ pub mod c {
             }
         }
     }
-    
+
     // This is constructed only in C, no need for warnings
     #[allow(dead_code)]
     #[repr(transparent)]
     pub struct LevelKeyboard(*const c_void);
 
     // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
-    
+
     /// Positions the layout contents within the available space.
     /// The origin of the transformation is the point inside the margins.
     #[no_mangle]
@@ -185,6 +188,13 @@ pub mod c {
 
     #[no_mangle]
     pub extern "C"
+    fn squeek_layout_get_purpose(layout: *const Layout) -> u32 {
+        let layout = unsafe { &*layout };
+        layout.purpose.clone() as u32
+    }
+
+    #[no_mangle]
+    pub extern "C"
     fn squeek_layout_free(layout: *mut Layout) {
         unsafe { Box::from_raw(layout) };
     }
@@ -198,7 +208,7 @@ pub mod c {
         pub extern "C"
         fn squeek_layout_release(
             layout: *mut Layout,
-            submission: *mut Submission,
+            submission: CSubmission,
             widget_to_layout: Transformation,
             time: u32,
             manager: manager::c::Manager,
@@ -206,7 +216,8 @@ pub mod c {
         ) {
             let time = Timestamp(time);
             let layout = unsafe { &mut *layout };
-            let submission = unsafe { &mut *submission };
+            let submission = submission.clone_ref();
+            let mut submission = submission.borrow_mut();
             let ui_backend = UIBackend {
                 widget_to_layout,
                 keyboard: ui_keyboard,
@@ -218,7 +229,7 @@ pub mod c {
                 let key: &Rc<RefCell<KeyState>> = key.borrow();
                 seat::handle_release_key(
                     layout,
-                    submission,
+                    &mut submission,
                     Some(&ui_backend),
                     time,
                     Some(manager),
@@ -233,18 +244,19 @@ pub mod c {
         pub extern "C"
         fn squeek_layout_release_all_only(
             layout: *mut Layout,
-            submission: *mut Submission,
+            submission: CSubmission,
             time: u32,
         ) {
             let layout = unsafe { &mut *layout };
-            let submission = unsafe { &mut *submission };
+            let submission = submission.clone_ref();
+            let mut submission = submission.borrow_mut();
             // The list must be copied,
             // because it will be mutated in the loop
             for key in layout.pressed_keys.clone() {
                 let key: &Rc<RefCell<KeyState>> = key.borrow();
                 seat::handle_release_key(
                     layout,
-                    submission,
+                    &mut submission,
                     None, // don't update UI
                     Timestamp(time),
                     None, // don't switch layouts
@@ -257,25 +269,26 @@ pub mod c {
         pub extern "C"
         fn squeek_layout_depress(
             layout: *mut Layout,
-            submission: *mut Submission,
+            submission: CSubmission,
             x_widget: f64, y_widget: f64,
             widget_to_layout: Transformation,
             time: u32,
             ui_keyboard: EekGtkKeyboard,
         ) {
             let layout = unsafe { &mut *layout };
-            let submission = unsafe { &mut *submission };
+            let submission = submission.clone_ref();
+            let mut submission = submission.borrow_mut();
             let point = widget_to_layout.forward(
                 Point { x: x_widget, y: y_widget }
             );
 
             let state = layout.find_button_by_position(point)
                 .map(|place| place.button.state.clone());
-            
+
             if let Some(state) = state {
                 seat::handle_press_key(
                     layout,
-                    submission,
+                    &mut submission,
                     Timestamp(time),
                     &state,
                 );
@@ -294,7 +307,7 @@ pub mod c {
         pub extern "C"
         fn squeek_layout_drag(
             layout: *mut Layout,
-            submission: *mut Submission,
+            submission: CSubmission,
             x_widget: f64, y_widget: f64,
             widget_to_layout: Transformation,
             time: u32,
@@ -303,7 +316,8 @@ pub mod c {
         ) {
             let time = Timestamp(time);
             let layout = unsafe { &mut *layout };
-            let submission = unsafe { &mut *submission };
+            let submission = submission.clone_ref();
+            let mut submission = submission.borrow_mut();
             let ui_backend = UIBackend {
                 widget_to_layout,
                 keyboard: ui_keyboard,
@@ -311,7 +325,7 @@ pub mod c {
             let point = ui_backend.widget_to_layout.forward(
                 Point { x: x_widget, y: y_widget }
             );
-            
+
             let pressed = layout.pressed_keys.clone();
             let button_info = {
                 let place = layout.find_button_by_position(point);
@@ -331,7 +345,7 @@ pub mod c {
                     } else {
                         seat::handle_release_key(
                             layout,
-                            submission,
+                            &mut submission,
                             Some(&ui_backend),
                             time,
                             Some(manager),
@@ -342,7 +356,7 @@ pub mod c {
                 if !found {
                     seat::handle_press_key(
                         layout,
-                        submission,
+                        &mut submission,
                         time,
                         &state,
                     );
@@ -356,7 +370,7 @@ pub mod c {
                     let key: &Rc<RefCell<KeyState>> = wrapped_key.borrow();
                     seat::handle_release_key(
                         layout,
-                        submission,
+                        &mut submission,
                         Some(&ui_backend),
                         time,
                         Some(manager),
@@ -370,11 +384,11 @@ pub mod c {
         #[cfg(test)]
         mod test {
             use super::*;
-            
+
             fn near(a: f64, b: f64) -> bool {
                 (a - b).abs() < ((a + b) * 0.001f64).abs()
             }
-            
+
             #[test]
             fn transform_back() {
                 let transform = Transformation {
@@ -413,7 +427,7 @@ pub enum Label {
 /// The graphical representation of a button
 #[derive(Clone, Debug)]
 pub struct Button {
-    /// ID string, e.g. for CSS 
+    /// ID string, e.g. for CSS
     pub name: CString,
     /// Label to display to the user
     pub label: Label,
@@ -573,11 +587,11 @@ impl View {
             offset: &row.0 + c::Point { x: button.0, y: 0.0 },
         })
     }
-    
+
     pub fn get_size(&self) -> Size {
         self.size.clone()
     }
-    
+
     /// Returns positioned rows, with appropriate x offsets (centered)
     pub fn get_rows(&self) -> &Vec<(c::Point, Row)> {
         &self.rows
@@ -627,6 +641,7 @@ pub enum LatchedState {
 pub struct Layout {
     pub margins: Margins,
     pub kind: ArrangementKind,
+    pub purpose: ContentPurpose,
     pub current_view: String,
 
     // If current view is latched,
@@ -676,7 +691,7 @@ impl fmt::Display for NoSuchView {
 // The usage of &mut on Rc<RefCell<KeyState>> doesn't mean anything special.
 // Cloning could also be used.
 impl Layout {
-    pub fn new(data: LayoutData, kind: ArrangementKind) -> Layout {
+    pub fn new(data: LayoutData, kind: ArrangementKind, purpose: ContentPurpose) -> Layout {
         Layout {
             kind,
             current_view: "base".to_owned(),
@@ -685,6 +700,7 @@ impl Layout {
             keymaps: data.keymaps,
             pressed_keys: HashSet::new(),
             margins: data.margins,
+            purpose,
         }
     }
 
@@ -731,7 +747,7 @@ impl Layout {
             ),
         }
     }
-    
+
     pub fn calculate_transformation(
         &self,
         available: Size,
@@ -770,7 +786,7 @@ impl Layout {
             }
         }
     }
-    
+
     fn apply_view_transition(
         &mut self,
         action: &Action,
@@ -812,7 +828,7 @@ impl Layout {
     ///
     /// Although the state is not defined at the keys
     /// (it's in the relationship between view and action),
-    /// keys go through the following stages when clicked repeatedly: 
+    /// keys go through the following stages when clicked repeatedly:
     /// unlocked+unlatched -> locked+latched -> locked+unlatched
     /// -> unlocked+unlatched
     fn process_action_for_view<'a>(
@@ -906,7 +922,7 @@ mod procedures {
                 })
         }).collect()
     }
-    
+
     #[cfg(test)]
     mod test {
         use super::*;
@@ -1113,7 +1129,7 @@ mod test {
             state: state,
         })
     }
-    
+
     #[test]
     fn latch_lock_unlock() {
         let action = Action::LockView {
@@ -1152,7 +1168,7 @@ mod test {
             latches: true,
             looks_locked_from: vec![],
         };
-        
+
         let submit = Action::Erase;
 
         let view = View::new(vec![(
@@ -1194,7 +1210,8 @@ mod test {
                 "base".into() => (c::Point { x: 0.0, y: 0.0 }, view.clone()),
                 "locked".into() => (c::Point { x: 0.0, y: 0.0 }, view),
             },
-        };        
+            purpose: ContentPurpose::Normal,
+        };
 
         // Basic cycle
         layout.apply_view_transition(&switch);
@@ -1220,14 +1237,14 @@ mod test {
             latches: true,
             looks_locked_from: vec![],
         };
-        
+
         let unswitch = Action::LockView {
             lock: "locked".into(),
             unlock: "unlocked".into(),
             latches: false,
             looks_locked_from: vec![],
         };
-        
+
         let submit = Action::Erase;
 
         let view = View::new(vec![(
@@ -1270,7 +1287,8 @@ mod test {
                 "locked".into() => (c::Point { x: 0.0, y: 0.0 }, view.clone()),
                 "unlocked".into() => (c::Point { x: 0.0, y: 0.0 }, view),
             },
-        };        
+            purpose: ContentPurpose::Normal,
+        };
 
         layout.apply_view_transition(&switch);
         assert_eq!(&layout.current_view, "locked");
@@ -1286,14 +1304,14 @@ mod test {
             latches: true,
             looks_locked_from: vec![],
         };
-        
+
         let switch_again = Action::LockView {
             lock: "ĄĘ".into(),
             unlock: "locked".into(),
             latches: true,
             looks_locked_from: vec![],
         };
-        
+
         let submit = Action::Erase;
 
         let view = View::new(vec![(
@@ -1336,7 +1354,8 @@ mod test {
                 "locked".into() => (c::Point { x: 0.0, y: 0.0 }, view.clone()),
                 "ĄĘ".into() => (c::Point { x: 0.0, y: 0.0 }, view),
             },
-        };        
+            purpose: ContentPurpose::Normal,
+        };
 
         // Latch twice, then Ąto-unlatch across 2 levels
         layout.apply_view_transition(&switch);
@@ -1436,6 +1455,7 @@ mod test {
             views: hashmap! {
                 String::new() => (c::Point { x: 0.0, y: 0.0 }, view),
             },
+            purpose: ContentPurpose::Normal,
         };
         assert_eq!(
             layout.calculate_inner_size(),

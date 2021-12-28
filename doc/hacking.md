@@ -90,6 +90,15 @@ Layouts can be selected using the GNOME Settings application.
 $ gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'us'), ('xkb', 'de')]"
 ```
 
+### Environment Variables
+
+Besides the environment variables supported by GTK and [GLib](https://docs.gtk.org/glib/running.html) applications
+squeekboard honors the `SQUEEKBOARD_DEBUG` environment variable which can
+contain a comma separated list of:
+
+- `force-show` : Show squeekboard on startup independent of any gsettings or compositor requests
+- `gtk-inspector`: Spawn [gtk-inspector](https://wiki.gnome.org/Projects/GTK/Inspector)
+
 Coding
 ------
 
@@ -110,6 +119,16 @@ User interface modules should:
 - give libraries the ability to report errors and surprises (e.g. via giving them loggers)
 
 ### Style
+
+Note that some portions, like the .gitlab-ci.yml file have accummulated enough style/whitespace conflicts that an enforced style checker is now applied.
+
+To fix your contributions before submitting a change, use:
+
+```
+./tools/style-check_source --apply
+```
+
+* * *
 
 Code submitted should roughly match the style of surrounding code. Things that will *not* be accepted are ones that often lead to errors:
 
@@ -175,14 +194,73 @@ All Cargo dependencies must be selected in the version available in PureOS, and 
 
 Dependencies must be specified in `Cargo.toml` with 2 numbers: "major.minor". Since bugfix version number is meant to not affect the interface, this allows for safe updates.
 
-`Cargo.lock` is used for remembering the revisions of all Rust dependencies. It must correspond to the default dependency configuration: without flags to use older or newer versions of dependencies. It should be updated often, preferably with each bugfix revision, and in a commit on its own:
+Releases
+----------
+
+Squeekboard should get a new release every time something interesting comes in. Preferably when there are no known bugs too. People will rely on theose releases, after all.
+
+### 1. Update `Cargo.toml`.
+
+While the file is not actually used, it's a good idea to save the config in case some rare bug appears in dependencies.
 
 ```
-cd build_dir
-ninja ./Cargo.toml
-sh /source_path/cargo.sh update
+cd squeekboard-build
 ninja test
-cp ./Cargo.lock /source_path/
+cp ./Cargo.lock .../squeekboard-source
 ```
 
-Since version 1.9.3, `Cargo.lock` is not actually used by the build system, due to `Cargo.toml` being generated at every build.
+Then commit the updated `Cargo.lock`.
+
+### 2. Choose the version number
+
+Squeekboard tries to use semantic versioning. It's 3 numbers separated by dots: "a.b.c". Releases which only fix bugs and nothing else are "a.b.c+1". Releases which add user-visible features in addition to bug fixes are "a.b+1.0". Releases which, in addition to the previous, change *the user contract* in incompatible ways are "a+1.0.0". "The user contract" means plugin APIs that are deemed stable, or the way language switching works, etc. In other words, incompatible changes to developers, or big changes to users bump "a" to the next natural number.
+
+### 3. Update the number in `meson.build`
+
+It's in the `project(version: xxx)` statement.
+
+### 4. Update packaging
+
+Packaging is in the `debian/` directory, and creates builds that can be quickly tested.
+
+```
+cd squeekboard-source
+gbp dch --multimaint-merge  --ignore-branch
+```
+
+Inspect `debian/changelog`, and make sure the first line contains the correct version number and suite. For example:
+
+```
+squeekboard (1.13.0pureos0~amber0) amber-phone; urgency=medium
+```
+
+Commit the updated `debian/changelog`. The commit message should contain the release version and a description of changes.
+
+> Release 1.13.0 "Externality"
+>
+> Changes:
+>
+> - A system for latching and locking views
+> ...
+
+### 5. Create a signed tag for downstreams
+
+The tag should be the version number with "v" in front of it. The tag message should be "squeekboard" and the tag name. Push it to the upstream repository:
+
+```
+git tag -s -u my_address@example.com v1.13.0 -m "squeekboard v1.13.0"
+git push v1.13.0
+```
+
+### 5. Create a signed tag for packaging
+
+Similar to the above, but format it for the PureOS downstream.
+
+```
+git tag -s -u my_address@example.com 'pureos/1.13.0pureos0_amber0' -m 'squeekboard 1.13.0pureos0_amber0'
+git push 'pureos/1.13.0pureos0_amber0'
+```
+
+### 6. Rejoice
+
+You released a new version of Squeekboard, and made it available on PureOS. Congratulations.

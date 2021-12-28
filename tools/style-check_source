@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -e
+
+# Enforces style check for the project.
+THIS=$(realpath $0)
+TOOLS=$(dirname $THIS)
+cd $TOOLS/..
+
+# The CI file seems to be touched regularly, and causing problems often,
+# unlike layout files.
+./tools/yamlfmt ./.gitlab-ci.yml $1

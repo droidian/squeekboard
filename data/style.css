@@ -61,3 +61,5 @@ sq_button.small {
     background: mix(@theme_selected_bg_color, @theme_bg_color, 0.4); /*#1c71d8;*/
     border-color: @borders; /*#3584e4;*/
 }
+
+@import url("resource:///sm/puri/squeekboard/common.css");

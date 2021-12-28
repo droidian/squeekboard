@@ -18,6 +18,8 @@
  * 02110-1301 USA
  */
 
+#define G_LOG_DOMAIN "squeekboard-eek-renderer"
+
 #include <math.h>
 #include <string.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
@@ -54,6 +56,13 @@ render_outline (cairo_t     *cr,
         position.x, position.y, position.width, position.height);
 }
 
+float get_scale(cairo_t *cr) {
+    double width = 1;
+    double height = 1;
+    cairo_user_to_device_distance (cr, &width, &height);
+    return width;
+}
+
 /// Rust interface
 void eek_render_button_in_context(uint32_t scale_factor,
                                      cairo_t     *cr,
@@ -70,16 +79,17 @@ void eek_render_button_in_context(uint32_t scale_factor,
 
     /* render icon (if any) */
     if (icon_name) {
+        int context_scale = ceil (get_scale (cr));
         cairo_surface_t *icon_surface =
-            eek_renderer_get_icon_surface (icon_name, 16, scale_factor);
+            eek_renderer_get_icon_surface (icon_name, 16, scale_factor * context_scale);
         if (icon_surface) {
-            gint width = cairo_image_surface_get_width (icon_surface);
-            gint height = cairo_image_surface_get_height (icon_surface);
+            double width = cairo_image_surface_get_width (icon_surface);
+            double height = cairo_image_surface_get_height (icon_surface);
 
             cairo_save (cr);
             cairo_translate (cr,
-                             (bounds.width - (double)width / scale_factor) / 2,
-                             (bounds.height - (double)height / scale_factor) / 2);
+                             (bounds.width - width / (scale_factor * context_scale)) / 2,
+                             (bounds.height - height / (scale_factor * context_scale)) / 2);
             cairo_rectangle (cr, 0, 0, width, height);
             cairo_clip (cr);
             /* Draw the shape of the icon using the foreground color */
@@ -112,7 +122,7 @@ eek_get_style_context_for_button (EekRenderer *self,
                                   const char *name,
                                   const char *outline_name,
                                   const char *locked_class,
-               uint64_t     pressed)
+                                  uint64_t     pressed)
 {
     GtkStyleContext *ctx = self->button_context;
     /* Set the name of the button on the widget path, using the name obtained
@@ -226,6 +236,8 @@ eek_renderer_free (EekRenderer        *self)
     g_object_unref(self->css_provider);
     g_object_unref(self->view_context);
     g_object_unref(self->button_context);
+    g_clear_signal_handler (&self->theme_name_id, gtk_settings_get_default());
+
     // this is where renderer-specific surfaces would be released
 
     free(self);
@@ -257,11 +269,48 @@ static GType button_type(void) {
     return type;
 }
 
+
+static void
+on_gtk_theme_name_changed (GtkSettings *settings, gpointer foo, EekRenderer *self)
+{
+  g_autofree char *name = NULL;
+
+  g_object_get (settings, "gtk-theme-name", &name, NULL);
+  g_debug ("GTK theme: %s", name);
+
+  gtk_style_context_remove_provider_for_screen (gdk_screen_get_default (),
+                                                GTK_STYLE_PROVIDER (self->css_provider));
+  gtk_style_context_remove_provider (self->button_context,
+                                     GTK_STYLE_PROVIDER(self->css_provider));
+  gtk_style_context_remove_provider (self->view_context,
+                                     GTK_STYLE_PROVIDER(self->css_provider));
+
+  g_set_object (&self->css_provider, squeek_load_style());
+
+  gtk_style_context_add_provider_for_screen (gdk_screen_get_default (),
+                                             GTK_STYLE_PROVIDER (self->css_provider),
+                                             GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+  gtk_style_context_add_provider (self->button_context,
+                                  GTK_STYLE_PROVIDER(self->css_provider),
+                                  GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+  gtk_style_context_add_provider (self->view_context,
+                                  GTK_STYLE_PROVIDER(self->css_provider),
+                                  GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+}
+
+
 static void
 renderer_init (EekRenderer *self)
 {
     self->pcontext = NULL;
     self->scale_factor = 1;
+
+    GtkSettings *gtk_settings;
+
+    gtk_settings = gtk_settings_get_default ();
+
+    self->theme_name_id = g_signal_connect (gtk_settings, "notify::gtk-theme-name",
+                                            G_CALLBACK (on_gtk_theme_name_changed), self);
 
     self->css_provider = squeek_load_style();
 }
@@ -274,6 +323,7 @@ eek_renderer_new (LevelKeyboard  *keyboard,
     renderer_init(renderer);
     renderer->pcontext = pcontext;
     g_object_ref (renderer->pcontext);
+    const char *purpose_class = "normal";
 
     /* Create a style context for the layout */
     GtkWidgetPath *path = gtk_widget_path_new();
@@ -295,6 +345,55 @@ eek_renderer_new (LevelKeyboard  *keyboard,
     if (squeek_layout_get_kind(keyboard->layout) == ARRANGEMENT_KIND_WIDE) {
         gtk_widget_path_iter_add_class(path, -1, "wide");
     }
+    /* Add style classes based on purpose */
+    switch (squeek_layout_get_purpose (keyboard->layout)) {
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_NORMAL:
+        purpose_class = "normal";
+        break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_ALPHA:
+        purpose_class = "alpha";
+        break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_DIGITS:
+        purpose_class = "digits";
+        break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_NUMBER:
+        purpose_class = "number";
+        break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_PHONE:
+        purpose_class = "phone";
+        break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_URL:
+        purpose_class = "url";
+        break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_EMAIL:
+        purpose_class = "email";
+        break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_NAME:
+        purpose_class = "name";
+        break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_PASSWORD:
+        purpose_class = "password";
+        break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_PIN:
+        purpose_class = "pin";
+        break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_DATE:
+        purpose_class = "date";
+        break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_TIME:
+        purpose_class = "time";
+        break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_DATETIME:
+        purpose_class = "datetime";
+        break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_TERMINAL:
+        purpose_class = "terminal";
+        break;
+    default:
+        g_warning ("Unknown input purpose %d", squeek_layout_get_purpose(keyboard->layout));
+    }
+    gtk_widget_path_iter_add_class(path, -1, purpose_class);
+
     gtk_widget_path_append_type(path, button_type());
     renderer->button_context = gtk_style_context_new ();
     gtk_style_context_set_path(renderer->button_context, path);

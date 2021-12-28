@@ -1,10 +1,10 @@
-/* 
+/*
  * Copyright (C) 2010-2011 Daiki Ueno <ueno@unixuser.org>
  * Copyright (C) 2010-2011 Red Hat, Inc.
  * Copyright (C) 2018-2019 Purism SPC
  * SPDX-License-Identifier: GPL-3.0+
  * Author: Guido Günther <agx@sigxcpu.org>
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -29,6 +29,7 @@
 #include "eekboard/eekboard-context-service.h"
 #include "dbus.h"
 #include "layout.h"
+#include "main.h"
 #include "outputs.h"
 #include "submission.h"
 #include "server-context-service.h"
@@ -38,21 +39,29 @@
 #include <gdk/gdkwayland.h>
 
 
-/// Global application state
+typedef enum _SqueekboardDebugFlags {
+    SQUEEKBOARD_DEBUG_FLAG_NONE = 0,
+    SQUEEKBOARD_DEBUG_FLAG_FORCE_SHOW    = 1 << 0,
+    SQUEEKBOARD_DEBUG_FLAG_GTK_INSPECTOR = 1 << 1,
+} SqueekboardDebugFlags;
+
+
+/// Some state, some IO components, all mixed together.
+/// Better move what's possible to state::Application,
+/// or secondary data structures of the same general shape.
 struct squeekboard {
     struct squeek_wayland wayland; // Just hooks.
     DBusHandler *dbus_handler; // Controls visibility of the OSK.
     EekboardContextService *settings_context; // Gsettings hooks.
     ServerContextService *ui_context; // mess, includes the entire UI
-    struct submission *submission; // Wayland text input handling.
-    struct squeek_layout_state layout_choice; // Currently wanted layout.
-    struct ui_manager *ui_manager; // UI shape tracker/chooser. TODO: merge with layuot choice
+    /// Currently wanted layout. TODO: merge into state::Application
+    struct squeek_layout_state layout_choice;
+    /// UI shape tracker/chooser. TODO: merge into state::Application
+    struct ui_manager *ui_manager;
 };
 
 
 GMainLoop *loop;
-static gboolean opt_system = FALSE;
-static gchar *opt_address = NULL;
 
 static void
 quit (void)
@@ -77,13 +86,16 @@ on_name_lost (GDBusConnection *connection,
               const gchar     *name,
               gpointer         user_data)
 {
+    SqueekboardDebugFlags *flags = user_data;
     // TODO: could conceivable continue working
     // if intrnal changes stop sending dbus changes
     (void)connection;
     (void)name;
     (void)user_data;
-    g_error("DBus unavailable, unclear how to continue.");
-    exit (1);
+    g_warning("DBus unavailable, unclear how to continue. Is Squeekboard already running?");
+    if ((*flags & SQUEEKBOARD_DEBUG_FLAG_FORCE_SHOW) == 0) {
+        exit (1);
+    }
 }
 
 // Wayland
@@ -247,15 +259,105 @@ session_register(void) {
     g_signal_connect (_client_proxy, "g-signal", G_CALLBACK (client_proxy_signal), NULL);
 }
 
+
+static void
+phosh_theme_init (void)
+{
+    GtkSettings *gtk_settings;
+    const char *desktop;
+    gboolean phosh_session;
+    g_auto (GStrv) components = NULL;
+
+    desktop = g_getenv ("XDG_CURRENT_DESKTOP");
+    if (!desktop) {
+        return;
+    }
+
+    components = g_strsplit (desktop, ":", -1);
+    phosh_session = g_strv_contains ((const char * const *)components, "Phosh");
+
+    if (!phosh_session) {
+        return;
+    }
+
+    gtk_settings = gtk_settings_get_default ();
+    g_object_set (G_OBJECT (gtk_settings), "gtk-application-prefer-dark-theme", TRUE, NULL);
+}
+
+/// Create Rust objects in one go,
+/// to avoid crossing the language barrier and losing type information
+static struct rsobjects create_rsobjects(struct zwp_input_method_manager_v2 *immanager,
+                                         struct zwp_virtual_keyboard_manager_v1 *vkmanager,
+                                         struct wl_seat *seat) {
+    struct zwp_input_method_v2 *im = NULL;
+    if (immanager) {
+        im = zwp_input_method_manager_v2_get_input_method(immanager, seat);
+    }
+    struct zwp_virtual_keyboard_v1 *vk = NULL;
+    if (vkmanager) {
+        vk = zwp_virtual_keyboard_manager_v1_create_virtual_keyboard(vkmanager, seat);
+    }
+    return squeek_rsobjects_new(im, vk);
+}
+
+static GDebugKey debug_keys[] =
+{
+        { .key = "force-show",
+          .value = SQUEEKBOARD_DEBUG_FLAG_FORCE_SHOW,
+        },
+        { .key = "gtk-inspector",
+          .value = SQUEEKBOARD_DEBUG_FLAG_GTK_INSPECTOR,
+        },
+};
+
+
+static SqueekboardDebugFlags
+parse_debug_env (void)
+{
+    const char *debugenv;
+    SqueekboardDebugFlags flags = SQUEEKBOARD_DEBUG_FLAG_NONE;
+
+    debugenv = g_getenv("SQUEEKBOARD_DEBUG");
+    if (!debugenv) {
+        return flags;
+    }
+
+    return g_parse_debug_string(debugenv, debug_keys, G_N_ELEMENTS (debug_keys));
+}
+
+
 int
 main (int argc, char **argv)
 {
+    SqueekboardDebugFlags debug_flags = SQUEEKBOARD_DEBUG_FLAG_NONE;
+    g_autoptr (GError) err = NULL;
+    g_autoptr(GOptionContext) opt_context = NULL;
+
+    const GOptionEntry options [] = {
+        { NULL, 0, 0, G_OPTION_ARG_NONE, NULL, NULL, NULL }
+    };
+    opt_context = g_option_context_new ("- A on screen keyboard");
+
+    g_option_context_add_main_entries (opt_context, options, NULL);
+    g_option_context_add_group (opt_context, gtk_get_option_group (TRUE));
+    if (!g_option_context_parse (opt_context, &argc, &argv, &err)) {
+        g_warning ("%s", err->message);
+        return 1;
+    }
+
+    textdomain (GETTEXT_PACKAGE);
+    bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+    bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+
     if (!gtk_init_check (&argc, &argv)) {
         g_printerr ("Can't init GTK\n");
         exit (1);
     }
 
+    debug_flags = parse_debug_env ();
     eek_init ();
+
+    phosh_theme_init ();
 
     // Set up Wayland
     gdk_set_allowed_backends ("wayland");
@@ -283,10 +385,18 @@ main (int argc, char **argv)
         g_error("No virtual keyboard manager Wayland global available.");
         exit(1);
     }
+    if (!instance.wayland.layer_shell) {
+        g_error("No layer shell global available.");
+        exit(1);
+    }
 
     if (!instance.wayland.input_method_manager) {
         g_warning("Wayland input method interface not available");
     }
+
+    struct rsobjects rsobjects = create_rsobjects(instance.wayland.input_method_manager,
+        instance.wayland.virtual_keyboard_manager,
+        instance.wayland.seat);
 
     instance.ui_manager = squeek_uiman_new();
 
@@ -297,51 +407,17 @@ main (int argc, char **argv)
     // TODO: make dbus errors non-always-fatal
     // dbus is not strictly necessary for the useful operation
     // if text-input is used, as it can bring the keyboard in and out
-    GBusType bus_type;
-    if (opt_system) {
-        bus_type = G_BUS_TYPE_SYSTEM;
-    } else if (opt_address) {
-        bus_type = G_BUS_TYPE_NONE;
-    } else {
-        bus_type = G_BUS_TYPE_SESSION;
-    }
 
     GDBusConnection *connection = NULL;
-    GError *error = NULL;
-    switch (bus_type) {
-    case G_BUS_TYPE_SYSTEM:
-    case G_BUS_TYPE_SESSION:
-        error = NULL;
-        connection = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
-        if (connection == NULL) {
-            g_printerr ("Can't connect to the bus: %s. "
-                        "Visibility switching unavailable.", error->message);
-            g_error_free (error);
-        }
-        break;
-    case G_BUS_TYPE_NONE:
-        error = NULL;
-        connection = g_dbus_connection_new_for_address_sync (opt_address,
-                                                             0,
-                                                             NULL,
-                                                             NULL,
-                                                             &error);
-        if (connection == NULL) {
-            g_printerr ("Can't connect to the bus at %s: %s\n",
-                        opt_address,
-                        error->message);
-            g_error_free (error);
-            exit (1);
-        }
-        break;
-    default:
-        g_assert_not_reached ();
-        break;
+    connection = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &err);
+    if (connection == NULL) {
+        g_printerr ("Can't connect to the bus: %s. "
+                    "Visibility switching unavailable.", err->message);
     }
     guint owner_id = 0;
     DBusHandler *service = NULL;
     if (connection) {
-        service = dbus_handler_new(connection, DBUS_SERVICE_PATH);
+        service = dbus_handler_new(connection, DBUS_SERVICE_PATH, rsobjects.state_manager);
 
         if (service == NULL) {
             g_printerr ("Can't create dbus server\n");
@@ -354,7 +430,7 @@ main (int argc, char **argv)
                                                  G_BUS_NAME_OWNER_FLAGS_NONE,
                                                  on_name_acquired,
                                                  on_name_lost,
-                                                 NULL,
+                                                 &debug_flags,
                                                  NULL);
         if (owner_id == 0) {
             g_printerr ("Can't own the name\n");
@@ -362,35 +438,30 @@ main (int argc, char **argv)
         }
     }
 
-    struct vis_manager *vis_manager = squeek_visman_new();
-
-    instance.submission = get_submission(instance.wayland.input_method_manager,
-                                         instance.wayland.virtual_keyboard_manager,
-                                         vis_manager,
-                                         instance.wayland.seat,
-                                         instance.settings_context);
-
-    eekboard_context_service_set_submission(instance.settings_context, instance.submission);
+    eekboard_context_service_set_submission(instance.settings_context, rsobjects.submission);
 
     ServerContextService *ui_context = server_context_service_new(
                 instance.settings_context,
-                instance.submission,
+                rsobjects.submission,
                 &instance.layout_choice,
                 instance.ui_manager,
-                vis_manager);
+                rsobjects.state_manager);
     if (!ui_context) {
         g_error("Could not initialize GUI");
         exit(1);
     }
-    instance.ui_context = ui_context;
-    squeek_visman_set_ui(vis_manager, instance.ui_context);
 
-    if (instance.dbus_handler) {
-        dbus_handler_set_ui_context(instance.dbus_handler, instance.ui_context);
-    }
-    eekboard_context_service_set_ui(instance.settings_context, instance.ui_context);
+    instance.ui_context = ui_context;
+    register_ui_loop_handler(rsobjects.receiver, instance.ui_context, instance.dbus_handler);
 
     session_register();
+
+    if (debug_flags & SQUEEKBOARD_DEBUG_FLAG_GTK_INSPECTOR) {
+        gtk_window_set_interactive_debugging (TRUE);
+    }
+    if (debug_flags & SQUEEKBOARD_DEBUG_FLAG_FORCE_SHOW) {
+        squeek_state_send_force_visible (rsobjects.state_manager);
+    }
 
     loop = g_main_loop_new (NULL, FALSE);
     g_main_loop_run (loop);

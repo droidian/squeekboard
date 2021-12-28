@@ -30,7 +30,6 @@
 
 enum {
     PROP_0,
-    PROP_VISIBLE,
     PROP_ENABLED,
     PROP_LAST
 };
@@ -43,12 +42,10 @@ struct _ServerContextService {
     struct submission *submission; // unowned
     struct squeek_layout_state *layout;
     struct ui_manager *manager; // unowned
-    struct vis_manager *vis_manager; // owned
+    struct squeek_state_manager *state_manager; // shared reference
 
-    gboolean visible;
     PhoshLayerSurface *window;
     GtkWidget *widget; // nullable
-    guint hiding;
     guint last_requested_height;
 };
 
@@ -65,23 +62,6 @@ on_destroy (ServerContextService *self, GtkWidget *widget)
     self->widget = NULL;
 
     //eekboard_context_service_destroy (EEKBOARD_CONTEXT_SERVICE (context));
-}
-
-static void
-on_notify_map (ServerContextService *self, GtkWidget *widget)
-{
-    g_return_if_fail (SERVER_IS_CONTEXT_SERVICE (self));
-
-    g_object_set (self, "visible", TRUE, NULL);
-}
-
-
-static void
-on_notify_unmap (ServerContextService *self, GtkWidget *widget)
-{
-    g_return_if_fail (SERVER_IS_CONTEXT_SERVICE (self));
-
-    g_object_set (self, "visible", FALSE, NULL);
 }
 
 static uint32_t
@@ -187,8 +167,6 @@ make_window (ServerContextService *self)
 
     g_object_connect (self->window,
                       "swapped-signal::destroy", G_CALLBACK(on_destroy), self,
-                      "swapped-signal::map", G_CALLBACK(on_notify_map), self,
-                      "swapped-signal::unmap", G_CALLBACK(on_notify_unmap), self,
                       "swapped-signal::configured", G_CALLBACK(on_surface_configure), self,
                       NULL);
 
@@ -199,8 +177,7 @@ make_window (ServerContextService *self)
     // or for hacks with regular windows.
     gtk_widget_set_can_focus (GTK_WIDGET(self->window), FALSE);
     g_object_set (G_OBJECT(self->window), "accept_focus", FALSE, NULL);
-    gtk_window_set_title (GTK_WINDOW(self->window),
-                          _("Squeekboard"));
+    gtk_window_set_title (GTK_WINDOW(self->window), "Squeekboard");
     gtk_window_set_icon_name (GTK_WINDOW(self->window), "squeekboard");
     gtk_window_set_keep_above (GTK_WINDOW(self->window), TRUE);
 }
@@ -226,7 +203,8 @@ make_widget (ServerContextService *self)
     gtk_widget_show_all(self->widget);
 }
 
-static void
+// Called from rust
+void
 server_context_service_real_show_keyboard (ServerContextService *self)
 {
     if (!self->window) {
@@ -235,99 +213,16 @@ server_context_service_real_show_keyboard (ServerContextService *self)
     if (!self->widget) {
         make_widget (self);
     }
-    self->visible = TRUE;
     gtk_widget_show (GTK_WIDGET(self->window));
 }
 
-static gboolean
-show_keyboard_source_func(ServerContextService *context)
-{
-    server_context_service_real_show_keyboard(context);
-    return G_SOURCE_REMOVE;
-}
-
-static void
+// Called from rust
+void
 server_context_service_real_hide_keyboard (ServerContextService *self)
 {
-    gtk_widget_hide (GTK_WIDGET(self->window));
-    self->visible = FALSE;
-}
-
-static gboolean
-hide_keyboard_source_func(ServerContextService *context)
-{
-    server_context_service_real_hide_keyboard(context);
-    return G_SOURCE_REMOVE;
-}
-
-static gboolean
-on_hide (ServerContextService *self)
-{
-    server_context_service_real_hide_keyboard(self);
-    self->hiding = 0;
-
-    return G_SOURCE_REMOVE;
-}
-
-static void
-server_context_service_show_keyboard (ServerContextService *self)
-{
-    g_return_if_fail (SERVER_IS_CONTEXT_SERVICE(self));
-
-    if (self->hiding) {
-        g_source_remove (self->hiding);
-        self->hiding = 0;
+    if (self->window) {
+	    gtk_widget_hide (GTK_WIDGET(self->window));
     }
-
-    if (!self->visible) {
-        g_idle_add((GSourceFunc)show_keyboard_source_func, self);
-    }
-}
-
-void
-server_context_service_force_show_keyboard (ServerContextService *self)
-{
-    if (!submission_hint_available(self->submission)) {
-        eekboard_context_service_set_hint_purpose(
-            self->state,
-            ZWP_TEXT_INPUT_V3_CONTENT_HINT_NONE,
-            ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_NORMAL
-        );
-    }
-    server_context_service_show_keyboard(self);
-}
-
-void
-server_context_service_hide_keyboard (ServerContextService *self)
-{
-    g_return_if_fail (SERVER_IS_CONTEXT_SERVICE(self));
-
-    if (self->visible) {
-        g_idle_add((GSourceFunc)hide_keyboard_source_func, self);
-    }
-}
-
-/// Meant for use by the input-method handler:
-/// the visible keyboard is no longer needed.
-/// The implementation will delay it slightly,
-/// because the release may be due to switching from one text field to another.
-/// In this case, the user doesn't really need the keyboard surface
-/// to disappear completely.
-void
-server_context_service_release_visibility (ServerContextService *self)
-{
-    g_return_if_fail (SERVER_IS_CONTEXT_SERVICE(self));
-
-    if (!self->hiding && self->visible) {
-        self->hiding = g_timeout_add (200, (GSourceFunc) on_hide, self);
-    }
-}
-
-static void
-server_context_service_set_physical_keyboard_present (ServerContextService *self, gboolean physical_keyboard_present)
-{
-    g_return_if_fail (SERVER_IS_CONTEXT_SERVICE (self));
-    squeek_visman_set_keyboard_present(self->vis_manager, physical_keyboard_present);
 }
 
 static void
@@ -339,11 +234,8 @@ server_context_service_set_property (GObject      *object,
     ServerContextService *self = SERVER_CONTEXT_SERVICE(object);
 
     switch (prop_id) {
-    case PROP_VISIBLE:
-        self->visible = g_value_get_boolean (value);
-        break;
     case PROP_ENABLED:
-        server_context_service_set_physical_keyboard_present (self, !g_value_get_boolean (value));
+        squeek_state_send_keyboard_present(self->state_manager, !g_value_get_boolean (value));
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -357,11 +249,7 @@ server_context_service_get_property (GObject    *object,
                                        GValue     *value,
                                        GParamSpec *pspec)
 {
-    ServerContextService *self = SERVER_CONTEXT_SERVICE(object);
     switch (prop_id) {
-    case PROP_VISIBLE:
-        g_value_set_boolean (value, self->visible);
-        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
         break;
@@ -388,18 +276,6 @@ server_context_service_class_init (ServerContextServiceClass *klass)
     gobject_class->set_property = server_context_service_set_property;
     gobject_class->get_property = server_context_service_get_property;
     gobject_class->dispose = server_context_service_dispose;
-
-    /**
-     * Flag to indicate if keyboard is visible or not.
-     */
-    pspec = g_param_spec_boolean ("visible",
-                                  "Visible",
-                                  "Visible",
-                                  FALSE,
-                                  G_PARAM_READWRITE);
-    g_object_class_install_property (gobject_class,
-                                     PROP_VISIBLE,
-                                     pspec);
 
     /**
      * ServerContextServie:keyboard:
@@ -442,24 +318,20 @@ init (ServerContextService *self) {
 }
 
 ServerContextService *
-server_context_service_new (EekboardContextService *self, struct submission *submission, struct squeek_layout_state *layout, struct ui_manager *uiman, struct vis_manager *visman)
+server_context_service_new (EekboardContextService *self, struct submission *submission, struct squeek_layout_state *layout, struct ui_manager *uiman,  struct squeek_state_manager *state_manager)
 {
     ServerContextService *ui = g_object_new (SERVER_TYPE_CONTEXT_SERVICE, NULL);
     ui->submission = submission;
     ui->state = self;
     ui->layout = layout;
     ui->manager = uiman;
-    ui->vis_manager = visman;
+    ui->state_manager = state_manager;
     init(ui);
     return ui;
 }
 
-void
-server_context_service_update_visible (ServerContextService *self, gboolean visible) {
-    if (visible) {
-        server_context_service_show_keyboard(self);
-    } else {
-        server_context_service_hide_keyboard(self);
-    }
+// Used from Rust
+void server_context_service_set_hint_purpose(ServerContextService *self, uint32_t hint,
+                                              uint32_t purpose) {
+    eekboard_context_service_set_hint_purpose(self->state, hint, purpose);
 }
-

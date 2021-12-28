@@ -39,6 +39,8 @@ typedef struct EekRenderer
     GtkStyleContext *button_context; // TODO: maybe move a copy to each button
     /// Style class for rendering the view and button CSS.
     gchar *extra_style; // owned
+    // Theme name change signal handler id
+    gulong theme_name_id;
 
     // Mutable state
     gint scale_factor; /* the outputs scale factor */

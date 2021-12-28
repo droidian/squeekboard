@@ -58,9 +58,15 @@ foreach layout : [
     'us', 'us_wide',
 
     # Block: Languages
+    'am', 'am+phonetic',
+    'ara', 'ara_wide',
     'be', 'be_wide',
     'bg',
+    'bg+phonetic',
     'br',
+    'ch+fr',
+    'ch+de',
+    'ch', 'ch_wide',
     'cz', 'cz_wide',
     'cz+qwerty', 'cz+qwerty_wide',
     'de', 'de_wide',
@@ -87,12 +93,14 @@ foreach layout : [
 
     # Terminal keyboards
     'terminal/fr', 
+    'terminal/fr_wide', 
     'terminal/us',
     'terminal/us_wide',
     
     # Block: Not languages.
     'emoji/us',
     'number/us',
+    'pin/us',
 ]
     extra = []
     if layout.startswith('emoji/')
