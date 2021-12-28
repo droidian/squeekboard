@@ -61,7 +61,7 @@ pub mod c {
         };
 
         let (kind, layout) = load_layout_data_with_fallback(&name, type_, variant, overlay_str);
-        let layout = ::layout::Layout::new(layout, kind);
+        let layout = ::layout::Layout::new(layout, kind, variant);
         Box::into_raw(Box::new(layout))
     }
 }
@@ -166,10 +166,13 @@ fn get_directory_string(
 
     let layout_purpose = match overlay {
         None => match content_purpose {
-            ContentPurpose::Number => Special("number"),
+            ContentPurpose::Email => Special("email"),
             ContentPurpose::Digits => Special("number"),
+            ContentPurpose::Number => Special("number"),
             ContentPurpose::Phone => Special("number"),
+            ContentPurpose::Pin => Special("pin"),
             ContentPurpose::Terminal => Special("terminal"),
+            ContentPurpose::Url => Special("url"),
             _ => Default,
         },
         Some(overlay) => Special(overlay),

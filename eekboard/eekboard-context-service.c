@@ -217,7 +217,7 @@ eekboard_context_service_class_init (EekboardContextServiceClass *klass)
      * Emitted when @context is destroyed.
      */
     signals[DESTROYED] =
-        g_signal_new (I_("destroyed"),
+        g_signal_new ("destroyed",
                       G_TYPE_FROM_CLASS(gobject_class),
                       G_SIGNAL_RUN_LAST,
                       0,

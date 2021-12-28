@@ -12,7 +12,7 @@ desktopconf.set('bindir', bindir)
 
 desktop_file = 'sm.puri.Squeekboard.desktop'
 
-i18n.merge_file('desktop',
+i18n.merge_file(
     input: configure_file(
       input: desktop_file + '.in.in',
       output: desktop_file + '.in',

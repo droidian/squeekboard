@@ -312,7 +312,6 @@ on_phosh_layer_surface_unmapped (PhoshLayerSurface *self, gpointer unused)
   PhoshLayerSurfacePrivate *priv;
 
   g_return_if_fail (PHOSH_IS_LAYER_SURFACE (self));
-  priv = phosh_layer_surface_get_instance_private (self);
 
   priv = phosh_layer_surface_get_instance_private (self);
   if (priv->layer_surface) {

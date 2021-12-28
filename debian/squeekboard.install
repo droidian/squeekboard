@@ -1,4 +1,5 @@
-tools/squeekboard-restyled usr/bin
-usr/bin/squeekboard usr/bin
-usr/share/applications/sm.puri.Squeekboard.desktop usr/share/applications
+tools/squeekboard-restyled /usr/bin
+usr/bin/squeekboard /usr/bin
+usr/share/applications/
+usr/share/locale/
 debian/sm.puri.OSK0.desktop /usr/share/applications/

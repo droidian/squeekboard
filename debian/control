@@ -5,7 +5,7 @@ Maintainer: DebianOnMobile Maintainers <debian-on-mobile-maintainers@alioth-list
 Uploaders: Arnaud Ferraris <arnaud.ferraris@gmail.com>
 Build-Depends:
  cargo,
- debhelper-compat (= 12),
+ debhelper-compat (= 13),
  meson (>=0.51.0),
  ninja-build,
  pkg-config,
@@ -30,6 +30,7 @@ Build-Depends:
  libwayland-dev (>= 1.16),
  lsb-release,
  python3,
+ python3-ruamel.yaml,
  rustc,
  wayland-protocols (>= 1.14),
 Standards-Version: 4.5.0

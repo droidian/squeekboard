@@ -1,5 +1,6 @@
-.zanata-cache/
 _build
+po/squeekboard.pot
+po/*.mo
 TAGS
 tags
 vgdump

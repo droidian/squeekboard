@@ -316,7 +316,6 @@ eek_gtk_keyboard_dispose (GObject *object)
     if (priv->renderer) {
         eek_renderer_free(priv->renderer);
         priv->renderer = NULL;
-        priv->renderer = NULL;
     }
 
     if (priv->keyboard) {

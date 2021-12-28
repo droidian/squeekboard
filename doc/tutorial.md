@@ -21,7 +21,8 @@ Creating a layout is easy. You don't need to recompile things, just edit and tes
 ### Creating the keyboard layout
 
 * To be written: For the time being, take a look at [Using non-latin language on Librem 5](https://forums.puri.sm/t/using-non-latin-language-on-librem-5/7103/5)
-* The correct name of the .yaml file can be found with the command 
+* Select and enable the input source you would like to change from the Region & Language section of the device settings. Perhaps use "A user-defined custom layout" listed under Other.
+* Find the correct name of the .yaml file associated with that input source. This can be found with the command 
 
 ```
 gsettings get org.gnome.desktop.input-sources sources
@@ -29,12 +30,14 @@ gsettings get org.gnome.desktop.input-sources sources
 
 The output should be something like this: `[('xkb', 'us'), ('xkb', 'de')]`
 So for example “de.yaml” would be the correct name for the German keyboard layout.
-
 If the name of your layout is not translated correctly in the list, you can fix it by adding it and recompiling Squeekboard.
+
+There is also associated files for that layout in landscape, terminal, number, emoji mode. They can be found at something analogous to `us_wide.yaml`, `terminal/us.yaml`, `number/us.yaml`, `emoji/us.yaml`, respectively.
 
 ### Testing the layout
 
 Copy your yaml file to `~/.local/share/squeekboard/keyboards/` for testing purposes. From there it should get picked up by squeekboard automatically.
+The yaml file will overwrite the default settings for that layout. If you want to go back to default, simply remove the file.
 
 You can also use the `test_layout` tool from the -devel package to check it for errors:
 

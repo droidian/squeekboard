@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+
+"""Checks YAML files for correct formatting.
+Usage: yamlfmt.py [--apply] file.yaml
+"""
+
+import io
+from ruamel.yaml import YAML
+import sys
+
+args = sys.argv[:]
+try:
+    args.remove('--apply')
+    want_apply = True
+except ValueError:
+    want_apply = False
+
+path = args[1]
+
+def dump(yaml, yml):
+    buf = io.BytesIO()
+    yaml.dump(yml, buf)
+    return buf.getvalue().decode('utf-8')
+
+with open(path) as f:
+    contents = f.read()
+    yaml = YAML()
+    yaml.indent(offset=2, sequence=4)
+    yml = yaml.load(contents)
+    formatted = dump(yaml, yml)
+    well_formatted = formatted == contents
+        
+if not well_formatted:
+    print('The yaml file is not correctly formatted:', path)
+    if want_apply:
+        print('Correcting', path)
+        with open(path, 'w') as f:
+            f.write(formatted)
+    else:
+        print('Please use the following correction:')
+        print('----------corrected', path)
+        print(formatted)
+        print('----------end corrected', path)
+        sys.exit(1)

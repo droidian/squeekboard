@@ -8,7 +8,11 @@ use std::ffi::CString;
 use std::fmt;
 use std::num::Wrapping;
 use std::string::String;
+use std::time::Instant;
 
+use crate::event_loop::driver;
+use crate::state;
+use crate::state::Event;
 use ::logging;
 use ::util::c::into_cstring;
 
@@ -22,9 +26,6 @@ pub mod c {
     use super::*;
 
     use std::os::raw::{c_char, c_void};
-
-    pub use ::ui_manager::c::UIManager;
-    pub use ::submission::c::StateManager;
 
     // The following defined in C
         
@@ -40,7 +41,6 @@ pub mod c {
         pub fn eek_input_method_commit_string(im: *mut InputMethod, text: *const c_char);
         pub fn eek_input_method_delete_surrounding_text(im: *mut InputMethod, before: u32, after: u32);
         pub fn eek_input_method_commit(im: *mut InputMethod, serial: u32);
-        fn eekboard_context_service_set_hint_purpose(state: *const StateManager, hint: u32, purpose: u32);
     }
     
     // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
@@ -141,7 +141,6 @@ pub mod c {
         im: *const InputMethod)
     {
         let imservice = check_imservice(imservice, im).unwrap();
-        let active_changed = imservice.current.active ^ imservice.pending.active;
 
         imservice.current = imservice.pending.clone();
         imservice.pending = IMProtocolState {
@@ -150,19 +149,7 @@ pub mod c {
         };
 
         imservice.serial += Wrapping(1u32);
-
-        if active_changed {
-            (imservice.active_callback)(imservice.current.active);
-            if imservice.current.active {
-                unsafe {
-                    eekboard_context_service_set_hint_purpose(
-                        imservice.state_manager,
-                        imservice.current.content_hint.bits(),
-                        imservice.current.content_purpose.clone() as u32,
-                    );
-                }
-            }
-        }
+        imservice.send_event();
     }
     
     // TODO: this is really untested
@@ -178,7 +165,7 @@ pub mod c {
         // the keyboard is already decommissioned
         imservice.current.active = false;
 
-        (imservice.active_callback)(imservice.current.active);
+        imservice.send_event();
     }    
 
     // FIXME: destroy and deallocate
@@ -233,7 +220,7 @@ bitflags!{
 /// use rs::imservice::ContentPurpose;
 /// assert_eq!(ContentPurpose::Alpha as u32, 1);
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub enum ContentPurpose {
     Normal = 0,
     Alpha = 1,
@@ -329,9 +316,7 @@ impl Default for IMProtocolState {
 pub struct IMService {
     /// Owned reference (still created and destroyed in C)
     pub im: *mut c::InputMethod,
-    /// Unowned reference. Be careful, it's shared with C at large
-    state_manager: *const c::StateManager,
-    active_callback: Box<dyn Fn(bool)>,
+    sender: driver::Threaded,
 
     pending: IMProtocolState,
     current: IMProtocolState, // turn current into an idiomatic representation?
@@ -347,15 +332,13 @@ pub enum SubmitError {
 impl IMService {
     pub fn new(
         im: *mut c::InputMethod,
-        state_manager: *const c::StateManager,
-        active_callback: Box<dyn Fn(bool)>,
+        sender: driver::Threaded,
     ) -> Box<IMService> {
         // IMService will be referenced to by C,
         // so it needs to stay in the same place in memory via Box
         let imservice = Box::new(IMService {
             im,
-            active_callback,
-            state_manager,
+            sender,
             pending: IMProtocolState::default(),
             current: IMProtocolState::default(),
             preedit_string: String::new(),
@@ -414,5 +397,22 @@ impl IMService {
 
     pub fn is_active(&self) -> bool {
         self.current.active
+    }
+
+    fn send_event(&self) {
+        let state = &self.current;
+        let timestamp = Instant::now();
+        let message = if state.active {
+            state::InputMethod::Active(
+                state::InputMethodDetails {
+                    hint: state.content_hint,
+                    purpose: state.content_purpose,
+                }
+            )
+        } else {
+            state::InputMethod::InactiveSince(timestamp)
+        };
+        self.sender.send(Event::InputMethod(message))
+            .or_warn(&mut logging::Print, logging::Problem::Warning, "Can't send to state manager");
     }
 }

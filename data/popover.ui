@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <menu id="app-menu">
+    <item>
+      <!-- translators: This is a emmoji keyboard layout -->
+      <attribute name="label" translatable="yes">Emoji</attribute>
+      <attribute name="action">layout</attribute>
+      <attribute name="target">emoji</attribute>
+    </item>
+    <item>
+      <!-- translators: This is a terminal keyboard layout -->
+      <attribute name="label" translatable="yes">Terminal</attribute>
+      <attribute name="action">layout</attribute>
+      <attribute name="target">terminal</attribute>
+    </item>
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Keyboard Settings</attribute>
+        <attribute name="action">settings</attribute>
+      </item>
+    </section>
+  </menu>
+</interface>

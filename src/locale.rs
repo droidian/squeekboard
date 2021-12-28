@@ -89,15 +89,6 @@ impl Drop for XkbInfo {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Translation<'a>(pub &'a str);
-
-impl<'a> Translation<'a> {
-    pub fn to_owned(&'a self) -> OwnedTranslation {
-        OwnedTranslation(self.0.to_owned())
-    }
-}
-
-#[derive(Clone, Debug, PartialEq)]
 pub struct OwnedTranslation(pub String);
 
 fn cstring_safe(s: &str) -> CString {

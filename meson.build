@@ -1,7 +1,7 @@
 project(
     'squeekboard',
     'c', 'rust',
-    version: '1.14.0',
+    version: '1.15.0',
     license: 'GPLv3',
     meson_version: '>=0.51.0',
     default_options: [
@@ -36,8 +36,6 @@ add_project_arguments(
 
 i18n = import('i18n')
 
-conf_data = configuration_data()
-
 if get_option('buildtype').startswith('debug')
     add_project_arguments('-DDEBUG=1', language : 'c')
 endif
@@ -63,6 +61,7 @@ endif
 prefix = get_option('prefix')
 bindir = join_paths(prefix, get_option('bindir'))
 datadir = join_paths(prefix, get_option('datadir'))
+localedir = join_paths(prefix, get_option('localedir'))
 desktopdir = join_paths(datadir, 'applications')
 pkgdatadir = join_paths(datadir, meson.project_name())
 if get_option('depdatadir') == ''
@@ -71,6 +70,10 @@ else
   depdatadir = get_option('depdatadir')
 endif
 dbusdir = join_paths(depdatadir, 'dbus-1/interfaces')
+
+conf_data = configuration_data()
+conf_data.set_quoted('GETTEXT_PACKAGE', 'squeekboard')
+conf_data.set_quoted('LOCALEDIR', localedir)
 
 summary = [
         '',
@@ -114,6 +117,7 @@ cargo_script = find_program('cargo.sh')
 cargo_build = find_program('cargo_build.py')
 
 subdir('data')
+subdir('po')
 subdir('protocols')
 subdir('src')
 subdir('tools')
