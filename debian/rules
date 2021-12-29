@@ -24,7 +24,7 @@ export RUSTFLAGS = --remap-path-prefix=$(CURDIR)=/remap-pwd $(xgot)
 # The Debian version of linked-hash-map doesn't provide any hash,
 # causing Cargo to refuse to build with a crates.io copy
 build-arch:
-	rm Cargo.lock
+	rm -f Cargo.lock
 	dh $@ --builddirectory=_build --buildsystem=meson
 
 override_dh_autoreconf:
