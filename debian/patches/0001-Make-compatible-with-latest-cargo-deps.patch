@@ -1,0 +1,445 @@
+From: Tor <sorensentor@tuta.io>
+Date: Sun, 30 Jan 2022 17:47:57 +0000
+Subject: [PATCH] Make compatible with latest cargo deps
+
+Origin: upstream, https://gitlab.gnome.org/World/Phosh/squeekboard/-/commit/417fe35e910206b9de5a903e6fc356b8b958e3dd
+---
+ .gitlab-ci.yml    | 21 +++++++++++++++++++++
+ Cargo.deps        | 11 +++++++++++
+ Cargo.deps.legacy | 21 ---------------------
+ Cargo.deps.newer  | 33 +++++++++++++++++++++++++++++++++
+ Cargo.toml.in     | 15 +--------------
+ meson.build       |  8 ++++----
+ meson_options.txt |  4 ++--
+ src/drawing.rs    |  2 +-
+ src/main.rs       |  3 ++-
+ src/popover.rs    | 44 +++++++++++++++++++++++++++++++++-----------
+ src/style.rs      | 37 +++++++++++++++++++++++++++----------
+ tests/meson.build | 13 +++----------
+ 12 files changed, 138 insertions(+), 74 deletions(-)
+ delete mode 100644 Cargo.deps.legacy
+ create mode 100644 Cargo.deps.newer
+
+diff --git a/.gitlab-ci.yml b/.gitlab-ci.yml
+index f75cdef..75d707d 100644
+--- a/.gitlab-ci.yml
++++ b/.gitlab-ci.yml
+@@ -72,6 +72,27 @@ build_deb:arm64:
+     - debuild -i -us -uc -b
+     - cp ../*.deb .
+ 
++build_deb:future:
++  image: debian:sid
++  tags:
++    - aarch64
++  stage: build
++  artifacts:
++    paths:
++      - '*.deb'
++  script:
++    - rm -f ../*.deb
++    - mv debian/control-newer debian/control
++    - apt-get -y build-dep .
++    - apt-get -y install devscripts
++    - REV=$(git log -1 --format=%h)
++    - VER=$(dpkg-parsechangelog -SVersion)
++    - DEBFULLNAME="Librem5 CI"
++    - EMAIL="librem5-builds@lists.community.puri.sm"
++    - dch -v"$VER+librem5ci$CI_PIPELINE_ID.$REV" "$MSG"
++    - debuild -i -us -uc -b
++    - cp ../*.deb .
++
+ test_lintian:
+   stage: test
+   needs:
+diff --git a/Cargo.deps b/Cargo.deps
+index 99dc7e8..04f99e6 100644
+--- a/Cargo.deps
++++ b/Cargo.deps
+@@ -5,6 +5,9 @@ clap = { version = "2.33.*", default-features = false }
+ [dependencies.cairo-rs]
+ version = "0.7.*"
+ 
++[dependencies.cairo-sys-rs]
++version = "0.9"
++
+ [dependencies.gdk]
+ version = "0.11.*"
+ 
+@@ -16,6 +19,14 @@ features = ["v2_44"]
+ version = "0.8.*"
+ features = ["v2_44"]
+ 
++[dependencies.glib-sys]
++version = "*"
++features = ["v2_44"]
++
+ [dependencies.gtk]
+ version = "0.7.*"
+ features = ["v3_22"]
++
++[dependencies.gtk-sys]
++version = "0.9"
++features = ["v3_22"]
+diff --git a/Cargo.deps.legacy b/Cargo.deps.legacy
+deleted file mode 100644
+index a123f52..0000000
+--- a/Cargo.deps.legacy
++++ /dev/null
+@@ -1,21 +0,0 @@
+-# Dependencies which change based on build flags
+-bitflags = "1.0.*"
+-clap = { version = "2.32.*", default-features = false }
+-
+-[dependencies.cairo-rs]
+-version = "0.5.*"
+-
+-[dependencies.gdk]
+-version = "0.9.*"
+-
+-[dependencies.gio]
+-version = "0.5.*"
+-features = ["v2_44"]
+-
+-[dependencies.glib]
+-version = "0.6.*"
+-features = ["v2_44"]
+-
+-[dependencies.gtk]
+-version = "0.5.*"
+-features = ["v3_22"]
+diff --git a/Cargo.deps.newer b/Cargo.deps.newer
+new file mode 100644
+index 0000000..b259897
+--- /dev/null
++++ b/Cargo.deps.newer
+@@ -0,0 +1,33 @@
++# Dependencies which change based on build flags
++# For the newer-than-Byzantium config
++bitflags = "1.3.*"
++clap = { version = "2.33.*", default-features = false }
++
++[dependencies.cairo-rs]
++version = "0.14.*"
++
++[dependencies.cairo-sys-rs]
++version = "0.14.*"
++
++[dependencies.gdk]
++version = "0.14.*"
++
++[dependencies.gio]
++version = "0.14.*"
++features = ["v2_58"]
++
++[dependencies.glib]
++version = "0.14.*"
++features = ["v2_58"]
++
++[dependencies.glib-sys]
++version = "0.14.*"
++features = ["v2_58"]
++
++[dependencies.gtk]
++version = "0.14.*"
++features = ["v3_22"]
++
++[dependencies.gtk-sys]
++version = "0.14.*"
++features = ["v3_22"]
+diff --git a/Cargo.toml.in b/Cargo.toml.in
+index e74689c..5667197 100644
+--- a/Cargo.toml.in
++++ b/Cargo.toml.in
+@@ -17,22 +17,9 @@ name = "test_layout"
+ path = "@path@/examples/test_layout.rs"
+ 
+ [features]
+-gio_v0_5 = []
+-gtk_v0_5 = []
+-rustc_less_1_36 = []
++glib_v0_14 = []
+ 
+ # Dependencies which don't change based on build flags
+-[dependencies.cairo-sys-rs]
+-version = "0.9"
+-
+-[dependencies.glib-sys]
+-version = "*"
+-features = ["v2_44"]
+-
+-[dependencies.gtk-sys]
+-version = "0.9"
+-features = ["v3_22"]
+-
+ [dependencies]
+ maplit = "1.0.*"
+ serde = { version = "1.0.*", features = ["derive"] }
+diff --git a/meson.build b/meson.build
+index f8e5482..fba1940 100644
+--- a/meson.build
++++ b/meson.build
+@@ -99,11 +99,11 @@ cargo_toml_base = configure_file(
+ 
+ cargo_deps = files('Cargo.deps')
+ 
+-if get_option('legacy') == true
+-    cargo_build_flags += ['--features', 'gtk_v0_5,gio_v0_5,rustc_less_1_36']
+-    cargo_deps = files('Cargo.deps.legacy')
++if get_option('newer') == true
++    cargo_build_flags += ['--features', 'glib_v0_14']
++    cargo_deps = files('Cargo.deps.newer')
+ endif
+-    
++
+ cat = find_program('cat')
+ cargo_toml = custom_target(
+     'Cargo.toml',
+diff --git a/meson_options.txt b/meson_options.txt
+index bb68374..16e9ae9 100644
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -7,9 +7,9 @@ option('tests',
+        type: 'boolean', value: true,
+        description: 'Whether to compile unit tests')
+ 
+-option('legacy',
++option('newer',
+        type: 'boolean', value: false,
+-       description: 'Build with Deban Buster versions of dependencies')
++       description: 'Build with dependencies newer than those of Byzantium')
+ 
+ option('strict',
+        type: 'boolean', value: true,
+diff --git a/src/drawing.rs b/src/drawing.rs
+index 8982dcd..6ccf925 100644
+--- a/src/drawing.rs
++++ b/src/drawing.rs
+@@ -10,7 +10,7 @@ use ::layout::c::{ Bounds, EekGtkKeyboard, Point };
+ use ::submission::c::Submission as CSubmission;
+ 
+ use glib::translate::FromGlibPtrNone;
+-use gtk::WidgetExt;
++use gtk::prelude::WidgetExt;
+ 
+ use std::collections::HashSet;
+ use std::ffi::CStr;
+diff --git a/src/main.rs b/src/main.rs
+index 0a089bf..6ca90ae 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -87,7 +87,7 @@ mod c {
+         let receiver = Rc::try_unwrap(receiver).expect("References still present");
+         let receiver = receiver.into_inner();
+         let ctx = MainContext::default();
+-        ctx.acquire();
++        let _acqu = ctx.acquire();
+         receiver.attach(
+             Some(&ctx),
+             move |msg| {
+@@ -95,6 +95,7 @@ mod c {
+                 Continue(true)
+             },
+         );
++        #[cfg(not(feature = "glib_v0_14"))]
+         ctx.release();
+     }
+ 
+diff --git a/src/popover.rs b/src/popover.rs
+index bee817e..fad2c45 100644
+--- a/src/popover.rs
++++ b/src/popover.rs
+@@ -11,16 +11,11 @@ use ::manager;
+ use ::resources;
+ 
+ // Traits
+-use gio::ActionMapExt;
+-use gio::SettingsExt;
+-#[cfg(feature = "gio_v0_5")]
+-use gio::SimpleActionExt;
++use gio::prelude::ActionMapExt;
++use gio::prelude::SettingsExt;
+ use glib::translate::FromGlibPtrNone;
+ use glib::variant::ToVariant;
+-#[cfg(not(feature = "gtk_v0_5"))]
+ use gtk::prelude::*;
+-use gtk::PopoverExt;
+-use gtk::WidgetExt;
+ use ::logging::Warn;
+ 
+ mod c {
+@@ -110,8 +105,13 @@ mod variants {
+ 
+ fn get_settings(schema_name: &str) -> Option<gio::Settings> {
+     let mut error_handler = logging::Print{};
+-    gio::SettingsSchemaSource::get_default()
+-        .or_warn(
++
++    #[cfg(feature = "glib_v0_14")]
++    let ss = gio::SettingsSchemaSource::default();
++    #[cfg(not(feature = "glib_v0_14"))]
++    let ss = gio::SettingsSchemaSource::get_default();
++
++    ss.or_warn(
+             &mut error_handler,
+             logging::Problem::Surprise,
+             "No gsettings schemas installed.",
+@@ -130,7 +130,11 @@ fn get_settings(schema_name: &str) -> Option<gio::Settings> {
+ fn set_layout(kind: String, name: String) {
+     let settings = get_settings("org.gnome.desktop.input-sources");
+     if let Some(settings) = settings {
++        #[cfg(feature = "glib_v0_14")]
++        let inputs = settings.value("sources");
++        #[cfg(not(feature = "glib_v0_14"))]
+         let inputs = settings.get_value("sources").unwrap();
++
+         let current = (kind.clone(), name.clone());
+         let inputs = variants::get_tuples(inputs).into_iter()
+             .filter(|t| t != &current);
+@@ -254,7 +258,11 @@ pub fn show(
+     let settings = get_settings("org.gnome.desktop.input-sources");
+     let inputs = settings
+         .map(|settings| {
++            #[cfg(feature = "glib_v0_14")]
++            let inputs = settings.value("sources");
++            #[cfg(not(feature = "glib_v0_14"))]
+             let inputs = settings.get_value("sources").unwrap();
++
+             variants::get_tuples(inputs)
+         })
+         .unwrap_or_else(|| Vec::new());
+@@ -285,8 +293,18 @@ pub fn show(
+         }
+     });
+ 
+-    let builder = gtk::Builder::new_from_resource("/sm/puri/squeekboard/popover.ui");
+-    let model: gio::Menu = builder.get_object("app-menu").unwrap();
++    let model: gio::Menu = {
++        #[cfg(feature = "glib_v0_14")]
++        {
++            let builder = gtk::Builder::from_resource("/sm/puri/squeekboard/popover.ui");
++            builder.object("app-menu").unwrap()
++        }
++        #[cfg(not(feature = "glib_v0_14"))]
++        {
++            let builder = gtk::Builder::new_from_resource("/sm/puri/squeekboard/popover.ui");
++            builder.get_object("app-menu").unwrap()
++        }
++    };
+ 
+     for (tr, l) in human_names.iter().rev() {
+         let detailed_action = format!("layout::{}", l.get_name());
+@@ -294,7 +312,11 @@ pub fn show(
+         model.prepend_item (&item);
+     }
+ 
++    #[cfg(feature = "glib_v0_14")]
++    let menu = gtk::Popover::from_model(Some(&window), &model);
++    #[cfg(not(feature = "glib_v0_14"))]
+     let menu = gtk::Popover::new_from_model(Some(&window), &model);
++
+     menu.set_pointing_to(&gtk::Rectangle {
+         x: position.x.ceil() as i32,
+         y: position.y.ceil() as i32,
+diff --git a/src/style.rs b/src/style.rs
+index 153431a..e64efa7 100644
+--- a/src/style.rs
++++ b/src/style.rs
+@@ -21,7 +21,7 @@
+ use std::env;
+ use ::logging;
+ 
+-use glib::object::ObjectExt;
++use glib::prelude::ObjectExt;
+ use logging::Warn;
+ 
+ /// Gathers stuff defined in C or called by C
+@@ -30,8 +30,8 @@ pub mod c {
+     use gio;
+     use gtk;
+     use gtk_sys;
+-    
+-    use gtk::CssProviderExt;
++
++    use gtk::prelude::CssProviderExt;
+     use glib::translate::ToGlibPtr;
+ 
+     /// Loads the layout style based on current theme
+@@ -40,9 +40,14 @@ pub mod c {
+     pub extern "C"
+     fn squeek_load_style() -> *const gtk_sys::GtkCssProvider {
+         unsafe { gtk::set_initialized() };
+-        let theme = gtk::Settings::get_default()
+-            .map(|settings| get_theme_name(&settings));
+-        
++
++        #[cfg(feature = "glib_v0_14")]
++        let theme = gtk::Settings::default();
++        #[cfg(not(feature = "glib_v0_14"))]
++        let theme = gtk::Settings::get_default();
++
++        let theme = theme.map(|settings| get_theme_name(&settings));
++
+         let css_name = path_from_theme(theme);
+ 
+         let resource_name = if gio::resources_get_info(
+@@ -93,19 +98,31 @@ fn get_theme_name(settings: &gtk::Settings) -> GtkTheme {
+             e
+         }).ok();
+ 
++    #[cfg(feature = "glib_v0_14")]
++    let prop = |s: &gtk::Settings, name| s.property(name);
++    #[cfg(not(feature = "glib_v0_14"))]
++    let prop = |s: &gtk::Settings, name| s.get_property(name);
++
++    #[cfg(feature = "glib_v0_14")]
++    fn check<T, E: std::fmt::Display>(v: Result<T, E>) -> Option<T> {
++        v.or_print(logging::Problem::Surprise, "Key not of expected type")
++    }
++    #[cfg(not(feature = "glib_v0_14"))]
++    fn check<T>(v: Option<T>) -> Option<T> { v }
++
+     match env_theme {
+         Some(theme) => theme,
+         None => GtkTheme {
+             name: {
+-                settings.get_property("gtk-theme-name")
++                prop(settings, "gtk-theme-name")
+                     .or_print(logging::Problem::Surprise, "No theme name")
+-                    .and_then(|value| value.get::<String>())
++                    .and_then(|value| check(value.get::<String>()))
+                     .unwrap_or(DEFAULT_THEME_NAME.into())
+             },
+             variant: {
+-                settings.get_property("gtk-application-prefer-dark-theme")
++                prop(settings, "gtk-application-prefer-dark-theme")
+                     .or_print(logging::Problem::Surprise, "No settings key")
+-                    .and_then(|value| value.get::<bool>())
++                    .and_then(|value| check(value.get::<bool>()))
+                     .and_then(|dark_preferred| match dark_preferred {
+                         true => Some("dark".into()),
+                         false => None,
+diff --git a/tests/meson.build b/tests/meson.build
+index d43fe9a..7480666 100644
+--- a/tests/meson.build
++++ b/tests/meson.build
+@@ -106,16 +106,9 @@ foreach layout : [
+     if layout.startswith('emoji/')
+         extra += ['allow_missing_return']
+     endif
+-    
+-    # Older Cargo seens to be sensitive to something
+-    # about the RUST_FLAGS env var, and rebuilds all tests when it's set,
+-    # increasing test time by 2 orders of magnitude.
+-    # Let it have its way.
+-    if get_option('legacy') == true
+-        timeout = 300
+-    else
+-        timeout = 30
+-    endif
++
++    timeout = 30
++
+     test(
+         'test_layout_' + layout,
+         cargo_script,
