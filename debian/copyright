@@ -56,7 +56,6 @@ Copyright: 2019 Antonio Pandolfo <ant.pandolfo@gmail.com>
 License: GPL-3+
 
 Files: data/keyboards/it+fur.yaml
-       data/langs/fur-IT.txt
 Copyright: 2019 Purism SPC
            2020 Fabio Tomat <f.t.public@gmail.com>
 License: GPL-3+
@@ -73,6 +72,10 @@ Files: data/keyboards/fr.yaml
 Copyright: 2019 Purism SPC
            2020 Arnaud Ferraris <arnaud.ferraris@gmail.com>
 License: GPL-3+
+
+Files: dco.txt
+Copyright: 2004-2006 The Linux Foundation and its contributors
+License: DCO
 
 Files: eek/eek.c
        eek/eek-element.*
@@ -115,7 +118,9 @@ Copyright: 2010-2011 Daiki Ueno <ueno@unixuser.org>
 License: GPL-3+
 
 Files: protocols/input-method-unstable-v2.xml
-Copyright: 2012-2013 Intel Corporation
+Copyright: 2008-2011 Kristian Høgsberg
+           2010-2013 Intel Corporation
+           2012-2013 Collabora, Ltd.
            2015-2016 Jan Arne Petersen
            2017-2018 Red Hat, Inc.
            2018 Purism SPC
@@ -147,14 +152,6 @@ Files: src/float_ord.rs
 Copyright: 2017 Michael Howell <michael@notriddle.com>
            2019 Purism SPC
 License: MIT or Apache-2.0
-
-Files: src/locale_config.rs
-Copyright: 2016-2019 Jan Hudec <bulb@ucw.cz>
-           2016 A.J. Gardner <aaron.j.gardner@gmail.com>
-           2019 Bastien Orivel <eijebong@bananium.fr>
-           2019 Igor Gnatenko <i.gnatenko.brain@gmail.com>
-           2019 Sophie Tauchert <999eagle@999eagle.moe>
-License: MIT
 
 Files: src/resources.rs
 Copyright: 2019 Andreas Rönnquist <andreas@ronnquist.net>
@@ -278,3 +275,7 @@ License: Apache-2.0
  .
  On Debian systems, the complete text of the Apache License, Version 2.0
  can be found in "/usr/share/common-licenses/Apache-2.0".
+
+License: DCO
+ Everyone is permitted to copy and distribute verbatim copies of this
+ license document, but changing it is not allowed.
