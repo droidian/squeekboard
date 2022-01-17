@@ -49,6 +49,8 @@ class App(Gtk.Application):
         ("OSK provided", Gtk.InputHints.INHIBIT_OSK)
     ]
 
+    purpose_timer = 0;
+
     def on_purpose_toggled(self, btn, entry):
         purpose = Gtk.InputPurpose.PIN if btn.get_active() else Gtk.InputPurpose.PASSWORD
         entry.set_input_purpose(purpose)
@@ -60,13 +62,17 @@ class App(Gtk.Application):
         e.set_input_purpose(purpose)
         return True
 
+    def on_is_focus_changed(self, e, *args):
+        if not self.purpose_timer and e.props.is_focus:
+            GLib.timeout_add_seconds (3, self.on_timeout, e)
+
     def add_random (self, grid):
         l = Gtk.Label(label="Random")
         e = Gtk.Entry(hexpand=True)
+        e.connect("notify::is-focus", self.on_is_focus_changed)
         e.set_input_purpose(Gtk.InputPurpose.FREE_FORM)
         grid.attach(l, 0, len(self.purposes), 1, 1)
         grid.attach(e, 1, len(self.purposes), 1, 1)
-        GLib.timeout_add_seconds (3, self.on_timeout, e)
 
     def do_activate(self):
         w = Gtk.ApplicationWindow(application=self)
