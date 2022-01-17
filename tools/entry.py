@@ -46,7 +46,8 @@ class App(Gtk.Application):
     ] + terminal
 
     hints = [
-        ("OSK provided", Gtk.InputHints.INHIBIT_OSK)
+        ("OSK provided", Gtk.InputHints.INHIBIT_OSK),
+        ("Uppercase chars", Gtk.InputHints.UPPERCASE_CHARS),
     ]
 
     purpose_timer = 0;
