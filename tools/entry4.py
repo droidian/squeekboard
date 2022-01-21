@@ -3,29 +3,27 @@
 import gi
 import random
 import sys
-gi.require_version('Gtk', '3.0')
+gi.require_version('Gtk', '4.0')
 gi.require_version('GLib', '2.0')
 
 from gi.repository import Gtk
 from gi.repository import GLib
 
-try:
-    terminal = [("Terminal", Gtk.InputPurpose.TERMINAL)]
-except AttributeError:
-    print("Terminal purpose not available on this GTK version", file=sys.stderr)
-    terminal = []
 
 def new_grid(items, set_type):
     grid = Gtk.Grid(orientation='vertical', column_spacing=8, row_spacing=8)
-    grid.props.margin = 6
 
     i = 0
     for text, value in items:
-        l = Gtk.Label(label=text)
-        e = Gtk.Entry(hexpand=True)
-        set_type(e, value)
-        grid.attach(l, 0, i, 1, 1)
-        grid.attach(e, 1, i, 1, 1)
+        label = Gtk.Label(label=text)
+        label.props.margin_top = 6
+        label.props.margin_start = 6
+        entry = Gtk.Entry(hexpand=True)
+        entry.props.margin_top = 6
+        entry.props.margin_end = 6
+        set_type(entry, value)
+        grid.attach(label, 0, i, 1, 1)
+        grid.attach(entry, 1, i, 1, 1)
         i += 1
     return grid
 
@@ -43,14 +41,13 @@ class App(Gtk.Application):
         ("Name", Gtk.InputPurpose.NAME),
         ("Password", Gtk.InputPurpose.PASSWORD),
         ("PIN", Gtk.InputPurpose.PIN),
-    ] + terminal
-
-    hints = [
-        ("OSK provided", Gtk.InputHints.INHIBIT_OSK),
-        ("Uppercase chars", Gtk.InputHints.UPPERCASE_CHARS),
+        ("Terminal", Gtk.InputPurpose.TERMINAL),
     ]
 
-    purpose_timer = 0;
+    hints = [
+        ("OSK provided", Gtk.InputHints.INHIBIT_OSK)
+    ]
+    purpose_tick_id = 0
 
     def on_purpose_toggled(self, btn, entry):
         purpose = Gtk.InputPurpose.PIN if btn.get_active() else Gtk.InputPurpose.PASSWORD
@@ -63,24 +60,31 @@ class App(Gtk.Application):
         e.set_input_purpose(purpose)
         return True
 
-    def on_is_focus_changed(self, e, *args):
-        if not self.purpose_timer and e.props.is_focus:
-            GLib.timeout_add_seconds (3, self.on_timeout, e)
+    def on_random_enter(self, controller, entry):
+        self.purpose_tick_id = GLib.timeout_add_seconds(3, self.on_timeout, entry)
 
-    def add_random (self, grid):
-        l = Gtk.Label(label="Random")
-        e = Gtk.Entry(hexpand=True)
-        e.connect("notify::is-focus", self.on_is_focus_changed)
-        e.set_input_purpose(Gtk.InputPurpose.FREE_FORM)
-        grid.attach(l, 0, len(self.purposes), 1, 1)
-        grid.attach(e, 1, len(self.purposes), 1, 1)
+    def on_random_leave(self, controller, entry):
+        GLib.source_remove(self.purpose_tick_id)
+
+    def add_random(self, grid):
+        label = Gtk.Label(label="Random")
+        entry = Gtk.Entry(hexpand=True)
+        entry.set_input_purpose(Gtk.InputPurpose.FREE_FORM)
+        grid.attach(label, 0, len(self.purposes), 1, 1)
+        grid.attach(entry, 1, len(self.purposes), 1, 1)
+        focus_controller = Gtk.EventControllerFocus()
+        entry.add_controller(focus_controller)
+        focus_controller.connect("enter", self.on_random_enter, entry)
+        focus_controller.connect("leave", self.on_random_leave, entry)
 
     def do_activate(self):
         w = Gtk.ApplicationWindow(application=self)
-        w.set_default_size (300, 500)
+        w.set_default_size(300, 500)
         notebook = Gtk.Notebook()
+
         def add_purpose(entry, purpose):
             entry.set_input_purpose(purpose)
+
         def add_hint(entry, hint):
             entry.set_input_hints(hint)
         purpose_grid = new_grid(self.purposes, add_purpose)
@@ -89,11 +93,12 @@ class App(Gtk.Application):
 
         purpose_scroll = Gtk.ScrolledWindow()
         purpose_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        purpose_scroll.add(purpose_grid)
+        purpose_scroll.set_child(purpose_grid)
         notebook.append_page(purpose_scroll, Gtk.Label(label="Purposes"))
         notebook.append_page(hint_grid, Gtk.Label(label="Hints"))
-        w.add(notebook)
-        w.show_all()
+        w.set_child(notebook)
+        w.present()
+
 
 app = App()
 app.run(sys.argv)
