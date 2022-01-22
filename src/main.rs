@@ -33,6 +33,8 @@ mod c {
     /// Holds the Rust structures that are interesting from C.
     #[repr(C)]
     pub struct RsObjects {
+        /// The handle to which Commands should be sent
+        /// for processing in the main loop.
         receiver: Wrapped<Receiver<Commands>>,
         state_manager: Wrapped<driver::Threaded>,
         submission: Wrapped<Submission>,
