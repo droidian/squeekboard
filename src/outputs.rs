@@ -22,7 +22,7 @@ pub mod c {
     // Defined in C
 
     #[repr(transparent)]
-    #[derive(Clone, PartialEq, Copy)]
+    #[derive(Clone, PartialEq, Copy, Debug)]
     pub struct WlOutput(*const c_void);
 
     #[repr(C)]
@@ -68,7 +68,7 @@ pub mod c {
     }
 
     /// Map to `wl_output.transform` values
-    #[derive(Clone)]
+    #[derive(Clone, Copy, Debug)]
     pub enum Transform {
         Normal = 0,
         Rotated90 = 1,
@@ -206,13 +206,25 @@ pub mod c {
         let mut collection = outputs.borrow_mut();
         let output = collection
             .find_output_mut(wl_output);
-        match output {
-            Some(output) => { output.current = output.pending.clone(); }
-            None => log_print!(
-                logging::Level::Warning,
-                "Got done on unknown output",
-            ),
+        let event = match output {
+            Some(output) => {
+                output.current = output.pending.clone();
+                Some(Event {
+                    output: OutputId(wl_output),
+                    change: ChangeType::Altered(output.current),
+                })
+            },
+            None => {
+                log_print!(
+                    logging::Level::Warning,
+                    "Got done on unknown output",
+                );
+                None
+            }
         };
+        if let Some(event) = event {
+            collection.send_event(event);
+        }
     }
 
     extern fn outputs_handle_scale(
@@ -288,13 +300,13 @@ pub struct Size {
 }
 
 /// wl_output mode
-#[derive(Clone)]
+#[derive(Clone, Copy, Debug)]
 struct Mode {
     width: i32,
     height: i32,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy, Debug)]
 pub struct OutputState {
     current_mode: Option<Mode>,
     transform: Option<c::Transform>,
@@ -345,7 +357,13 @@ impl OutputState {
 
 /// Not guaranteed to exist,
 /// but can be used to look up state.
-pub type OutputId = c::WlOutput;
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct OutputId(c::WlOutput);
+
+// WlOutput is a pointer,
+// but in the public interface,
+// we're only using it as a lookup key.
+unsafe impl Send for OutputId {}
 
 struct Output {
     output: c::WlOutput,
@@ -366,6 +384,10 @@ impl Outputs {
         }
     }
 
+    fn send_event(&self, event: Event) {
+        self.sender.send(event.into()).unwrap()
+    }
+
     fn find_output(&self, wl_output: c::WlOutput) -> Option<&Output> {
         self.outputs
             .iter()
@@ -383,4 +405,17 @@ impl Outputs {
                 if o.output == wl_output { Some(o) } else { None }
             )
     }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum ChangeType {
+    /// Added or changed
+    Altered(OutputState),
+    Removed,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct Event {
+    output: OutputId,
+    change: ChangeType,
 }
