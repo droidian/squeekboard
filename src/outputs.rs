@@ -1,6 +1,11 @@
+/* Copyright (C) 2019-2022 Purism SPC
+ * SPDX-License-Identifier: GPL-3.0+
+ */
+
 /*! Managing Wayland outputs */
 
 use std::vec::Vec;
+use crate::event_loop;
 use ::logging;
 
 // traits
@@ -12,7 +17,7 @@ pub mod c {
     
     use std::os::raw::{ c_char, c_void };
 
-    use ::util::c::COpaquePtr;
+    use ::util::c::{COpaquePtr, Wrapped};
 
     // Defined in C
 
@@ -103,7 +108,8 @@ pub mod c {
         ) -> i32;
     }
 
-    type COutputs = ::util::c::Wrapped<Outputs>;
+    /// Wrapping Outputs is required for calling its methods from C
+    type COutputs = Wrapped<Outputs>;
 
     /// A stable reference to an output.
     #[derive(Clone)]
@@ -124,6 +130,8 @@ pub mod c {
     }
 
     // Defined in Rust
+
+    // Callbacks from the output listener follow
 
     extern fn outputs_handle_geometry(
         outputs: COutputs,
@@ -221,11 +229,7 @@ pub mod c {
         };
     }
 
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_outputs_new() -> COutputs {
-        COutputs::new(Outputs { outputs: Vec::new() })
-    }
+    // End callbacks
 
     #[no_mangle]
     pub extern "C"
@@ -363,4 +367,14 @@ pub struct Output {
 
 pub struct Outputs {
     outputs: Vec<Output>,
+    sender: event_loop::driver::Threaded,
+}
+
+impl Outputs {
+    pub fn new(sender: event_loop::driver::Threaded) -> Outputs {
+        Outputs {
+            outputs: Vec::new(),
+            sender,
+        }
+    }
 }

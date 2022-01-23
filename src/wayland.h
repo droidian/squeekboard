@@ -10,27 +10,18 @@
 #include "outputs.h"
 
 struct squeek_wayland {
+    // globals
     struct zwlr_layer_shell_v1 *layer_shell;
     struct zwp_virtual_keyboard_manager_v1 *virtual_keyboard_manager;
     struct zwp_input_method_manager_v2 *input_method_manager;
     struct squeek_outputs *outputs;
     struct wl_seat *seat;
+    // objects
+    struct zwp_input_method_v2 *input_method;
+    struct zwp_virtual_keyboard_v1 *virtual_keyboard;
 };
 
 
 extern struct squeek_wayland *squeek_wayland;
-
-
-static inline void squeek_wayland_init(struct squeek_wayland *wayland) {
-    wayland->outputs = squeek_outputs_new();
-}
-
-static inline void squeek_wayland_set_global(struct squeek_wayland *wayland) {
-    squeek_wayland = wayland;
-}
-
-static inline void squeek_wayland_deinit(struct squeek_wayland *wayland) {
-    squeek_outputs_free(wayland->outputs);
-}
 
 #endif // WAYLAND_H

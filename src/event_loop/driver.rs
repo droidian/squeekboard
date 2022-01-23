@@ -29,7 +29,9 @@ use std::time::Instant;
 use crate::logging::Warn;
 
 
+/// Type of the sender that waits for external events
 type Sender = mpsc::Sender<Event>;
+/// Type of the sender that waits for internal state changes
 type UISender = glib::Sender<Commands>;
 
 /// This loop driver spawns a new thread which updates the state in a loop,

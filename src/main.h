@@ -21,11 +21,12 @@ struct rsobjects {
     struct receiver *receiver;
     struct squeek_state_manager *state_manager;
     struct submission *submission;
+    struct squeek_wayland *wayland;
 };
 
 void register_ui_loop_handler(struct receiver *receiver, ServerContextService *ui, DBusHandler *dbus_handler);
 
-struct rsobjects squeek_rsobjects_new(struct zwp_input_method_v2 *im, struct zwp_virtual_keyboard_v1 *vk);
+struct rsobjects squeek_init(void);
 
 void squeek_state_send_force_visible(struct squeek_state_manager *state);
 void squeek_state_send_force_hidden(struct squeek_state_manager *state);

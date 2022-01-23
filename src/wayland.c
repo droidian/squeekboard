@@ -4,6 +4,12 @@
 
 struct squeek_wayland *squeek_wayland = NULL;
 
+void squeek_wayland_init_global(struct squeek_outputs *outputs) {
+    struct squeek_wayland *wayland = {0};
+    wayland->outputs = outputs;
+    squeek_wayland = wayland;
+}
+
 // The following functions only exist
 // to create linkable symbols out of inline functions,
 // because those are not directly callable from Rust

@@ -29,12 +29,14 @@ pub enum InputMethod {
     InactiveSince(Instant),
 }
 
-/// Incoming events
+/// Incoming events.
+/// This contains events that cause a change to the internal state.
 #[derive(Clone)]
 pub enum Event {
     InputMethod(InputMethod),
     Visibility(visibility::Event),
     PhysicalKeyboard(Presence),
+    
     /// Event triggered because a moment in time passed.
     /// Use to animate state transitions.
     /// The value is the ideal arrival time.
