@@ -53,7 +53,7 @@ mod c {
         input_method_manager: *const c_void,
         outputs: Wrapped<Outputs>,
         seat: *const c_void,
-        input_method: *mut InputMethod,
+        input_method: InputMethod,
         virtual_keyboard: ZwpVirtualKeyboardV1,
     }
 
@@ -65,7 +65,7 @@ mod c {
                 input_method_manager: ptr::null(),
                 outputs: Wrapped::new(outputs_manager),
                 seat: ptr::null(),
-                input_method: ptr::null_mut(),
+                input_method: InputMethod::null(),
                 virtual_keyboard: ZwpVirtualKeyboardV1::null(),
             }
         }

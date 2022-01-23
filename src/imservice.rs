@@ -26,21 +26,32 @@ pub mod c {
     use super::*;
 
     use std::os::raw::{c_char, c_void};
+    use std::ptr;
 
     // The following defined in C
         
     /// struct zwp_input_method_v2*
     #[repr(transparent)]
+    #[derive(PartialEq, Clone, Copy)]
     pub struct InputMethod(*const c_void);
 
+    impl InputMethod {
+        pub fn is_null(&self) -> bool {
+            self.0.is_null()
+        }
+        pub fn null() -> Self {
+            Self(ptr::null())
+        }
+    }
+
     extern "C" {
-        fn imservice_destroy_im(im: *mut c::InputMethod);
+        fn imservice_destroy_im(im: InputMethod);
 
         #[allow(improper_ctypes)] // IMService will never be dereferenced in C
-        pub fn imservice_connect_listeners(im: *mut InputMethod, imservice: *const IMService);
-        pub fn eek_input_method_commit_string(im: *mut InputMethod, text: *const c_char);
-        pub fn eek_input_method_delete_surrounding_text(im: *mut InputMethod, before: u32, after: u32);
-        pub fn eek_input_method_commit(im: *mut InputMethod, serial: u32);
+        pub fn imservice_connect_listeners(im: InputMethod, imservice: *const IMService);
+        pub fn eek_input_method_commit_string(im: InputMethod, text: *const c_char);
+        pub fn eek_input_method_delete_surrounding_text(im: InputMethod, before: u32, after: u32);
+        pub fn eek_input_method_commit(im: InputMethod, serial: u32);
     }
     
     // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
@@ -49,7 +60,7 @@ pub mod c {
     #[no_mangle]
     pub extern "C"
     fn imservice_handle_input_method_activate(imservice: *mut IMService,
-        im: *const InputMethod)
+        im: InputMethod)
     {
         let imservice = check_imservice(imservice, im).unwrap();
         imservice.preedit_string = String::new();
@@ -62,7 +73,7 @@ pub mod c {
     #[no_mangle]
     pub extern "C"
     fn imservice_handle_input_method_deactivate(imservice: *mut IMService,
-        im: *const InputMethod)
+        im: InputMethod)
     {
         let imservice = check_imservice(imservice, im).unwrap();
         imservice.pending = IMProtocolState {
@@ -74,7 +85,7 @@ pub mod c {
     #[no_mangle]
     pub extern "C"
     fn imservice_handle_surrounding_text(imservice: *mut IMService,
-        im: *const InputMethod,
+        im: InputMethod,
         text: *const c_char, cursor: u32, _anchor: u32)
     {
         let imservice = check_imservice(imservice, im).unwrap();
@@ -90,7 +101,7 @@ pub mod c {
     #[no_mangle]
     pub extern "C"
     fn imservice_handle_content_type(imservice: *mut IMService,
-        im: *const InputMethod,
+        im: InputMethod,
         hint: u32, purpose: u32)
     {
         let imservice = check_imservice(imservice, im).unwrap();
@@ -118,7 +129,7 @@ pub mod c {
     #[no_mangle]
     pub extern "C"
     fn imservice_handle_text_change_cause(imservice: *mut IMService,
-        im: *const InputMethod,
+        im: InputMethod,
         cause: u32)
     {
         let imservice = check_imservice(imservice, im).unwrap();
@@ -138,7 +149,7 @@ pub mod c {
     #[no_mangle]
     pub extern "C"
     fn imservice_handle_done(imservice: *mut IMService,
-        im: *const InputMethod)
+        im: InputMethod)
     {
         let imservice = check_imservice(imservice, im).unwrap();
 
@@ -156,7 +167,7 @@ pub mod c {
     #[no_mangle]
     pub extern "C"
     fn imservice_handle_unavailable(imservice: *mut IMService,
-        im: *mut InputMethod)
+        im: InputMethod)
     {
         let imservice = check_imservice(imservice, im).unwrap();
         unsafe { imservice_destroy_im(im); }
@@ -181,7 +192,7 @@ pub mod c {
     /// Care must be take
     /// not to exceed the lifetime of the pointer with the reference,
     /// especially not to store it.
-    fn check_imservice(imservice: *mut IMService, im: *const InputMethod)
+    fn check_imservice(imservice: *mut IMService, im: InputMethod)
         -> Result<&'static mut IMService, &'static str>
     {
         if imservice.is_null() {
@@ -315,7 +326,7 @@ impl Default for IMProtocolState {
 
 pub struct IMService {
     /// Owned reference (still created and destroyed in C)
-    pub im: *mut c::InputMethod,
+    pub im: c::InputMethod,
     sender: driver::Threaded,
 
     pending: IMProtocolState,
@@ -331,7 +342,7 @@ pub enum SubmitError {
 
 impl IMService {
     pub fn new(
-        im: *mut c::InputMethod,
+        im: c::InputMethod,
         sender: driver::Threaded,
     ) -> Box<IMService> {
         // IMService will be referenced to by C,
