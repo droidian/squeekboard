@@ -125,7 +125,9 @@ pub mod c {
         pub fn get_state(&self) -> Option<OutputState> {
             let outputs = self.outputs.clone_ref();
             let outputs = outputs.borrow();
-            find_output(&outputs, self.wl_output.clone()).map(|o| o.current.clone())
+            outputs
+                .find_output(self.wl_output.clone())
+                .map(|o| o.current.clone())
         }
     }
 
@@ -151,7 +153,8 @@ pub mod c {
         let outputs = outputs.clone_ref();
         let mut collection = outputs.borrow_mut();
         let output_state: Option<&mut OutputState>
-            = find_output_mut(&mut collection, wl_output)
+            = collection
+                .find_output_mut(wl_output)
                 .map(|o| &mut o.pending);
         match output_state {
             Some(state) => { state.transform = Some(transform) },
@@ -179,7 +182,8 @@ pub mod c {
         let outputs = outputs.clone_ref();
         let mut collection = outputs.borrow_mut();
         let output_state: Option<&mut OutputState>
-            = find_output_mut(&mut collection, wl_output)
+            = collection
+                .find_output_mut(wl_output)
                 .map(|o| &mut o.pending);
         match output_state {
             Some(state) => {
@@ -200,7 +204,8 @@ pub mod c {
     ) {
         let outputs = outputs.clone_ref();
         let mut collection = outputs.borrow_mut();
-        let output = find_output_mut(&mut collection, wl_output);
+        let output = collection
+            .find_output_mut(wl_output);
         match output {
             Some(output) => { output.current = output.pending.clone(); }
             None => log_print!(
@@ -218,7 +223,8 @@ pub mod c {
         let outputs = outputs.clone_ref();
         let mut collection = outputs.borrow_mut();
         let output_state: Option<&mut OutputState>
-            = find_output_mut(&mut collection, wl_output)
+            = collection
+                .find_output_mut(wl_output)
                 .map(|o| &mut o.pending);
         match output_state {
             Some(state) => { state.scale = factor; }
@@ -272,28 +278,6 @@ pub mod c {
     }
 
     // TODO: handle unregistration
-    
-    fn find_output(
-        collection: &Outputs,
-        wl_output: WlOutput,
-    ) -> Option<&Output> {
-        collection.outputs
-            .iter()
-            .find_map(|o|
-                if o.output == wl_output { Some(o) } else { None }
-            )
-    }
-
-    fn find_output_mut(
-        collection: &mut Outputs,
-        wl_output: WlOutput,
-    ) -> Option<&mut Output> {
-        collection.outputs
-            .iter_mut()
-            .find_map(|o|
-                if o.output == wl_output { Some(o) } else { None }
-            )
-    }
 }
 
 /// Generic size
@@ -359,7 +343,11 @@ impl OutputState {
     }
 }
 
-pub struct Output {
+/// Not guaranteed to exist,
+/// but can be used to look up state.
+pub type OutputId = c::WlOutput;
+
+struct Output {
     output: c::WlOutput,
     pending: OutputState,
     current: OutputState,
@@ -376,5 +364,23 @@ impl Outputs {
             outputs: Vec::new(),
             sender,
         }
+    }
+
+    fn find_output(&self, wl_output: c::WlOutput) -> Option<&Output> {
+        self.outputs
+            .iter()
+            .find_map(|o|
+                if o.output == wl_output { Some(o) } else { None }
+            )
+    }
+
+    fn find_output_mut(&mut self, wl_output: c::WlOutput)
+        -> Option<&mut Output>
+    {
+        self.outputs
+            .iter_mut()
+            .find_map(|o|
+                if o.output == wl_output { Some(o) } else { None }
+            )
     }
 }
