@@ -1,4 +1,31 @@
-/* Theme independent style */
+/* Theme independent styles */
+
+sq_view {
+    font-family: cantarell, sans-serif;
+    font-size: 1.5em;
+}
+
+sq_button {
+    border-radius: 4px;
+    margin: 2px;
+}
+
+sq_view.wide sq_button {
+    margin: 3px;
+}
+
+sq_button.latched,
+sq_button.locked {
+    font-weight: bold;
+}
+
+sq_button.action {
+    font-size: 0.75em;
+}
+
+sq_button.small {
+    font-size: 0.5em;
+}
 
 sq_view.pin sq_button {
     border-radius: 0px;
