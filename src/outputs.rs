@@ -16,6 +16,7 @@ pub mod c {
     use super::*;
     
     use std::os::raw::{ c_char, c_void };
+    use std::ptr;
 
     use ::util::c::{COpaquePtr, Wrapped};
 
@@ -24,6 +25,12 @@ pub mod c {
     #[repr(transparent)]
     #[derive(Clone, PartialEq, Copy, Debug)]
     pub struct WlOutput(*const c_void);
+
+    impl WlOutput {
+        fn null() -> Self {
+            Self(ptr::null())
+        }
+    }
 
     #[repr(C)]
     struct WlOutputListener<T: COpaquePtr> {
@@ -257,14 +264,17 @@ pub mod c {
 
     #[no_mangle]
     pub extern "C"
-    fn squeek_outputs_register(raw_collection: COutputs, output: WlOutput) {
+    fn squeek_outputs_register(raw_collection: COutputs, output: WlOutput, id: u32) {
         let collection = raw_collection.clone_ref();
         let mut collection = collection.borrow_mut();
-        collection.outputs.push(Output {
-            output: output.clone(),
-            pending: OutputState::uninitialized(),
-            current: OutputState::uninitialized(),
-        });
+        collection.outputs.push((
+            Output {
+                output: output.clone(),
+                pending: OutputState::uninitialized(),
+                current: OutputState::uninitialized(),
+            },
+            id,
+        ));
 
         unsafe { squeek_output_add_listener(
             output,
@@ -277,14 +287,29 @@ pub mod c {
             raw_collection,
         )};
     }
-    
+
+    /// This will try to unregister the output, if the id matches a registered one.
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_outputs_try_unregister(raw_collection: COutputs, id: u32) -> WlOutput {
+        let collection = raw_collection.clone_ref();
+        let mut collection = collection.borrow_mut();
+        collection.remove_output_by_global(id)
+            .map_err(|e| log_print!(
+                logging::Level::Debug,
+                "Tried to remove global {:x} but it is not registered as an output: {:?}",
+                id, e,
+            ))
+            .unwrap_or(WlOutput::null())
+    }
+
     #[no_mangle]
     pub extern "C"
     fn squeek_outputs_get_current(raw_collection: COutputs) -> OutputHandle {
         let collection = raw_collection.clone_ref();
         let collection = collection.borrow();
         OutputHandle {
-            wl_output: collection.outputs[0].output.clone(),
+            wl_output: collection.outputs[0].0.output.clone(),
             outputs: raw_collection.clone(),
         }
     }
@@ -371,8 +396,13 @@ struct Output {
     current: OutputState,
 }
 
+#[derive(Debug)]
+struct NotFound;
+
+type GlobalId = u32;
+
 pub struct Outputs {
-    outputs: Vec<Output>,
+    outputs: Vec<(Output, GlobalId)>,
     sender: event_loop::driver::Threaded,
 }
 
@@ -388,10 +418,27 @@ impl Outputs {
         self.sender.send(event.into()).unwrap()
     }
 
+    fn remove_output_by_global(&mut self, id: GlobalId)
+        -> Result<c::WlOutput, NotFound>
+    {
+        let index = self.outputs.iter()
+            .position(|(_o, global_id)| *global_id == id);
+        if let Some(index) = index {
+            let (output, _id) = self.outputs.remove(index);
+            self.send_event(Event {
+                change: ChangeType::Removed,
+                output: OutputId(output.output),
+            });
+            Ok(output.output)
+        } else {
+            Err(NotFound)
+        }
+    }
+
     fn find_output(&self, wl_output: c::WlOutput) -> Option<&Output> {
         self.outputs
             .iter()
-            .find_map(|o|
+            .find_map(|(o, _global)|
                 if o.output == wl_output { Some(o) } else { None }
             )
     }
@@ -401,7 +448,7 @@ impl Outputs {
     {
         self.outputs
             .iter_mut()
-            .find_map(|o|
+            .find_map(|(o, _global)|
                 if o.output == wl_output { Some(o) } else { None }
             )
     }

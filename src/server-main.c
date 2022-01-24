@@ -126,7 +126,7 @@ registry_handle_global (void *data,
     } else if (!strcmp (interface, "wl_output")) {
         struct wl_output *output = wl_registry_bind (registry, name,
             &wl_output_interface, 2);
-        squeek_outputs_register(wayland->outputs, output);
+        squeek_outputs_register(wayland->outputs, output, name);
     } else if (!strcmp(interface, "wl_seat")) {
         wayland->seat = wl_registry_bind(registry, name,
             &wl_seat_interface, 1);
@@ -138,7 +138,12 @@ registry_handle_global_remove (void *data,
                                struct wl_registry *registry,
                                uint32_t name)
 {
-  // TODO: outputs
+    (void)registry;
+    struct squeek_wayland *wayland = data;
+    struct wl_output *output = squeek_outputs_try_unregister(wayland->outputs, name);
+    if (output) {
+        wl_output_destroy(output);
+    }
 }
 
 static const struct wl_registry_listener registry_listener = {
