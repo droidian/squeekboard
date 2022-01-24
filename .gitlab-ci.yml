@@ -1,4 +1,4 @@
-image: $CI_REGISTRY/world/phosh/phosh/debian:v0.0.20211208
+image: pureos/byzantium
 
 stages:
   - build
@@ -53,7 +53,7 @@ build_deb:
     - cp ../*.deb .
 
 build_deb:arm64:
-  image: debian:bookworm
+  image: pureos/byzantium
   tags:
     - aarch64
   stage: build
