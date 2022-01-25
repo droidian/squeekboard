@@ -1,3 +1,54 @@
+squeekboard (1.16.0-1) experimental; urgency=medium
+
+  [ Dorota Czaplejewicz ]
+  * build: Remove regex crate
+  * ci: Use bookworm image
+  * build: Pin transitive dependencies
+  * cargo: Update Cargo.lock with pinned dependencies
+  * CI: Use byzantium as the base
+  * cargo: Bump dependencies
+
+  [ Guido Günther ]
+  * po: Fix ui file name
+  * entry: Mark as executable
+  * entry: Only activate purpose timer when focused
+  * entry: Add another input hint
+  * Add entry test using GTK4
+
+  [ Rafael Fontenelle ]
+  * Add Brazilian Portuguese translation
+
+  [ Yuri Chornoivan ]
+  * Add Ukrainian translation
+
+  [ Luna Jernberg ]
+  * Add Swedish Translation
+  * Update sv.po
+  * Update LINGUAS
+
+  [ Fabio Tomat ]
+  * Add Friulian translation
+
+  [ Daniel Șerbănescu ]
+  * Add Romanian translation
+
+  [ Matej Urbančič ]
+  * Add Slovenian translation
+
+  [ Nathan Follens ]
+  * Add Dutch translation
+
+  [ Jiri Grönroos ]
+  * Add Finnish translation
+
+  [ Danial Behzadi ]
+  * Add Persian translation
+
+  [ Jordi Mas i Hernandez ]
+  * Add Catalan translation
+
+ -- Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>  Tue, 25 Jan 2022 11:24:04 +0000
+
 squeekboard (1.15.0-1) experimental; urgency=medium
 
   [ Khaled Eldoheiri ]
