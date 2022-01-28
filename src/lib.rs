@@ -13,6 +13,8 @@ extern crate gtk_sys;
 extern crate maplit;
 extern crate serde;
 extern crate xkbcommon;
+extern crate zbus;
+extern crate zvariant;
 
 #[cfg(test)]
 #[macro_use]
@@ -23,6 +25,7 @@ mod logging;
 mod action;
 mod animation;
 pub mod data;
+mod debug;
 mod drawing;
 mod event_loop;
 pub mod float_ord;
