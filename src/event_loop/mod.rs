@@ -170,6 +170,7 @@ mod test {
             im: InputMethod::Active(imdetails_new()),
             physical_keyboard: Presence::Missing,
             visibility_override: visibility::State::NotForced,
+            ..Application::new(start)
         };
         
         let l = State::new(state, now);

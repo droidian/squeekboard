@@ -9,8 +9,9 @@ use crate::animation;
 use crate::imservice::{ ContentHint, ContentPurpose };
 use crate::main::{ Commands, PanelCommand };
 use crate::outputs;
+use crate::outputs::{OutputId, OutputState};
+use std::collections::HashMap;
 use std::time::Instant;
-
 
 #[derive(Clone, Copy)]
 pub enum Presence {
@@ -139,6 +140,7 @@ pub struct Application {
     pub im: InputMethod,
     pub visibility_override: visibility::State,
     pub physical_keyboard: Presence,
+    pub outputs: HashMap<OutputId, OutputState>,
 }
 
 impl Application {
@@ -153,6 +155,7 @@ impl Application {
             im: InputMethod::InactiveSince(now),
             visibility_override: visibility::State::NotForced,
             physical_keyboard: Presence::Missing,
+            outputs: Default::default(),
         }
     }
 
@@ -173,9 +176,17 @@ impl Application {
                 ..self
             },
 
-            Event::Output(output) => {
-                println!("Stub: output event {:?}", output);
-                self
+            Event::Output(outputs::Event { output, change }) => {
+                let mut app = self;
+                match change {
+                    outputs::ChangeType::Altered(state) => {
+                        app.outputs.insert(output, state);
+                    },
+                    outputs::ChangeType::Removed => {
+                        app.outputs.remove(&output);
+                    },
+                };
+                app
             },
 
             Event::InputMethod(new_im) => match (self.im.clone(), new_im) {
@@ -271,6 +282,7 @@ mod test {
             im: InputMethod::Active(imdetails_new()),
             physical_keyboard: Presence::Missing,
             visibility_override: visibility::State::NotForced,
+            ..Application::new(start)
         };
 
         let state = state.apply_event(Event::InputMethod(InputMethod::InactiveSince(now)), now);
@@ -299,6 +311,7 @@ mod test {
             im: InputMethod::Active(imdetails_new()),
             physical_keyboard: Presence::Missing,
             visibility_override: visibility::State::NotForced,
+            ..Application::new(start)
         };
         
         let state = state.apply_event(Event::InputMethod(InputMethod::InactiveSince(now)), now);
@@ -323,6 +336,7 @@ mod test {
             im: InputMethod::Active(imdetails_new()),
             physical_keyboard: Presence::Missing,
             visibility_override: visibility::State::NotForced,
+            ..Application::new(start)
         };
         // This reflects the sequence from Wayland:
         // disable, disable, enable, disable
@@ -361,6 +375,7 @@ mod test {
             im: InputMethod::InactiveSince(now),
             physical_keyboard: Presence::Missing,
             visibility_override: visibility::State::NotForced,
+            ..Application::new(start)
         };
         now += Duration::from_secs(1);
 
@@ -394,6 +409,7 @@ mod test {
             im: InputMethod::Active(imdetails_new()),
             physical_keyboard: Presence::Missing,
             visibility_override: visibility::State::NotForced,
+            ..Application::new(start)
         };
         now += Duration::from_secs(1);
 

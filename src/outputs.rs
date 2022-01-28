@@ -23,7 +23,7 @@ pub mod c {
     // Defined in C
 
     #[repr(transparent)]
-    #[derive(Clone, PartialEq, Copy, Debug)]
+    #[derive(Clone, PartialEq, Copy, Debug, Eq, Hash)]
     pub struct WlOutput(*const c_void);
 
     impl WlOutput {
@@ -382,7 +382,7 @@ impl OutputState {
 
 /// Not guaranteed to exist,
 /// but can be used to look up state.
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug, Eq, Hash)]
 pub struct OutputId(c::WlOutput);
 
 // WlOutput is a pointer,
@@ -399,8 +399,10 @@ struct Output {
 #[derive(Debug)]
 struct NotFound;
 
+/// Wayland global ID type
 type GlobalId = u32;
 
+/// The outputs manager
 pub struct Outputs {
     outputs: Vec<(Output, GlobalId)>,
     sender: event_loop::driver::Threaded,
@@ -463,6 +465,6 @@ pub enum ChangeType {
 
 #[derive(Clone, Copy, Debug)]
 pub struct Event {
-    output: OutputId,
-    change: ChangeType,
+    pub output: OutputId,
+    pub change: ChangeType,
 }
