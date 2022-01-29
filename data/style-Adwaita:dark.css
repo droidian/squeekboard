@@ -1,34 +1,22 @@
+/* Adwaita-dark style keyboard */
 sq_view {
     background-color: rgba(0, 0, 0, 255);
     color: #ffffff;
-    font-family: cantarell, sans-serif;
-    font-size: 25px;
 }
 
 sq_view sq_button {
     color: #deddda;
     background: #464448;
-    border-style: solid;
-    border-width: 1px;
-    border-color: #5e5c64;
-    border-radius: 3px;
-    margin: 4px 2px 4px 2px;
-}
-
-sq_view.wide sq_button {
-    margin: 1px 1px 1px 1px;
 }
 
 sq_button:active {
     background: #747077;
-    border-color: #96949d;
 }
 
 sq_button.altline,
 sq_button.special,
 sq_button.wide {
     background: #2b292f;
-    border-color: #3e3a44;
 }
 
 sq_button.latched {
@@ -41,22 +29,12 @@ sq_button.locked {
     color: #1c71d8;
 }
 
-sq_button.action {
-    font-size: 0.75em;
-}
-
-sq_button.small {
-    font-size: 0.5em;
-}
-
 #Return {
     background: #1c71d8;
-    border-color: #1a5fb4;
 }
 
 #Return:active {
     background: #1c71d8;
-    border-color: #3584e4;
 }
 
 @import url("resource:///sm/puri/squeekboard/common.css");
