@@ -1,32 +1,33 @@
 # Dependencies which change based on build flags
-bitflags = "1.2.*"
+# For the newer-than-Byzantium config
+bitflags = "1.3.*"
 clap = { version = "2.33.*", default-features = false }
 
 [dependencies.cairo-rs]
-version = "0.7.*"
+version = "0.14.*"
 
 [dependencies.cairo-sys-rs]
-version = "0.9"
+version = "0.14.*"
 
 [dependencies.gdk]
-version = "0.11.*"
+version = "0.14.*"
 
 [dependencies.gio]
-version = "0.7.*"
-features = ["v2_44"]
+version = "0.14.*"
+features = ["v2_58"]
 
 [dependencies.glib]
-version = "0.8.*"
-features = ["v2_44"]
+version = "0.14.*"
+features = ["v2_58"]
 
 [dependencies.glib-sys]
-version = "*"
-features = ["v2_44"]
+version = "0.14.*"
+features = ["v2_58"]
 
 [dependencies.gtk]
-version = "0.7.*"
+version = "0.14.*"
 features = ["v3_22"]
 
 [dependencies.gtk-sys]
-version = "0.9"
+version = "0.14.*"
 features = ["v3_22"]

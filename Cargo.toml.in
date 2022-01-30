@@ -17,22 +17,9 @@ name = "test_layout"
 path = "@path@/examples/test_layout.rs"
 
 [features]
-gio_v0_5 = []
-gtk_v0_5 = []
-rustc_less_1_36 = []
+glib_v0_14 = []
 
 # Dependencies which don't change based on build flags
-[dependencies.cairo-sys-rs]
-version = "0.9"
-
-[dependencies.glib-sys]
-version = "*"
-features = ["v2_44"]
-
-[dependencies.gtk-sys]
-version = "0.9"
-features = ["v3_22"]
-
 [dependencies]
 maplit = "1.0.*"
 serde = { version = "1.0.*", features = ["derive"] }
