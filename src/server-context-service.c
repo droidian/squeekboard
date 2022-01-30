@@ -27,6 +27,7 @@
 #include "submission.h"
 #include "wayland.h"
 #include "server-context-service.h"
+#include "wayland-client-protocol.h"
 
 enum {
     PROP_0,
@@ -205,7 +206,7 @@ make_widget (ServerContextService *self)
 
 // Called from rust
 void
-server_context_service_real_show_keyboard (ServerContextService *self)
+server_context_service_real_show_keyboard (ServerContextService *self, struct wl_output *output)
 {
     if (!self->window) {
         make_window (self);

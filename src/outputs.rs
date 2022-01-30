@@ -326,15 +326,15 @@ pub struct Size {
 
 /// wl_output mode
 #[derive(Clone, Copy, Debug)]
-struct Mode {
+pub struct Mode {
     width: i32,
     height: i32,
 }
 
 #[derive(Clone, Copy, Debug)]
 pub struct OutputState {
-    current_mode: Option<Mode>,
-    transform: Option<c::Transform>,
+    pub current_mode: Option<Mode>,
+    pub transform: Option<c::Transform>,
     pub scale: i32,
 }
 
@@ -383,7 +383,7 @@ impl OutputState {
 /// Not guaranteed to exist,
 /// but can be used to look up state.
 #[derive(Clone, Copy, PartialEq, Debug, Eq, Hash)]
-pub struct OutputId(c::WlOutput);
+pub struct OutputId(pub c::WlOutput);
 
 // WlOutput is a pointer,
 // but in the public interface,

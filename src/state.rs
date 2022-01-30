@@ -93,12 +93,12 @@ impl Outcome {
     pub fn get_commands_to_reach(&self, new_state: &Self) -> Commands {
         let layout_hint_set = match new_state {
             Outcome {
-                visibility: animation::Outcome::Visible,
+                visibility: animation::Outcome::Visible(_),
                 im: InputMethod::Active(hints),
             } => Some(hints.clone()),
             
             Outcome {
-                visibility: animation::Outcome::Visible,
+                visibility: animation::Outcome::Visible(_),
                 im: InputMethod::InactiveSince(_),
             } => Some(InputMethodDetails {
                 hint: ContentHint::NONE,
@@ -110,9 +110,9 @@ impl Outcome {
                 ..
             } => None,
         };
-
+// FIXME: handle switching outputs
         let (dbus_visible_set, panel_visibility) = match new_state.visibility {
-            animation::Outcome::Visible => (Some(true), Some(PanelCommand::Show)),
+            animation::Outcome::Visible(output) => (Some(true), Some(PanelCommand::Show(output))),
             animation::Outcome::Hidden => (Some(false), Some(PanelCommand::Hide)),
         };
 
@@ -239,15 +239,18 @@ impl Application {
     pub fn get_outcome(&self, now: Instant) -> Outcome {
         // FIXME: include physical keyboard presence
         Outcome {
-            visibility: match (self.physical_keyboard, self.visibility_override) {
-                (_, visibility::State::ForcedHidden) => animation::Outcome::Hidden,
-                (_, visibility::State::ForcedVisible) => animation::Outcome::Visible,
-                (Presence::Present, visibility::State::NotForced) => animation::Outcome::Hidden,
-                (Presence::Missing, visibility::State::NotForced) => match self.im {
-                    InputMethod::Active(_) => animation::Outcome::Visible,
-                    InputMethod::InactiveSince(since) => {
-                        if now < since + animation::HIDING_TIMEOUT { animation::Outcome::Visible }
-                        else { animation::Outcome::Hidden }
+            visibility: match self.preferred_output {
+                None => animation::Outcome::Hidden,
+                Some(output) => match (self.physical_keyboard, self.visibility_override) {
+                    (_, visibility::State::ForcedHidden) => animation::Outcome::Hidden,
+                    (_, visibility::State::ForcedVisible) => animation::Outcome::Visible(output),
+                    (Presence::Present, visibility::State::NotForced) => animation::Outcome::Hidden,
+                    (Presence::Missing, visibility::State::NotForced) => match self.im {
+                        InputMethod::Active(_) => animation::Outcome::Visible(output),
+                        InputMethod::InactiveSince(since) => {
+                            if now < since + animation::HIDING_TIMEOUT { animation::Outcome::Visible(output) }
+                            else { animation::Outcome::Hidden }
+                        },
                     },
                 },
             },
@@ -274,15 +277,39 @@ impl Application {
 
 
 #[cfg(test)]
-mod test {
+pub mod test {
     use super::*;
-
+    use crate::outputs::c::WlOutput;
     use std::time::Duration;
 
     fn imdetails_new() -> InputMethodDetails {
         InputMethodDetails {
             purpose: ContentPurpose::Normal,
             hint: ContentHint::NONE,
+        }
+    }
+
+    fn fake_output_id(id: usize) -> OutputId {
+        OutputId(unsafe {
+            std::mem::transmute::<_, WlOutput>(id)
+        })
+    }
+
+    pub fn application_with_fake_output(start: Instant) -> Application {
+        let id = fake_output_id(1);
+        let mut outputs = HashMap::new();
+        outputs.insert(
+            id,
+            OutputState {
+                current_mode: None,
+                transform: None,
+                scale: 1,
+            },
+        );
+        Application {
+            preferred_output: Some(id),
+            outputs,
+            ..Application::new(start)
         }
     }
 
@@ -295,16 +322,16 @@ mod test {
             im: InputMethod::Active(imdetails_new()),
             physical_keyboard: Presence::Missing,
             visibility_override: visibility::State::NotForced,
-            ..Application::new(start)
+            ..application_with_fake_output(start)
         };
 
         let state = state.apply_event(Event::InputMethod(InputMethod::InactiveSince(now)), now);
         // Check 100ms at 1ms intervals. It should remain visible.
         for _i in 0..100 {
             now += Duration::from_millis(1);
-            assert_eq!(
+            assert_matches!(
                 state.get_outcome(now).visibility,
-                animation::Outcome::Visible,
+                animation::Outcome::Visible(_),
                 "Hidden when it should remain visible: {:?}",
                 now.saturating_duration_since(start),
             )
@@ -312,7 +339,7 @@ mod test {
 
         let state = state.apply_event(Event::InputMethod(InputMethod::Active(imdetails_new())), now);
 
-        assert_eq!(state.get_outcome(now).visibility, animation::Outcome::Visible);
+        assert_matches!(state.get_outcome(now).visibility, animation::Outcome::Visible(_));
     }
 
     /// Make sure that hiding works when input method goes away
@@ -324,12 +351,12 @@ mod test {
             im: InputMethod::Active(imdetails_new()),
             physical_keyboard: Presence::Missing,
             visibility_override: visibility::State::NotForced,
-            ..Application::new(start)
+            ..application_with_fake_output(start)
         };
         
         let state = state.apply_event(Event::InputMethod(InputMethod::InactiveSince(now)), now);
 
-        while let animation::Outcome::Visible = state.get_outcome(now).visibility {
+        while let animation::Outcome::Visible(_) = state.get_outcome(now).visibility {
             now += Duration::from_millis(1);
             assert!(
                 now < start + Duration::from_millis(250),
@@ -349,7 +376,7 @@ mod test {
             im: InputMethod::Active(imdetails_new()),
             physical_keyboard: Presence::Missing,
             visibility_override: visibility::State::NotForced,
-            ..Application::new(start)
+            ..application_with_fake_output(start)
         };
         // This reflects the sequence from Wayland:
         // disable, disable, enable, disable
@@ -359,7 +386,7 @@ mod test {
         let state = state.apply_event(Event::InputMethod(InputMethod::Active(imdetails_new())), now);
         let state = state.apply_event(Event::InputMethod(InputMethod::InactiveSince(now)), now);
 
-        while let animation::Outcome::Visible = state.get_outcome(now).visibility {
+        while let animation::Outcome::Visible(_) = state.get_outcome(now).visibility {
             now += Duration::from_millis(1);
             assert!(
                 now < start + Duration::from_millis(250),
@@ -388,14 +415,14 @@ mod test {
             im: InputMethod::InactiveSince(now),
             physical_keyboard: Presence::Missing,
             visibility_override: visibility::State::NotForced,
-            ..Application::new(start)
+            ..application_with_fake_output(start)
         };
         now += Duration::from_secs(1);
 
         let state = state.apply_event(Event::Visibility(visibility::Event::ForceVisible), now);
-        assert_eq!(
+        assert_matches!(
             state.get_outcome(now).visibility,
-            animation::Outcome::Visible,
+            animation::Outcome::Visible(_),
             "Failed to show: {:?}",
             now.saturating_duration_since(start),
         );
@@ -422,7 +449,7 @@ mod test {
             im: InputMethod::Active(imdetails_new()),
             physical_keyboard: Presence::Missing,
             visibility_override: visibility::State::NotForced,
-            ..Application::new(start)
+            ..application_with_fake_output(start)
         };
         now += Duration::from_secs(1);
 
@@ -449,9 +476,9 @@ mod test {
         now += Duration::from_secs(1);
         let state = state.apply_event(Event::PhysicalKeyboard(Presence::Missing), now);
 
-        assert_eq!(
+        assert_matches!(
             state.get_outcome(now).visibility,
-            animation::Outcome::Visible,
+            animation::Outcome::Visible(_),
             "Failed to appear: {:?}",
             now.saturating_duration_since(start),
         );

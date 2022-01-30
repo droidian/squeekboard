@@ -153,6 +153,7 @@ mod test {
     use crate::imservice::{ ContentHint, ContentPurpose };
     use crate::main::PanelCommand;
     use crate::state::{ Application, InputMethod, InputMethodDetails, Presence, visibility };
+    use crate::state::test::application_with_fake_output;
 
     fn imdetails_new() -> InputMethodDetails {
         InputMethodDetails {
@@ -170,12 +171,12 @@ mod test {
             im: InputMethod::Active(imdetails_new()),
             physical_keyboard: Presence::Missing,
             visibility_override: visibility::State::NotForced,
-            ..Application::new(start)
+            ..application_with_fake_output(start)
         };
         
         let l = State::new(state, now);
         let (l, commands) = handle_event(l, InputMethod::InactiveSince(now).into(), now);
-        assert_eq!(commands.panel_visibility, Some(PanelCommand::Show));
+        assert_matches!(commands.panel_visibility, Some(PanelCommand::Show(_)));
         assert_eq!(l.scheduled_wakeup, Some(now + animation::HIDING_TIMEOUT));
         
         now += animation::HIDING_TIMEOUT;

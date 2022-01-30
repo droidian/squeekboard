@@ -14,6 +14,9 @@ extern crate maplit;
 extern crate serde;
 extern crate xkbcommon;
 
+#[cfg(test)]
+#[macro_use]
+mod assert_matches;
 #[macro_use]
 mod logging;
 
