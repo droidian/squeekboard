@@ -46,6 +46,8 @@ struct _ServerContextService {
 
     PhoshLayerSurface *window;
     GtkWidget *widget; // nullable
+
+    struct wl_output *current_output;
     guint last_requested_height;
 };
 
@@ -62,81 +64,6 @@ on_destroy (ServerContextService *self, GtkWidget *widget)
     self->widget = NULL;
 
     //eekboard_context_service_destroy (EEKBOARD_CONTEXT_SERVICE (context));
-}
-
-static uint32_t
-calculate_height(int32_t width, GdkRectangle *geometry)
-{
-    uint32_t height;
-    if (geometry->width > geometry->height) {
-        // 1:5 ratio works fine on lanscape mode, and makes sure there's
-        // room left for the app window
-        height = width / 5;
-    } else {
-        if (width < 540 && width > 0) {
-            height = ((unsigned)width * 7 / 12); // to match 360×210
-        } else {
-            // Here we switch to wide layout, less height needed
-            height = ((unsigned)width * 7 / 22);
-        }
-    }
-    return height;
-}
-
-static void
-on_surface_configure(ServerContextService *self, PhoshLayerSurface *surface)
-{
-    GdkDisplay *display = NULL;
-    GdkWindow *window = NULL;
-    GdkMonitor *monitor = NULL;
-    GdkRectangle geometry;
-    gint width;
-    gint height;
-
-    g_return_if_fail (SERVER_IS_CONTEXT_SERVICE (self));
-    g_return_if_fail (PHOSH_IS_LAYER_SURFACE (surface));
-
-    g_object_get(G_OBJECT(surface),
-                 "configured-width", &width,
-                 "configured-height", &height,
-                 NULL);
-
-    // In order to improve height calculation, we need the monitor geometry so
-    // we can use different algorithms for portrait and landscape mode.
-    // Note: this is a temporary fix until the size manager is complete.
-    display = gdk_display_get_default ();
-    if (display) {
-        window = gtk_widget_get_window (GTK_WIDGET (surface));
-    }
-    if (window) {
-        monitor = gdk_display_get_monitor_at_window (display, window);
-    }
-    if (monitor) {
-        gdk_monitor_get_geometry (monitor, &geometry);
-    } else {
-        geometry.width = geometry.height = 0;
-    }
-
-     // When the geometry event comes after surface.configure,
-     // this entire height calculation does nothing.
-     // guint desired_height = squeek_uiman_get_perceptual_height(context->manager);
-     // Temporarily use old method, until the size manager is complete.
-    guint desired_height = calculate_height(width, &geometry);
-
-    guint configured_height = (guint)height;
-    // if height was already requested once but a different one was given
-    // (for the same set of surrounding properties),
-    // then it's probably not reasonable to ask for it again,
-    // as it's likely to create pointless loops
-    // of request->reject->request_again->...
-    if (desired_height != configured_height
-            && self->last_requested_height != desired_height) {
-        self->last_requested_height = desired_height;
-        phosh_layer_surface_set_size(surface, 0,
-                                     (gint)desired_height);
-        phosh_layer_surface_set_exclusive_zone(surface, (gint)desired_height);
-        phosh_layer_surface_wl_surface_commit (surface);
-    }
 }
 
 static void
@@ -163,7 +90,7 @@ make_window (ServerContextService *self, struct wl_output *output, uint32_t heig
 
     g_object_connect (self->window,
                       "swapped-signal::destroy", G_CALLBACK(on_destroy), self,
-                      "swapped-signal::configured", G_CALLBACK(on_surface_configure), self,
+                      //"swapped-signal::configured", G_CALLBACK(on_surface_configure), self,
                       NULL);
 
     // The properties below are just to make hacking easier.
@@ -200,9 +127,47 @@ make_widget (ServerContextService *self)
 }
 
 // Called from rust
+/// Updates the type of hiddenness
 void
-server_context_service_real_show_keyboard (ServerContextService *self, struct wl_output *output, uint32_t height)
+server_context_service_real_hide_keyboard (ServerContextService *self)
 {
+    //self->desired_height = 0;
+    self->current_output = NULL;
+    if (self->window) {
+        gtk_widget_hide (GTK_WIDGET(self->window));
+    }
+}
+
+// Called from rust
+/// Updates the type of visibility
+void
+server_context_service_update_keyboard (ServerContextService *self, struct wl_output *output, uint32_t height)
+{
+    if (output != self->current_output) {
+        // Recreate on a new output
+        server_context_service_real_hide_keyboard(self);
+    } else {
+        gint h;
+        PhoshLayerSurface *surface = self->window;
+        g_object_get(G_OBJECT(surface),
+                     "configured-height", &h,
+                     NULL);
+
+        if ((uint32_t)h != height) {
+
+            //TODO: make sure that redrawing happens in the correct place (it doesn't now).
+            phosh_layer_surface_set_size(self->window, 0, height);
+            phosh_layer_surface_set_exclusive_zone(self->window, height);
+            phosh_layer_surface_wl_surface_commit(self->window);
+
+            self->current_output = output;
+
+            return;
+        }
+    }
+
+    self->current_output = output;
+
     if (!self->window) {
         make_window (self, output, height);
     }
@@ -212,14 +177,6 @@ server_context_service_real_show_keyboard (ServerContextService *self, struct wl
     gtk_widget_show (GTK_WIDGET(self->window));
 }
 
-// Called from rust
-void
-server_context_service_real_hide_keyboard (ServerContextService *self)
-{
-    if (self->window) {
-	    gtk_widget_hide (GTK_WIDGET(self->window));
-    }
-}
 
 static void
 server_context_service_set_property (GObject      *object,
