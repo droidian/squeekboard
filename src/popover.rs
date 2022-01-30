@@ -11,16 +11,11 @@ use ::manager;
 use ::resources;
 
 // Traits
-use gio::ActionMapExt;
-use gio::SettingsExt;
-#[cfg(feature = "gio_v0_5")]
-use gio::SimpleActionExt;
+use gio::prelude::ActionMapExt;
+use gio::prelude::SettingsExt;
 use glib::translate::FromGlibPtrNone;
 use glib::variant::ToVariant;
-#[cfg(not(feature = "gtk_v0_5"))]
 use gtk::prelude::*;
-use gtk::PopoverExt;
-use gtk::WidgetExt;
 use ::logging::Warn;
 
 mod c {
@@ -110,8 +105,13 @@ mod variants {
 
 fn get_settings(schema_name: &str) -> Option<gio::Settings> {
     let mut error_handler = logging::Print{};
-    gio::SettingsSchemaSource::get_default()
-        .or_warn(
+
+    #[cfg(feature = "glib_v0_14")]
+    let ss = gio::SettingsSchemaSource::default();
+    #[cfg(not(feature = "glib_v0_14"))]
+    let ss = gio::SettingsSchemaSource::get_default();
+    
+    ss.or_warn(
             &mut error_handler,
             logging::Problem::Surprise,
             "No gsettings schemas installed.",
@@ -130,7 +130,11 @@ fn get_settings(schema_name: &str) -> Option<gio::Settings> {
 fn set_layout(kind: String, name: String) {
     let settings = get_settings("org.gnome.desktop.input-sources");
     if let Some(settings) = settings {
+        #[cfg(feature = "glib_v0_14")]
+        let inputs = settings.value("sources");
+        #[cfg(not(feature = "glib_v0_14"))]
         let inputs = settings.get_value("sources").unwrap();
+
         let current = (kind.clone(), name.clone());
         let inputs = variants::get_tuples(inputs).into_iter()
             .filter(|t| t != &current);
@@ -254,7 +258,11 @@ pub fn show(
     let settings = get_settings("org.gnome.desktop.input-sources");
     let inputs = settings
         .map(|settings| {
+            #[cfg(feature = "glib_v0_14")]
+            let inputs = settings.value("sources");
+            #[cfg(not(feature = "glib_v0_14"))]
             let inputs = settings.get_value("sources").unwrap();
+
             variants::get_tuples(inputs)
         })
         .unwrap_or_else(|| Vec::new());
@@ -285,8 +293,18 @@ pub fn show(
         }
     });
 
-    let builder = gtk::Builder::new_from_resource("/sm/puri/squeekboard/popover.ui");
-    let model: gio::Menu = builder.get_object("app-menu").unwrap();
+    let model: gio::Menu = {
+        #[cfg(feature = "glib_v0_14")]
+        {
+            let builder = gtk::Builder::from_resource("/sm/puri/squeekboard/popover.ui");
+            builder.object("app-menu").unwrap()
+        }
+        #[cfg(not(feature = "glib_v0_14"))]
+        {
+            let builder = gtk::Builder::new_from_resource("/sm/puri/squeekboard/popover.ui");
+            builder.get_object("app-menu").unwrap()
+        }
+    };
 
     for (tr, l) in human_names.iter().rev() {
         let detailed_action = format!("layout::{}", l.get_name());
@@ -294,7 +312,11 @@ pub fn show(
         model.prepend_item (&item);
     }
 
+    #[cfg(feature = "glib_v0_14")]
+    let menu = gtk::Popover::from_model(Some(&window), &model);
+    #[cfg(not(feature = "glib_v0_14"))]
     let menu = gtk::Popover::new_from_model(Some(&window), &model);
+
     menu.set_pointing_to(&gtk::Rectangle {
         x: position.x.ceil() as i32,
         y: position.y.ceil() as i32,

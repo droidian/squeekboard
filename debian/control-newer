@@ -1,0 +1,58 @@
+Source: squeekboard
+Section: x11
+Priority: optional
+Maintainer: Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>
+Build-Depends:
+ cargo,
+ debhelper-compat (= 13),
+ meson (>=0.51.0),
+ ninja-build,
+ pkg-config,
+ libglib2.0-dev,
+ libgnome-desktop-3-dev,
+ libgtk-3-dev,
+ libfeedback-dev,
+ librust-bitflags-dev (>= 1.0),
+ librust-clap-dev (>= 2.32),
+ librust-gio+v2-58-dev,
+ librust-glib+v2-58-dev,
+ librust-glib-sys-dev,
+ librust-gtk+v3-22-dev (>= 0.5),
+ librust-gtk-sys-dev,
+ librust-maplit-1-dev (>= 1.0),
+ librust-serde-derive-1-dev (>= 1.0),
+ librust-serde-yaml-0.8-dev (>= 0.8),
+ librust-xkbcommon-0.4+wayland-dev (>= 0.4),
+ libwayland-dev (>= 1.16),
+ lsb-release,
+ python3,
+ python3-ruamel.yaml,
+ rustc,
+ wayland-protocols (>= 1.14),
+Standards-Version: 4.1.3
+Homepage: https://source.puri.sm/Librem5/squeekboard
+
+Package: squeekboard
+Architecture: linux-any
+Depends:
+# for the Adwaita-dark theme
+ gnome-themes-extra-data,
+ ${shlibs:Depends},
+ ${misc:Depends},
+Breaks:
+ librem5-base (<< 24),
+Description: On-screen keyboard for Wayland
+ Virtual keyboard supporting Wayland, built primarily for the Librem 5 phone.
+
+Package: squeekboard-devel
+Architecture: linux-any
+Depends:
+ python3,
+ python3-gi,
+ ${shlibs:Depends},
+ ${misc:Depends},
+Description: Resources for making Squeekboard layouts
+ Tools for creating and testing Squeekboard layouts:
+ .
+  * squeekboard-entry
+  * squeekboard-test-layout

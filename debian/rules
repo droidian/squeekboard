@@ -25,10 +25,10 @@ export RUSTFLAGS = --remap-path-prefix=$(CURDIR)=/remap-pwd $(xgot)
 
 
 distrel := $(shell lsb_release --codename --short)
-ifneq (,$(filter $(distrel),buster amber))
-	legacy = true
+ifneq (,$(filter $(distrel),sid))
+	newer = true
 else
-	legacy = false
+	newer = false
 endif
 
 %:
@@ -38,6 +38,6 @@ endif
 # causing Cargo to refuse to build with a crates.io copy
 override_dh_auto_configure:
 	[ ! -f Cargo.lock ] || rm Cargo.lock
-	dh_auto_configure -- -Dlegacy=$(legacy)
+	dh_auto_configure -- -Dnewer=$(newer)
 
 override_dh_autoreconf:

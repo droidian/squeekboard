@@ -10,7 +10,7 @@ use ::layout::c::{ Bounds, EekGtkKeyboard, Point };
 use ::submission::c::Submission as CSubmission;
 
 use glib::translate::FromGlibPtrNone;
-use gtk::WidgetExt;
+use gtk::prelude::WidgetExt;
 
 use std::collections::HashSet;
 use std::ffi::CStr;
