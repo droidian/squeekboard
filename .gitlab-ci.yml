@@ -72,6 +72,27 @@ build_deb:arm64:
     - debuild -i -us -uc -b
     - cp ../*.deb .
 
+build_deb:future:
+  image: debian:sid
+  tags:
+    - aarch64
+  stage: build
+  artifacts:
+    paths:
+      - '*.deb'
+  script:
+    - rm -f ../*.deb
+    - mv debian/control-newer debian/control
+    - apt-get -y build-dep .
+    - apt-get -y install devscripts
+    - REV=$(git log -1 --format=%h)
+    - VER=$(dpkg-parsechangelog -SVersion)
+    - DEBFULLNAME="Librem5 CI"
+    - EMAIL="librem5-builds@lists.community.puri.sm"
+    - dch -v"$VER+librem5ci$CI_PIPELINE_ID.$REV" "$MSG"
+    - debuild -i -us -uc -b
+    - cp ../*.deb .
+
 test_lintian:
   stage: test
   needs:

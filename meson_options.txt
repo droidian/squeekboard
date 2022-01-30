@@ -7,9 +7,9 @@ option('tests',
        type: 'boolean', value: true,
        description: 'Whether to compile unit tests')
 
-option('legacy',
+option('newer',
        type: 'boolean', value: false,
-       description: 'Build with Deban Buster versions of dependencies')
+       description: 'Build with dependencies newer than those of Byzantium')
 
 option('strict',
        type: 'boolean', value: true,

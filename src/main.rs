@@ -87,7 +87,7 @@ mod c {
         let receiver = Rc::try_unwrap(receiver).expect("References still present");
         let receiver = receiver.into_inner();
         let ctx = MainContext::default();
-        ctx.acquire();
+        let _acqu = ctx.acquire();
         receiver.attach(
             Some(&ctx),
             move |msg| {
@@ -95,6 +95,7 @@ mod c {
                 Continue(true)
             },
         );
+        #[cfg(not(feature = "glib_v0_14"))]
         ctx.release();
     }
 

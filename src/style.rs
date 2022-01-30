@@ -21,7 +21,7 @@
 use std::env;
 use ::logging;
 
-use glib::object::ObjectExt;
+use glib::prelude::ObjectExt;
 use logging::Warn;
 
 /// Gathers stuff defined in C or called by C
@@ -30,8 +30,8 @@ pub mod c {
     use gio;
     use gtk;
     use gtk_sys;
-    
-    use gtk::CssProviderExt;
+
+    use gtk::prelude::CssProviderExt;
     use glib::translate::ToGlibPtr;
 
     /// Loads the layout style based on current theme
@@ -40,9 +40,14 @@ pub mod c {
     pub extern "C"
     fn squeek_load_style() -> *const gtk_sys::GtkCssProvider {
         unsafe { gtk::set_initialized() };
-        let theme = gtk::Settings::get_default()
-            .map(|settings| get_theme_name(&settings));
-        
+
+        #[cfg(feature = "glib_v0_14")]
+        let theme = gtk::Settings::default();
+        #[cfg(not(feature = "glib_v0_14"))]
+        let theme = gtk::Settings::get_default();
+
+        let theme = theme.map(|settings| get_theme_name(&settings));
+
         let css_name = path_from_theme(theme);
 
         let resource_name = if gio::resources_get_info(
@@ -93,19 +98,31 @@ fn get_theme_name(settings: &gtk::Settings) -> GtkTheme {
             e
         }).ok();
 
+    #[cfg(feature = "glib_v0_14")]
+    let prop = |s: &gtk::Settings, name| s.property(name);
+    #[cfg(not(feature = "glib_v0_14"))]
+    let prop = |s: &gtk::Settings, name| s.get_property(name);
+
+    #[cfg(feature = "glib_v0_14")]
+    fn check<T, E: std::fmt::Display>(v: Result<T, E>) -> Option<T> {
+        v.or_print(logging::Problem::Surprise, "Key not of expected type")
+    }
+    #[cfg(not(feature = "glib_v0_14"))]
+    fn check<T>(v: Option<T>) -> Option<T> { v }
+
     match env_theme {
         Some(theme) => theme,
         None => GtkTheme {
             name: {
-                settings.get_property("gtk-theme-name")
+                prop(settings, "gtk-theme-name")
                     .or_print(logging::Problem::Surprise, "No theme name")
-                    .and_then(|value| value.get::<String>())
+                    .and_then(|value| check(value.get::<String>()))
                     .unwrap_or(DEFAULT_THEME_NAME.into())
             },
             variant: {
-                settings.get_property("gtk-application-prefer-dark-theme")
+                prop(settings, "gtk-application-prefer-dark-theme")
                     .or_print(logging::Problem::Surprise, "No settings key")
-                    .and_then(|value| value.get::<bool>())
+                    .and_then(|value| check(value.get::<bool>()))
                     .and_then(|dark_preferred| match dark_preferred {
                         true => Some("dark".into()),
                         false => None,
