@@ -141,13 +141,11 @@ on_surface_configure(ServerContextService *self, PhoshLayerSurface *surface)
 }
 
 static void
-make_window (ServerContextService *self, struct wl_output *output)
+make_window (ServerContextService *self, struct wl_output *output, uint32_t height)
 {
     if (self->window) {
         g_error("Window already present");
     }
-
-    uint32_t height = squeek_uiman_get_perceptual_height(self->manager);
 
     self->window = g_object_new (
         PHOSH_TYPE_LAYER_SURFACE,
@@ -204,10 +202,10 @@ make_widget (ServerContextService *self)
 
 // Called from rust
 void
-server_context_service_real_show_keyboard (ServerContextService *self, struct wl_output *output)
+server_context_service_real_show_keyboard (ServerContextService *self, struct wl_output *output, uint32_t height)
 {
     if (!self->window) {
-        make_window (self, output);
+        make_window (self, output, height);
     }
     if (!self->widget) {
         make_widget (self);

@@ -176,7 +176,7 @@ mod test {
         
         let l = State::new(state, now);
         let (l, commands) = handle_event(l, InputMethod::InactiveSince(now).into(), now);
-        assert_matches!(commands.panel_visibility, Some(PanelCommand::Show(_)));
+        assert_matches!(commands.panel_visibility, Some(PanelCommand::Show{..}));
         assert_eq!(l.scheduled_wakeup, Some(now + animation::HIDING_TIMEOUT));
         
         now += animation::HIDING_TIMEOUT;

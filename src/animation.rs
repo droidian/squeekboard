@@ -14,6 +14,9 @@ pub const HIDING_TIMEOUT: Duration = Duration::from_millis(200);
 /// The outwardly visible state of visibility
 #[derive(PartialEq, Debug, Clone)]
 pub enum Outcome {
-    Visible(OutputId),
+    Visible {
+        output: OutputId,
+        height: u32,
+    },
     Hidden,
 }

@@ -75,7 +75,7 @@ mod c {
     extern "C" {
         #[allow(improper_ctypes)]
         fn init_wayland(wayland: *mut Wayland);
-        fn server_context_service_real_show_keyboard(service: *const UIManager, output: WlOutput);
+        fn server_context_service_real_show_keyboard(service: *const UIManager, output: WlOutput, height: u32);
         fn server_context_service_real_hide_keyboard(service: *const UIManager);
         fn server_context_service_set_hint_purpose(service: *const UIManager, hint: u32, purpose: u32);
         // This should probably only get called from the gtk main loop,
@@ -149,8 +149,8 @@ mod c {
         dbus_handler: *const DBusHandler,
     ) {
         match msg.panel_visibility {
-            Some(PanelCommand::Show(output)) => unsafe {
-                server_context_service_real_show_keyboard(ui_manager, output.0);
+            Some(PanelCommand::Show { output, height }) => unsafe {
+                server_context_service_real_show_keyboard(ui_manager, output.0, height);
             },
             Some(PanelCommand::Hide) => unsafe {
                 server_context_service_real_hide_keyboard(ui_manager);
@@ -176,7 +176,10 @@ mod c {
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum PanelCommand {
-    Show(OutputId),
+    Show {
+        output: OutputId,
+        height: u32,
+    },
     Hide,
 }
 

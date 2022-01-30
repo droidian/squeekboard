@@ -10,6 +10,7 @@ use crate::imservice::{ ContentHint, ContentPurpose };
 use crate::main::{ Commands, PanelCommand };
 use crate::outputs;
 use crate::outputs::{OutputId, OutputState};
+use std::cmp;
 use std::collections::HashMap;
 use std::time::Instant;
 
@@ -93,12 +94,12 @@ impl Outcome {
     pub fn get_commands_to_reach(&self, new_state: &Self) -> Commands {
         let layout_hint_set = match new_state {
             Outcome {
-                visibility: animation::Outcome::Visible(_),
+                visibility: animation::Outcome::Visible{..},
                 im: InputMethod::Active(hints),
             } => Some(hints.clone()),
             
             Outcome {
-                visibility: animation::Outcome::Visible(_),
+                visibility: animation::Outcome::Visible{..},
                 im: InputMethod::InactiveSince(_),
             } => Some(InputMethodDetails {
                 hint: ContentHint::NONE,
@@ -112,7 +113,8 @@ impl Outcome {
         };
 // FIXME: handle switching outputs
         let (dbus_visible_set, panel_visibility) = match new_state.visibility {
-            animation::Outcome::Visible(output) => (Some(true), Some(PanelCommand::Show(output))),
+            animation::Outcome::Visible{output, height}
+                => (Some(true), Some(PanelCommand::Show{output, height})),
             animation::Outcome::Hidden => (Some(false), Some(PanelCommand::Hide)),
         };
 
@@ -236,23 +238,48 @@ impl Application {
         }
     }
 
+    fn get_preferred_height(output: &OutputState) -> Option<u32> {
+        output.get_pixel_size()
+            .map(|px_size| {
+                if px_size.width > px_size.height {
+                    px_size.width / 5
+                } else {
+                    if (px_size.width < 540) & (px_size.width > 0) {
+                        px_size.width * 7 / 12 // to match 360×210
+                    } else {
+                        // Here we switch to wide layout, less height needed
+                        px_size.width * 7 / 22
+                    }
+                }
+            })
+    }
+
     pub fn get_outcome(&self, now: Instant) -> Outcome {
         // FIXME: include physical keyboard presence
         Outcome {
             visibility: match self.preferred_output {
                 None => animation::Outcome::Hidden,
-                Some(output) => match (self.physical_keyboard, self.visibility_override) {
-                    (_, visibility::State::ForcedHidden) => animation::Outcome::Hidden,
-                    (_, visibility::State::ForcedVisible) => animation::Outcome::Visible(output),
-                    (Presence::Present, visibility::State::NotForced) => animation::Outcome::Hidden,
-                    (Presence::Missing, visibility::State::NotForced) => match self.im {
-                        InputMethod::Active(_) => animation::Outcome::Visible(output),
-                        InputMethod::InactiveSince(since) => {
-                            if now < since + animation::HIDING_TIMEOUT { animation::Outcome::Visible(output) }
-                            else { animation::Outcome::Hidden }
+                Some(output) => {
+                    // Hoping that this will get optimized out on branches not using `visible`.
+                    let height = Self::get_preferred_height(self.outputs.get(&output).unwrap())
+                        .unwrap_or(0);
+                    // TODO: Instead of setting size to 0 when the output is invalid,
+                    // simply go invisible.
+                    let visible = animation::Outcome::Visible{output, height};
+                    
+                    match (self.physical_keyboard, self.visibility_override) {
+                        (_, visibility::State::ForcedHidden) => animation::Outcome::Hidden,
+                        (_, visibility::State::ForcedVisible) => visible,
+                        (Presence::Present, visibility::State::NotForced) => animation::Outcome::Hidden,
+                        (Presence::Missing, visibility::State::NotForced) => match self.im {
+                            InputMethod::Active(_) => visible,
+                            InputMethod::InactiveSince(since) => {
+                                if now < since + animation::HIDING_TIMEOUT { visible }
+                                else { animation::Outcome::Hidden }
+                            },
                         },
-                    },
-                },
+                    }
+                }
             },
             im: self.im.clone(),
         }
@@ -331,7 +358,7 @@ pub mod test {
             now += Duration::from_millis(1);
             assert_matches!(
                 state.get_outcome(now).visibility,
-                animation::Outcome::Visible(_),
+                animation::Outcome::Visible{..},
                 "Hidden when it should remain visible: {:?}",
                 now.saturating_duration_since(start),
             )
@@ -339,7 +366,7 @@ pub mod test {
 
         let state = state.apply_event(Event::InputMethod(InputMethod::Active(imdetails_new())), now);
 
-        assert_matches!(state.get_outcome(now).visibility, animation::Outcome::Visible(_));
+        assert_matches!(state.get_outcome(now).visibility, animation::Outcome::Visible{..});
     }
 
     /// Make sure that hiding works when input method goes away
@@ -356,7 +383,7 @@ pub mod test {
         
         let state = state.apply_event(Event::InputMethod(InputMethod::InactiveSince(now)), now);
 
-        while let animation::Outcome::Visible(_) = state.get_outcome(now).visibility {
+        while let animation::Outcome::Visible{..} = state.get_outcome(now).visibility {
             now += Duration::from_millis(1);
             assert!(
                 now < start + Duration::from_millis(250),
@@ -386,7 +413,7 @@ pub mod test {
         let state = state.apply_event(Event::InputMethod(InputMethod::Active(imdetails_new())), now);
         let state = state.apply_event(Event::InputMethod(InputMethod::InactiveSince(now)), now);
 
-        while let animation::Outcome::Visible(_) = state.get_outcome(now).visibility {
+        while let animation::Outcome::Visible{..} = state.get_outcome(now).visibility {
             now += Duration::from_millis(1);
             assert!(
                 now < start + Duration::from_millis(250),
@@ -422,7 +449,7 @@ pub mod test {
         let state = state.apply_event(Event::Visibility(visibility::Event::ForceVisible), now);
         assert_matches!(
             state.get_outcome(now).visibility,
-            animation::Outcome::Visible(_),
+            animation::Outcome::Visible{..},
             "Failed to show: {:?}",
             now.saturating_duration_since(start),
         );
@@ -478,7 +505,7 @@ pub mod test {
 
         assert_matches!(
             state.get_outcome(now).visibility,
-            animation::Outcome::Visible(_),
+            animation::Outcome::Visible{..},
             "Failed to appear: {:?}",
             now.saturating_duration_since(start),
         );
