@@ -3,7 +3,7 @@
  */
 
 /*! Glue for the main loop. */
-use crate::outputs::OutputId;
+use crate::panel;
 use crate::debug;
 use crate::state;
 use glib::{Continue, MainContext, PRIORITY_DEFAULT, Receiver};
@@ -20,19 +20,21 @@ mod c {
     use crate::imservice::IMService;
     use crate::imservice::c::InputMethod;
     use crate::outputs::Outputs;
-    use crate::outputs::c::WlOutput;
     use crate::state;
     use crate::submission::Submission;
     use crate::util::c::Wrapped;
     use crate::vkeyboard::c::ZwpVirtualKeyboardV1;
     
-    /// ServerContextService*
-    #[repr(transparent)]
-    pub struct UIManager(*const c_void);
-    
     /// DbusHandler*
     #[repr(transparent)]
     pub struct DBusHandler(*const c_void);
+
+    /// EekboardContextService* in the role of a hint receiver
+    // The clone/copy is a concession to C style of programming.
+    // It would be hard to get rid of it.
+    #[repr(transparent)]
+    #[derive(Clone, Copy)]
+    pub struct HintManager(*const c_void);
     
     /// Holds the Rust structures that are interesting from C.
     #[repr(C)]
@@ -76,9 +78,7 @@ mod c {
     extern "C" {
         #[allow(improper_ctypes)]
         fn init_wayland(wayland: *mut Wayland);
-        fn server_context_service_update_keyboard(service: *const UIManager, output: WlOutput, scaled_height: u32);
-        fn server_context_service_real_hide_keyboard(service: *const UIManager);
-        fn server_context_service_set_hint_purpose(service: *const UIManager, hint: u32, purpose: u32);
+        fn eekboard_context_service_set_hint_purpose(service: HintManager, hint: u32, purpose: u32);
         // This should probably only get called from the gtk main loop,
         // given that dbus handler is using glib.
         fn dbus_handler_set_visible(dbus: *const DBusHandler, visible: u8);
@@ -124,18 +124,20 @@ mod c {
     pub extern "C"
     fn register_ui_loop_handler(
         receiver: Wrapped<Receiver<Commands>>,
-        ui_manager: *const UIManager,
+        panel_manager: panel::c::PanelManager,
+        hint_manager: HintManager,
         dbus_handler: *const DBusHandler,
     ) {
         let receiver = unsafe { receiver.unwrap() };
         let receiver = Rc::try_unwrap(receiver).expect("References still present");
         let receiver = receiver.into_inner();
+        let panel_manager = Wrapped::new(panel::Manager::new(panel_manager));
         let ctx = MainContext::default();
         let _acqu = ctx.acquire();
         receiver.attach(
             Some(&ctx),
             move |msg| {
-                main_loop_handle_message(msg, ui_manager, dbus_handler);
+                main_loop_handle_message(msg, panel_manager.clone(), hint_manager, dbus_handler);
                 Continue(true)
             },
         );
@@ -149,18 +151,13 @@ mod c {
     /// and doesn't lend itself to testing other than integration.
     fn main_loop_handle_message(
         msg: Commands,
-        ui_manager: *const UIManager,
+        panel_manager: Wrapped<panel::Manager>,
+        hint_manager: HintManager,
         dbus_handler: *const DBusHandler,
     ) {
-        match msg.panel_visibility {
-            Some(PanelCommand::Show { output, height }) => unsafe {
-                server_context_service_update_keyboard(ui_manager, output.0, height.as_scaled_ceiling());
-            },
-            Some(PanelCommand::Hide) => unsafe {
-                server_context_service_real_hide_keyboard(ui_manager);
-            },
-            None => {},
-        };
+        if let Some(visibility) = msg.panel_visibility {
+            panel::Manager::update(panel_manager, visibility);
+        }
 
         if let Some(visible) = msg.dbus_visible_set {
             if dbus_handler != std::ptr::null() {
@@ -170,8 +167,8 @@ mod c {
 
         if let Some(hints) = msg.layout_hint_set {
             unsafe {
-                server_context_service_set_hint_purpose(
-                    ui_manager,
+                eekboard_context_service_set_hint_purpose(
+                    hint_manager,
                     hints.hint.bits(),
                     hints.purpose.clone() as u32,
                 )
@@ -180,42 +177,11 @@ mod c {
     }
 }
 
-/// Size in pixels that is aware of scaling
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct PixelSize {
-    pub pixels: u32,
-    pub scale_factor: u32,
-}
-
-fn div_ceil(a: u32, b: u32) -> u32 {
-    // Given that it's for pixels on a screen, an overflow is unlikely.
-    (a + b - 1) / b
-}
-
-impl PixelSize {
-    pub fn as_scaled_floor(&self) -> u32 {
-        self.pixels / self.scale_factor
-    }
-
-    pub fn as_scaled_ceiling(&self) -> u32 {
-        div_ceil(self.pixels, self.scale_factor)
-    }
-}
-
-#[derive(Clone, PartialEq, Debug)]
-pub enum PanelCommand {
-    Show {
-        output: OutputId,
-        height: PixelSize,
-    },
-    Hide,
-}
-
 /// The commands consumed by the main loop,
 /// to be sent out to external components.
 #[derive(Clone)]
 pub struct Commands {
-    pub panel_visibility: Option<PanelCommand>,
+    pub panel_visibility: Option<panel::Command>,
     pub layout_hint_set: Option<state::InputMethodDetails>,
     pub dbus_visible_set: Option<bool>,
 }

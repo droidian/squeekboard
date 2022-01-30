@@ -31,6 +31,7 @@
 #include "layout.h"
 #include "main.h"
 #include "outputs.h"
+#include "panel.h"
 #include "submission.h"
 #include "server-context-service.h"
 #include "wayland.h"
@@ -51,8 +52,10 @@ typedef enum _SqueekboardDebugFlags {
 struct squeekboard {
     struct squeek_wayland wayland; // Just hooks.
     DBusHandler *dbus_handler; // Controls visibility of the OSK.
-    EekboardContextService *settings_context; // Gsettings hooks.
-    ServerContextService *ui_context; // mess, includes the entire UI
+    EekboardContextService *settings_context; // Gsettings hooks for layouts.
+    /// Gsettings hook for visibility. TODO: this does not belong in gsettings.
+    ServerContextService *settings_handler;
+    struct panel_manager panel_manager; // Controls the shape of the panel.
     /// Currently wanted layout. TODO: merge into state::Application
     struct squeek_layout_state layout_choice;
 };
@@ -435,20 +438,21 @@ main (int argc, char **argv)
         }
     }
 
-    eekboard_context_service_set_submission(instance.settings_context, rsobjects.submission);
-
-    ServerContextService *ui_context = server_context_service_new(
-                instance.settings_context,
-                rsobjects.submission,
-                &instance.layout_choice,
+    ServerContextService *setting_listener = server_context_service_new(
                 rsobjects.state_manager);
-    if (!ui_context) {
-        g_error("Could not initialize GUI");
-        exit(1);
+    if (!setting_listener) {
+        g_warning ("could not connect to gsettings");
     }
 
-    instance.ui_context = ui_context;
-    register_ui_loop_handler(rsobjects.receiver, instance.ui_context, instance.dbus_handler);
+    instance.settings_handler = setting_listener;
+
+    eekboard_context_service_set_submission(instance.settings_context, rsobjects.submission);
+
+    instance.panel_manager = panel_manager_new(instance.settings_context,
+        rsobjects.submission,
+        &instance.layout_choice);
+
+    register_ui_loop_handler(rsobjects.receiver, &instance.panel_manager, instance.settings_context, instance.dbus_handler);
 
     session_register();
 

@@ -8,9 +8,11 @@
 use crate::animation;
 use crate::debug;
 use crate::imservice::{ ContentHint, ContentPurpose };
-use crate::main::{ Commands, PanelCommand, PixelSize };
+use crate::main::Commands;
 use crate::outputs;
 use crate::outputs::{Millimeter, OutputId, OutputState};
+use crate::panel;
+use crate::panel::PixelSize;
 use crate::util::Rational;
 use std::cmp;
 use std::collections::HashMap;
@@ -118,8 +120,8 @@ impl Outcome {
 // FIXME: handle switching outputs
         let (dbus_visible_set, panel_visibility) = match new_state.visibility {
             animation::Outcome::Visible{output, height}
-                => (Some(true), Some(PanelCommand::Show{output, height})),
-            animation::Outcome::Hidden => (Some(false), Some(PanelCommand::Hide)),
+                => (Some(true), Some(panel::Command::Show{output, height})),
+            animation::Outcome::Hidden => (Some(false), Some(panel::Command::Hide)),
         };
 
         Commands {

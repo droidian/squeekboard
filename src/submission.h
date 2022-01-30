@@ -1,12 +1,12 @@
 #ifndef __SUBMISSION_H
 #define __SUBMISSION_H
 
-#include "input-method-unstable-v2-client-protocol.h"
-#include "virtual-keyboard-unstable-v1-client-protocol.h"
+#include "inttypes.h"
+
 #include "eek/eek-types.h"
-#include "main.h"
 
 struct squeek_layout;
+struct submission;
 
 // Defined in Rust
 uint8_t submission_hint_available(struct submission *self);

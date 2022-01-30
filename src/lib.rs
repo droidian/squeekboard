@@ -36,6 +36,7 @@ mod locale;
 mod main;
 mod manager;
 mod outputs;
+mod panel;
 mod popover;
 mod resources;
 mod state;
