@@ -42,7 +42,6 @@ struct _ServerContextService {
     /// Needed for instantiating the widget
     struct submission *submission; // unowned
     struct squeek_layout_state *layout;
-    struct ui_manager *manager; // unowned
     struct squeek_state_manager *state_manager; // shared reference
 
     PhoshLayerSurface *window;
@@ -315,13 +314,12 @@ init (ServerContextService *self) {
 }
 
 ServerContextService *
-server_context_service_new (EekboardContextService *self, struct submission *submission, struct squeek_layout_state *layout, struct ui_manager *uiman,  struct squeek_state_manager *state_manager)
+server_context_service_new (EekboardContextService *self, struct submission *submission, struct squeek_layout_state *layout, struct squeek_state_manager *state_manager)
 {
     ServerContextService *ui = g_object_new (SERVER_TYPE_CONTEXT_SERVICE, NULL);
     ui->submission = submission;
     ui->state = self;
     ui->layout = layout;
-    ui->manager = uiman;
     ui->state_manager = state_manager;
     init(ui);
     return ui;

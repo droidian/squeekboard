@@ -118,26 +118,6 @@ pub mod c {
     /// Wrapping Outputs is required for calling its methods from C
     type COutputs = Wrapped<Outputs>;
 
-    /// A stable reference to an output.
-    #[derive(Clone)]
-    #[repr(C)]
-    pub struct OutputHandle {
-        wl_output: WlOutput,
-        outputs: COutputs,
-    }
-
-    impl OutputHandle {
-        // Cannot return an Output reference
-        // because COutputs is too deeply wrapped
-        pub fn get_state(&self) -> Option<OutputState> {
-            let outputs = self.outputs.clone_ref();
-            let outputs = outputs.borrow();
-            outputs
-                .find_output(self.wl_output.clone())
-                .map(|o| o.current.clone())
-        }
-    }
-
     // Defined in Rust
 
     // Callbacks from the output listener follow
@@ -303,17 +283,6 @@ pub mod c {
             .unwrap_or(WlOutput::null())
     }
 
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_outputs_get_current(raw_collection: COutputs) -> OutputHandle {
-        let collection = raw_collection.clone_ref();
-        let collection = collection.borrow();
-        OutputHandle {
-            wl_output: collection.outputs[0].0.output.clone(),
-            outputs: raw_collection.clone(),
-        }
-    }
-
     // TODO: handle unregistration
 }
 
@@ -435,14 +404,6 @@ impl Outputs {
         } else {
             Err(NotFound)
         }
-    }
-
-    fn find_output(&self, wl_output: c::WlOutput) -> Option<&Output> {
-        self.outputs
-            .iter()
-            .find_map(|(o, _global)|
-                if o.output == wl_output { Some(o) } else { None }
-            )
     }
 
     fn find_output_mut(&mut self, wl_output: c::WlOutput)

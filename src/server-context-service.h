@@ -20,7 +20,6 @@
 
 #include "src/layout.h"
 #include "src/submission.h"
-#include "ui_manager.h"
 
 G_BEGIN_DECLS
 
@@ -29,7 +28,7 @@ G_BEGIN_DECLS
 /** Manages the lifecycle of the window displaying layouts. */
 G_DECLARE_FINAL_TYPE (ServerContextService, server_context_service, SERVER, CONTEXT_SERVICE, GObject)
 
-ServerContextService *server_context_service_new(EekboardContextService *self, struct submission *submission, struct squeek_layout_state *layout, struct ui_manager *uiman, struct squeek_state_manager *state_manager);
+ServerContextService *server_context_service_new(EekboardContextService *self, struct submission *submission, struct squeek_layout_state *layout, struct squeek_state_manager *state_manager);
 enum squeek_arrangement_kind server_context_service_get_layout_type(ServerContextService *);
 G_END_DECLS
 #endif  /* SERVER_CONTEXT_SERVICE_H */
