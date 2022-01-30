@@ -140,6 +140,12 @@ pub struct Application {
     pub im: InputMethod,
     pub visibility_override: visibility::State,
     pub physical_keyboard: Presence,
+    /// The output on which the panel should appear.
+    /// This is stored as part of the state
+    /// because it's not clear how to derive the output from the rest of the state.
+    /// It should probably follow the focused input,
+    /// but not sure about being allowed on non-touch displays.
+    pub preferred_output: Option<OutputId>,
     pub outputs: HashMap<OutputId, OutputState>,
 }
 
@@ -155,6 +161,7 @@ impl Application {
             im: InputMethod::InactiveSince(now),
             visibility_override: visibility::State::NotForced,
             physical_keyboard: Presence::Missing,
+            preferred_output: None,
             outputs: Default::default(),
         }
     }
@@ -181,9 +188,15 @@ impl Application {
                 match change {
                     outputs::ChangeType::Altered(state) => {
                         app.outputs.insert(output, state);
+                        app.preferred_output = app.preferred_output.or(Some(output));
                     },
                     outputs::ChangeType::Removed => {
                         app.outputs.remove(&output);
+                        if app.preferred_output == Some(output) {
+                            // There's currently no policy to choose one output over another,
+                            // so just take whichever comes first.
+                            app.preferred_output = app.outputs.keys().next().map(|output| *output);
+                        }
                     },
                 };
                 app
