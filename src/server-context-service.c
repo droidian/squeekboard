@@ -141,20 +141,18 @@ on_surface_configure(ServerContextService *self, PhoshLayerSurface *surface)
 }
 
 static void
-make_window (ServerContextService *self)
+make_window (ServerContextService *self, struct wl_output *output)
 {
     if (self->window) {
         g_error("Window already present");
     }
 
-    struct squeek_output_handle output = squeek_outputs_get_current(squeek_wayland->outputs);
-    squeek_uiman_set_output(self->manager, output);
     uint32_t height = squeek_uiman_get_perceptual_height(self->manager);
 
     self->window = g_object_new (
         PHOSH_TYPE_LAYER_SURFACE,
         "layer-shell", squeek_wayland->layer_shell,
-        "wl-output", output.output,
+        "wl-output", output,
         "height", height,
         "anchor", ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM
                   | ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT
@@ -209,7 +207,7 @@ void
 server_context_service_real_show_keyboard (ServerContextService *self, struct wl_output *output)
 {
     if (!self->window) {
-        make_window (self);
+        make_window (self, output);
     }
     if (!self->widget) {
         make_widget (self);
