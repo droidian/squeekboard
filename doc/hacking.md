@@ -205,6 +205,7 @@ While the file is not actually used, it's a good idea to save the config in case
 
 ```
 cd squeekboard-build
+.../squeekboard-source/cargo.sh update
 ninja test
 cp ./Cargo.lock .../squeekboard-source
 ```
