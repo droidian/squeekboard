@@ -10,10 +10,17 @@ type KeyCode = u32;
 pub mod c {
     use std::ffi::CStr;
     use std::os::raw::{ c_char, c_void };
+    use std::ptr;
 
     #[repr(transparent)]
     #[derive(Clone, Copy)]
     pub struct ZwpVirtualKeyboardV1(*const c_void);
+
+    impl ZwpVirtualKeyboardV1 {
+        pub fn null() -> Self {
+            Self(ptr::null())
+        }
+    }
 
     #[repr(C)]
     pub struct KeyMap {

@@ -8,6 +8,7 @@
 use crate::animation;
 use crate::imservice::{ ContentHint, ContentPurpose };
 use crate::main::{ Commands, PanelCommand };
+use crate::outputs;
 use std::time::Instant;
 
 
@@ -29,12 +30,14 @@ pub enum InputMethod {
     InactiveSince(Instant),
 }
 
-/// Incoming events
+/// Incoming events.
+/// This contains events that cause a change to the internal state.
 #[derive(Clone)]
 pub enum Event {
     InputMethod(InputMethod),
     Visibility(visibility::Event),
     PhysicalKeyboard(Presence),
+    Output(outputs::Event),
     /// Event triggered because a moment in time passed.
     /// Use to animate state transitions.
     /// The value is the ideal arrival time.
@@ -44,6 +47,12 @@ pub enum Event {
 impl From<InputMethod> for Event {
     fn from(im: InputMethod) -> Self {
         Self::InputMethod(im)
+    }
+}
+
+impl From<outputs::Event> for Event {
+    fn from(ev: outputs::Event) -> Self {
+        Self::Output(ev)
     }
 }
 
@@ -162,6 +171,11 @@ impl Application {
             Event::PhysicalKeyboard(presence) => Self {
                 physical_keyboard: presence,
                 ..self
+            },
+
+            Event::Output(output) => {
+                println!("Stub: output event {:?}", output);
+                self
             },
 
             Event::InputMethod(new_im) => match (self.im.clone(), new_im) {

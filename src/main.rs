@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 Purism SPC
+/* Copyright (C) 2020,2022 Purism SPC
  * SPDX-License-Identifier: GPL-3.0+
  */
 
@@ -11,12 +11,14 @@ use glib::{Continue, MainContext, PRIORITY_DEFAULT, Receiver};
 mod c {
     use super::*;
     use std::os::raw::c_void;
+    use std::ptr;
     use std::rc::Rc;
     use std::time::Instant;
 
     use crate::event_loop::driver;
     use crate::imservice::IMService;
     use crate::imservice::c::InputMethod;
+    use crate::outputs::Outputs;
     use crate::state;
     use crate::submission::Submission;
     use crate::util::c::Wrapped;
@@ -33,12 +35,45 @@ mod c {
     /// Holds the Rust structures that are interesting from C.
     #[repr(C)]
     pub struct RsObjects {
+        /// The handle to which Commands should be sent
+        /// for processing in the main loop.
         receiver: Wrapped<Receiver<Commands>>,
         state_manager: Wrapped<driver::Threaded>,
         submission: Wrapped<Submission>,
+        /// Not wrapped, because C needs to access this.
+        wayland: *mut Wayland,
+    }
+
+    /// Corresponds to wayland.h::squeek_wayland.
+    /// Fields unused by Rust are marked as generic data types.
+    #[repr(C)]
+    pub struct Wayland {
+        layer_shell: *const c_void,
+        virtual_keyboard_manager: *const c_void,
+        input_method_manager: *const c_void,
+        outputs: Wrapped<Outputs>,
+        seat: *const c_void,
+        input_method: InputMethod,
+        virtual_keyboard: ZwpVirtualKeyboardV1,
+    }
+
+    impl Wayland {
+        fn new(outputs_manager: Outputs) -> Self {
+            Wayland {
+                layer_shell: ptr::null(),
+                virtual_keyboard_manager: ptr::null(),
+                input_method_manager: ptr::null(),
+                outputs: Wrapped::new(outputs_manager),
+                seat: ptr::null(),
+                input_method: InputMethod::null(),
+                virtual_keyboard: ZwpVirtualKeyboardV1::null(),
+            }
+        }
     }
     
     extern "C" {
+        #[allow(improper_ctypes)]
+        fn init_wayland(wayland: *mut Wayland);
         fn server_context_service_real_show_keyboard(service: *const UIManager);
         fn server_context_service_real_hide_keyboard(service: *const UIManager);
         fn server_context_service_set_hint_purpose(service: *const UIManager, hint: u32, purpose: u32);
@@ -52,19 +87,23 @@ mod c {
     /// and that leads to suffering.
     #[no_mangle]
     pub extern "C"
-    fn squeek_rsobjects_new(
-        im: *mut InputMethod,
-        vk: ZwpVirtualKeyboardV1,
-    ) -> RsObjects {
+    fn squeek_init() -> RsObjects {
+        // Set up channels
         let (sender, receiver) = MainContext::channel(PRIORITY_DEFAULT);
-        
         let now = Instant::now();
         let state_manager = driver::Threaded::new(sender, state::Application::new(now));
 
-        let imservice = if im.is_null() {
+        let outputs = Outputs::new(state_manager.clone());
+        let mut wayland = Box::new(Wayland::new(outputs));
+        let wayland_raw = &mut *wayland as *mut _;
+        unsafe { init_wayland(wayland_raw); }
+
+        let vk = wayland.virtual_keyboard;
+
+        let imservice = if wayland.input_method.is_null() {
             None
         } else {
-            Some(IMService::new(im, state_manager.clone()))
+            Some(IMService::new(wayland.input_method, state_manager.clone()))
         };
         let submission = Submission::new(vk, imservice);
         
@@ -72,6 +111,7 @@ mod c {
             submission: Wrapped::new(submission),
             state_manager: Wrapped::new(state_manager),
             receiver: Wrapped::new(receiver),
+            wayland: Box::into_raw(wayland),
         }
     }
 

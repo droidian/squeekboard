@@ -1,6 +1,11 @@
+/* Copyright (C) 2019-2022 Purism SPC
+ * SPDX-License-Identifier: GPL-3.0+
+ */
+
 /*! Managing Wayland outputs */
 
 use std::vec::Vec;
+use crate::event_loop;
 use ::logging;
 
 // traits
@@ -11,14 +16,21 @@ pub mod c {
     use super::*;
     
     use std::os::raw::{ c_char, c_void };
+    use std::ptr;
 
-    use ::util::c::COpaquePtr;
+    use ::util::c::{COpaquePtr, Wrapped};
 
     // Defined in C
 
     #[repr(transparent)]
-    #[derive(Clone, PartialEq, Copy)]
+    #[derive(Clone, PartialEq, Copy, Debug)]
     pub struct WlOutput(*const c_void);
+
+    impl WlOutput {
+        fn null() -> Self {
+            Self(ptr::null())
+        }
+    }
 
     #[repr(C)]
     struct WlOutputListener<T: COpaquePtr> {
@@ -63,7 +75,7 @@ pub mod c {
     }
 
     /// Map to `wl_output.transform` values
-    #[derive(Clone)]
+    #[derive(Clone, Copy, Debug)]
     pub enum Transform {
         Normal = 0,
         Rotated90 = 1,
@@ -103,7 +115,8 @@ pub mod c {
         ) -> i32;
     }
 
-    type COutputs = ::util::c::Wrapped<Outputs>;
+    /// Wrapping Outputs is required for calling its methods from C
+    type COutputs = Wrapped<Outputs>;
 
     /// A stable reference to an output.
     #[derive(Clone)]
@@ -119,11 +132,15 @@ pub mod c {
         pub fn get_state(&self) -> Option<OutputState> {
             let outputs = self.outputs.clone_ref();
             let outputs = outputs.borrow();
-            find_output(&outputs, self.wl_output.clone()).map(|o| o.current.clone())
+            outputs
+                .find_output(self.wl_output.clone())
+                .map(|o| o.current.clone())
         }
     }
 
     // Defined in Rust
+
+    // Callbacks from the output listener follow
 
     extern fn outputs_handle_geometry(
         outputs: COutputs,
@@ -143,7 +160,8 @@ pub mod c {
         let outputs = outputs.clone_ref();
         let mut collection = outputs.borrow_mut();
         let output_state: Option<&mut OutputState>
-            = find_output_mut(&mut collection, wl_output)
+            = collection
+                .find_output_mut(wl_output)
                 .map(|o| &mut o.pending);
         match output_state {
             Some(state) => { state.transform = Some(transform) },
@@ -171,7 +189,8 @@ pub mod c {
         let outputs = outputs.clone_ref();
         let mut collection = outputs.borrow_mut();
         let output_state: Option<&mut OutputState>
-            = find_output_mut(&mut collection, wl_output)
+            = collection
+                .find_output_mut(wl_output)
                 .map(|o| &mut o.pending);
         match output_state {
             Some(state) => {
@@ -192,14 +211,27 @@ pub mod c {
     ) {
         let outputs = outputs.clone_ref();
         let mut collection = outputs.borrow_mut();
-        let output = find_output_mut(&mut collection, wl_output);
-        match output {
-            Some(output) => { output.current = output.pending.clone(); }
-            None => log_print!(
-                logging::Level::Warning,
-                "Got done on unknown output",
-            ),
+        let output = collection
+            .find_output_mut(wl_output);
+        let event = match output {
+            Some(output) => {
+                output.current = output.pending.clone();
+                Some(Event {
+                    output: OutputId(wl_output),
+                    change: ChangeType::Altered(output.current),
+                })
+            },
+            None => {
+                log_print!(
+                    logging::Level::Warning,
+                    "Got done on unknown output",
+                );
+                None
+            }
         };
+        if let Some(event) = event {
+            collection.send_event(event);
+        }
     }
 
     extern fn outputs_handle_scale(
@@ -210,7 +242,8 @@ pub mod c {
         let outputs = outputs.clone_ref();
         let mut collection = outputs.borrow_mut();
         let output_state: Option<&mut OutputState>
-            = find_output_mut(&mut collection, wl_output)
+            = collection
+                .find_output_mut(wl_output)
                 .map(|o| &mut o.pending);
         match output_state {
             Some(state) => { state.scale = factor; }
@@ -221,11 +254,7 @@ pub mod c {
         };
     }
 
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_outputs_new() -> COutputs {
-        COutputs::new(Outputs { outputs: Vec::new() })
-    }
+    // End callbacks
 
     #[no_mangle]
     pub extern "C"
@@ -235,14 +264,17 @@ pub mod c {
 
     #[no_mangle]
     pub extern "C"
-    fn squeek_outputs_register(raw_collection: COutputs, output: WlOutput) {
+    fn squeek_outputs_register(raw_collection: COutputs, output: WlOutput, id: u32) {
         let collection = raw_collection.clone_ref();
         let mut collection = collection.borrow_mut();
-        collection.outputs.push(Output {
-            output: output.clone(),
-            pending: OutputState::uninitialized(),
-            current: OutputState::uninitialized(),
-        });
+        collection.outputs.push((
+            Output {
+                output: output.clone(),
+                pending: OutputState::uninitialized(),
+                current: OutputState::uninitialized(),
+            },
+            id,
+        ));
 
         unsafe { squeek_output_add_listener(
             output,
@@ -255,41 +287,34 @@ pub mod c {
             raw_collection,
         )};
     }
-    
+
+    /// This will try to unregister the output, if the id matches a registered one.
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_outputs_try_unregister(raw_collection: COutputs, id: u32) -> WlOutput {
+        let collection = raw_collection.clone_ref();
+        let mut collection = collection.borrow_mut();
+        collection.remove_output_by_global(id)
+            .map_err(|e| log_print!(
+                logging::Level::Debug,
+                "Tried to remove global {:x} but it is not registered as an output: {:?}",
+                id, e,
+            ))
+            .unwrap_or(WlOutput::null())
+    }
+
     #[no_mangle]
     pub extern "C"
     fn squeek_outputs_get_current(raw_collection: COutputs) -> OutputHandle {
         let collection = raw_collection.clone_ref();
         let collection = collection.borrow();
         OutputHandle {
-            wl_output: collection.outputs[0].output.clone(),
+            wl_output: collection.outputs[0].0.output.clone(),
             outputs: raw_collection.clone(),
         }
     }
 
     // TODO: handle unregistration
-    
-    fn find_output(
-        collection: &Outputs,
-        wl_output: WlOutput,
-    ) -> Option<&Output> {
-        collection.outputs
-            .iter()
-            .find_map(|o|
-                if o.output == wl_output { Some(o) } else { None }
-            )
-    }
-
-    fn find_output_mut(
-        collection: &mut Outputs,
-        wl_output: WlOutput,
-    ) -> Option<&mut Output> {
-        collection.outputs
-            .iter_mut()
-            .find_map(|o|
-                if o.output == wl_output { Some(o) } else { None }
-            )
-    }
 }
 
 /// Generic size
@@ -300,13 +325,13 @@ pub struct Size {
 }
 
 /// wl_output mode
-#[derive(Clone)]
+#[derive(Clone, Copy, Debug)]
 struct Mode {
     width: i32,
     height: i32,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy, Debug)]
 pub struct OutputState {
     current_mode: Option<Mode>,
     transform: Option<c::Transform>,
@@ -355,12 +380,89 @@ impl OutputState {
     }
 }
 
-pub struct Output {
+/// Not guaranteed to exist,
+/// but can be used to look up state.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct OutputId(c::WlOutput);
+
+// WlOutput is a pointer,
+// but in the public interface,
+// we're only using it as a lookup key.
+unsafe impl Send for OutputId {}
+
+struct Output {
     output: c::WlOutput,
     pending: OutputState,
     current: OutputState,
 }
 
+#[derive(Debug)]
+struct NotFound;
+
+type GlobalId = u32;
+
 pub struct Outputs {
-    outputs: Vec<Output>,
+    outputs: Vec<(Output, GlobalId)>,
+    sender: event_loop::driver::Threaded,
+}
+
+impl Outputs {
+    pub fn new(sender: event_loop::driver::Threaded) -> Outputs {
+        Outputs {
+            outputs: Vec::new(),
+            sender,
+        }
+    }
+
+    fn send_event(&self, event: Event) {
+        self.sender.send(event.into()).unwrap()
+    }
+
+    fn remove_output_by_global(&mut self, id: GlobalId)
+        -> Result<c::WlOutput, NotFound>
+    {
+        let index = self.outputs.iter()
+            .position(|(_o, global_id)| *global_id == id);
+        if let Some(index) = index {
+            let (output, _id) = self.outputs.remove(index);
+            self.send_event(Event {
+                change: ChangeType::Removed,
+                output: OutputId(output.output),
+            });
+            Ok(output.output)
+        } else {
+            Err(NotFound)
+        }
+    }
+
+    fn find_output(&self, wl_output: c::WlOutput) -> Option<&Output> {
+        self.outputs
+            .iter()
+            .find_map(|(o, _global)|
+                if o.output == wl_output { Some(o) } else { None }
+            )
+    }
+
+    fn find_output_mut(&mut self, wl_output: c::WlOutput)
+        -> Option<&mut Output>
+    {
+        self.outputs
+            .iter_mut()
+            .find_map(|(o, _global)|
+                if o.output == wl_output { Some(o) } else { None }
+            )
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum ChangeType {
+    /// Added or changed
+    Altered(OutputState),
+    Removed,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct Event {
+    output: OutputId,
+    change: ChangeType,
 }
