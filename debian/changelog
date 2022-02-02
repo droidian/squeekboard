@@ -1,3 +1,22 @@
+squeekboard (1.16.0-1) unstable; urgency=medium
+
+  [ Guido Günther ]
+
+  * debian: Install translations
+  * debian: Switch to dh 13.
+  * debian: Install desktop file.
+
+  [ Arnaud Ferraris ]
+  * debian: drop obsolete patches.
+  * debian: update upstream URL
+  * d/rules: don't fail if Cargo.lock doesn't exist.
+  * debian: build with newer crates versions. (Closes: #1003756)
+  * d/lintian-overrides: update for new syntax
+  * d/copyright: update copyright info.
+  * d/control: bump Standards-Version, no changes required
+
+ -- Arnaud Ferraris <arnaud.ferraris@gmail.com>  Wed, 02 Feb 2022 21:22:32 +0100
+
 squeekboard (1.14.0-3) unstable; urgency=medium
 
   * Team upload.
