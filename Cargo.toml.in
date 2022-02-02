@@ -23,14 +23,14 @@ rustc_less_1_36 = []
 
 # Dependencies which don't change based on build flags
 [dependencies.cairo-sys-rs]
-version = "*"
+version = "0.9"
 
 [dependencies.glib-sys]
 version = "*"
 features = ["v2_44"]
 
 [dependencies.gtk-sys]
-version = "*"
+version = "0.9"
 features = ["v3_22"]
 
 [dependencies]
