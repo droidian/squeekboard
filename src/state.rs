@@ -241,16 +241,19 @@ impl Application {
     fn get_preferred_height(output: &OutputState) -> Option<u32> {
         output.get_pixel_size()
             .map(|px_size| {
-                if px_size.width > px_size.height {
-                    px_size.width / 5
-                } else {
-                    if (px_size.width < 540) & (px_size.width > 0) {
-                        px_size.width * 7 / 12 // to match 360×210
+                let height = {
+                    if px_size.width > px_size.height {
+                        px_size.width / 5
                     } else {
-                        // Here we switch to wide layout, less height needed
-                        px_size.width * 7 / 22
+                        if (px_size.width < 540) & (px_size.width > 0) {
+                            px_size.width * 7 / 12 // to match 360×210
+                        } else {
+                            // Here we switch to wide layout, less height needed
+                            px_size.width * 7 / 22
+                        }
                     }
-                }
+                };
+                cmp::min(height, px_size.height / 2)
             })
     }
 
