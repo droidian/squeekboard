@@ -1,7 +1,6 @@
 # Dependencies which change based on build flags
 bitflags = "1.0.*"
 clap = { version = "2.32.*", default-features = false }
-regex = { version = "1.1.*", default-features = false, features = ['use_std'] }
 
 [dependencies.cairo-rs]
 version = "0.5.*"
