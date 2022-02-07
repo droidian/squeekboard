@@ -159,7 +159,9 @@ mod c {
         };
 
         if let Some(visible) = msg.dbus_visible_set {
-            unsafe { dbus_handler_set_visible(dbus_handler, visible as u8) };
+            if dbus_handler != std::ptr::null() {
+                unsafe { dbus_handler_set_visible(dbus_handler, visible as u8) };
+            }
         }
 
         if let Some(hints) = msg.layout_hint_set {
