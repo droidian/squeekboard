@@ -23,7 +23,7 @@ pub mod c {
     // Defined in C
 
     #[repr(transparent)]
-    #[derive(Clone, PartialEq, Copy, Debug)]
+    #[derive(Clone, PartialEq, Copy, Debug, Eq, Hash)]
     pub struct WlOutput(*const c_void);
 
     impl WlOutput {
@@ -117,26 +117,6 @@ pub mod c {
 
     /// Wrapping Outputs is required for calling its methods from C
     type COutputs = Wrapped<Outputs>;
-
-    /// A stable reference to an output.
-    #[derive(Clone)]
-    #[repr(C)]
-    pub struct OutputHandle {
-        wl_output: WlOutput,
-        outputs: COutputs,
-    }
-
-    impl OutputHandle {
-        // Cannot return an Output reference
-        // because COutputs is too deeply wrapped
-        pub fn get_state(&self) -> Option<OutputState> {
-            let outputs = self.outputs.clone_ref();
-            let outputs = outputs.borrow();
-            outputs
-                .find_output(self.wl_output.clone())
-                .map(|o| o.current.clone())
-        }
-    }
 
     // Defined in Rust
 
@@ -303,17 +283,6 @@ pub mod c {
             .unwrap_or(WlOutput::null())
     }
 
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_outputs_get_current(raw_collection: COutputs) -> OutputHandle {
-        let collection = raw_collection.clone_ref();
-        let collection = collection.borrow();
-        OutputHandle {
-            wl_output: collection.outputs[0].0.output.clone(),
-            outputs: raw_collection.clone(),
-        }
-    }
-
     // TODO: handle unregistration
 }
 
@@ -326,15 +295,15 @@ pub struct Size {
 
 /// wl_output mode
 #[derive(Clone, Copy, Debug)]
-struct Mode {
+pub struct Mode {
     width: i32,
     height: i32,
 }
 
 #[derive(Clone, Copy, Debug)]
 pub struct OutputState {
-    current_mode: Option<Mode>,
-    transform: Option<c::Transform>,
+    pub current_mode: Option<Mode>,
+    pub transform: Option<c::Transform>,
     pub scale: i32,
 }
 
@@ -382,8 +351,8 @@ impl OutputState {
 
 /// Not guaranteed to exist,
 /// but can be used to look up state.
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct OutputId(c::WlOutput);
+#[derive(Clone, Copy, PartialEq, Debug, Eq, Hash)]
+pub struct OutputId(pub c::WlOutput);
 
 // WlOutput is a pointer,
 // but in the public interface,
@@ -399,8 +368,10 @@ struct Output {
 #[derive(Debug)]
 struct NotFound;
 
+/// Wayland global ID type
 type GlobalId = u32;
 
+/// The outputs manager
 pub struct Outputs {
     outputs: Vec<(Output, GlobalId)>,
     sender: event_loop::driver::Threaded,
@@ -435,14 +406,6 @@ impl Outputs {
         }
     }
 
-    fn find_output(&self, wl_output: c::WlOutput) -> Option<&Output> {
-        self.outputs
-            .iter()
-            .find_map(|(o, _global)|
-                if o.output == wl_output { Some(o) } else { None }
-            )
-    }
-
     fn find_output_mut(&mut self, wl_output: c::WlOutput)
         -> Option<&mut Output>
     {
@@ -463,6 +426,6 @@ pub enum ChangeType {
 
 #[derive(Clone, Copy, Debug)]
 pub struct Event {
-    output: OutputId,
-    change: ChangeType,
+    pub output: OutputId,
+    pub change: ChangeType,
 }

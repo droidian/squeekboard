@@ -33,7 +33,6 @@
 #include "outputs.h"
 #include "submission.h"
 #include "server-context-service.h"
-#include "ui_manager.h"
 #include "wayland.h"
 
 #include <gdk/gdkwayland.h>
@@ -56,8 +55,6 @@ struct squeekboard {
     ServerContextService *ui_context; // mess, includes the entire UI
     /// Currently wanted layout. TODO: merge into state::Application
     struct squeek_layout_state layout_choice;
-    /// UI shape tracker/chooser. TODO: merge into state::Application
-    struct ui_manager *ui_manager;
 };
 
 
@@ -400,8 +397,6 @@ main (int argc, char **argv)
     // Also initializes wayland
     struct rsobjects rsobjects = squeek_init();
 
-    instance.ui_manager = squeek_uiman_new();
-
     instance.settings_context = eekboard_context_service_new(&instance.layout_choice);
 
     // set up dbus
@@ -446,7 +441,6 @@ main (int argc, char **argv)
                 instance.settings_context,
                 rsobjects.submission,
                 &instance.layout_choice,
-                instance.ui_manager,
                 rsobjects.state_manager);
     if (!ui_context) {
         g_error("Could not initialize GUI");

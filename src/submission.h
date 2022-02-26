@@ -5,7 +5,6 @@
 #include "virtual-keyboard-unstable-v1-client-protocol.h"
 #include "eek/eek-types.h"
 #include "main.h"
-#include "src/ui_manager.h"
 
 struct squeek_layout;
 

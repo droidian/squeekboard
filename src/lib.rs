@@ -14,6 +14,9 @@ extern crate maplit;
 extern crate serde;
 extern crate xkbcommon;
 
+#[cfg(test)]
+#[macro_use]
+mod assert_matches;
 #[macro_use]
 mod logging;
 
@@ -37,6 +40,5 @@ mod style;
 mod submission;
 pub mod tests;
 pub mod util;
-mod ui_manager;
 mod vkeyboard;
 mod xdg;
