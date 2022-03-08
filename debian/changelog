@@ -1,3 +1,48 @@
+squeekboard (1.17.0-1) experimental; urgency=medium
+
+  [ Dorota Czaplejewicz ]
+  * docs: Detail the release process better
+  * cleanup: Remove unused header lines
+  * docstrings: Clarify the purpose of Receiver
+  * wayland: Move initialization to the Rust side
+  * ffi: Remove unnecessary pointers to InputMethod
+  * outputs: Clean up for more Rust usage
+  * outputs: Notify the state manager about changes
+  * outputs: Handle removal
+  * Save outputs state
+  * Store preferred output
+  * deps: Vendor assert_matches
+  * Carry output information on visible command all the way to C
+  * Don't reach for globals to choose output
+  * visibility: Forward panel height information to window creation
+  * outputs: Remove ui manager
+  * output: Use new source of panel height information
+  * panel: Apply a hard limit of 1/2 height
+  * cargo: Update lockfile
+
+  [ Cosmin Humeniuc ]
+  * Add Romanian layout
+
+  [ Sam Hewitt ]
+  * data: Update stylesheet with upstream design
+
+  [ Tor ]
+  * Make compatible with latest cargo deps
+
+  [ Luís Fernando Stürmer da Rosa ]
+  * Update Brazilian Portuguese translation
+
+  [ Fran Dieguez ]
+  * Add Galician translation
+
+  [ William Wold ]
+  * Check if dbus handler is null before using
+
+  [ Yosef Or Boczko ]
+  * Add Hebrew translation
+
+ -- Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>  Tue, 25 Jan 2022 11:24:04 +0000
+
 squeekboard (1.16.0-1) experimental; urgency=medium
 
   [ Dorota Czaplejewicz ]
