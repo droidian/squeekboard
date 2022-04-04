@@ -1,0 +1,4 @@
+# Dependencies which are only used with online, crates.io builds.
+[patch.crates-io]
+# Dependency was yanked, but gio 0.7 needs it.
+fragile = { git = "https://source.puri.sm/dorota.czaplejewicz/fragile.git", tag = "0.3.0" }

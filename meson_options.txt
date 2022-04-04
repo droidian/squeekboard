@@ -11,6 +11,10 @@ option('newer',
        type: 'boolean', value: false,
        description: 'Build with dependencies newer than those of Byzantium')
 
+option('online',
+       type: 'boolean', value: true,
+       description: 'Pull packages from the internet while building, as opposed to a local regstry.')
+       
 option('strict',
        type: 'boolean', value: true,
        description: 'Turn more warnings into errors')
