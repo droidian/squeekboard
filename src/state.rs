@@ -7,7 +7,7 @@
 
 use crate::animation;
 use crate::imservice::{ ContentHint, ContentPurpose };
-use crate::main::{ Commands, PanelCommand };
+use crate::main::{ Commands, PanelCommand, PixelSize };
 use crate::outputs;
 use crate::outputs::{OutputId, OutputState};
 use std::cmp;
@@ -238,7 +238,7 @@ impl Application {
         }
     }
 
-    fn get_preferred_height(output: &OutputState) -> Option<u32> {
+    fn get_preferred_height(output: &OutputState) -> Option<PixelSize> {
         output.get_pixel_size()
             .map(|px_size| {
                 let height = {
@@ -253,7 +253,10 @@ impl Application {
                         }
                     }
                 };
-                cmp::min(height, px_size.height / 2)
+                PixelSize {
+                    scale_factor: output.scale as u32,
+                    pixels: cmp::min(height, px_size.height / 2),
+                }
             })
     }
 
@@ -265,10 +268,10 @@ impl Application {
                 Some(output) => {
                     // Hoping that this will get optimized out on branches not using `visible`.
                     let height = Self::get_preferred_height(self.outputs.get(&output).unwrap())
-                        .unwrap_or(0);
+                        .unwrap_or(PixelSize{pixels: 0, scale_factor: 1});
                     // TODO: Instead of setting size to 0 when the output is invalid,
                     // simply go invisible.
-                    let visible = animation::Outcome::Visible{output, height};
+                    let visible = animation::Outcome::Visible{ output, height };
                     
                     match (self.physical_keyboard, self.visibility_override) {
                         (_, visibility::State::ForcedHidden) => animation::Outcome::Hidden,
