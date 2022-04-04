@@ -245,7 +245,13 @@ impl Application {
                     if px_size.width > px_size.height {
                         px_size.width / 5
                     } else {
-                        if (px_size.width < 540) & (px_size.width > 0) {
+                        let abstract_width
+                            = PixelSize {
+                                scale_factor: output.scale as u32,
+                                pixels: px_size.width,
+                            } 
+                            .as_scaled_ceiling();
+                        if (abstract_width < 540) && (px_size.width > 0) {
                             px_size.width * 7 / 12 // to match 360×210
                         } else {
                             // Here we switch to wide layout, less height needed
