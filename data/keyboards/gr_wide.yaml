@@ -1,14 +1,11 @@
-# Greek layout originally created by Antonis Tsolomitis
-# University of the Aegean, Department of Mathematics, atsol@aegean.gr
-# Sep 2019
-# Edited by Sotiris Papadopoulos, sotirios.papadopoulos@inserm.fr
+# Creaed by Sotiris Papadopoulos, sotirios.papadopoulos@inserm.fr
 ---
 outlines:
-    default:    { width: 40,    height: 60 }
-    altline:    { width: 52.67, height: 60 }
-    wide:       { width: 62,    height: 60 }
-    spaceline:  { width: 140,   height: 60 }
-    special:    { width: 44,    height: 60 }
+    default:    { width: 80,    height: 60 }
+    altline:    { width: 110,    height: 60 }
+    wide:       { width: 120,   height: 60 }
+    spaceline:  { width: 250,   height: 60 }
+    special:    { width: 75,    height: 60 }
 
 views:
     base:
@@ -24,7 +21,7 @@ views:
     accented:
         - "ά έ ή ί ϊ ΐ ό ύ ϋ ώ "
         - "Ά Έ Ή Ί Ϊ Ό Ύ Ϋ Ώ show_base"
-        - "Ϗ ϐ ϑ ϗ ϖ ΰ ϕ – — BackSpace"
+        - "Ϗ ϐ ϑ ϗ ΰ ϕ ϖ – — BackSpace"
         - "show_numbers preferences space eis_l eis_r Return"
     numbers:
         - "1 2 3 4 5 6 7 8 9 0"
@@ -50,7 +47,7 @@ buttons:
         action: "erase"
     preferences:
         action: "show_prefs"
-        outline: "altline"
+        outline: "special"
         icon: "keyboard-mode-symbolic"
     show_numbers:
         action:
@@ -205,4 +202,3 @@ buttons:
         text: "["
     bracketright:
         text: "]"
-
