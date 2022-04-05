@@ -154,11 +154,6 @@ pub mod c {
         let imservice = check_imservice(imservice, im).unwrap();
 
         imservice.current = imservice.pending.clone();
-        imservice.pending = IMProtocolState {
-            active: imservice.current.active,
-            ..IMProtocolState::default()
-        };
-
         imservice.serial += Wrapping(1u32);
         imservice.send_event();
     }
