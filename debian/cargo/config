@@ -9,4 +9,3 @@ replace-with = 'vendored-sources'
 
 [source.vendored-sources]
 directory = '/usr/share/cargo/registry'
-

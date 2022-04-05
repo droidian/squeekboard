@@ -74,6 +74,7 @@ build_deb:arm64:
 
 build_deb:future:
   image: debian:sid
+  allow_failure: true
   tags:
     - aarch64
   stage: build

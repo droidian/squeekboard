@@ -38,6 +38,6 @@ endif
 # causing Cargo to refuse to build with a crates.io copy
 override_dh_auto_configure:
 	[ ! -f Cargo.lock ] || rm Cargo.lock
-	dh_auto_configure -- -Dnewer=$(newer)
+	dh_auto_configure -- -Dnewer=$(newer) -Donline=false
 
 override_dh_autoreconf:
