@@ -139,9 +139,10 @@ server_context_service_real_hide_keyboard (ServerContextService *self)
 }
 
 // Called from rust
-/// Updates the type of visibility
+/// Updates the type of visibility.
+/// Height is in scaled units.
 void
-server_context_service_update_keyboard (ServerContextService *self, struct wl_output *output, uint32_t height)
+server_context_service_update_keyboard (ServerContextService *self, struct wl_output *output, uint32_t scaled_height)
 {
     if (output != self->current_output) {
         // Recreate on a new output
@@ -153,11 +154,11 @@ server_context_service_update_keyboard (ServerContextService *self, struct wl_ou
                      "configured-height", &h,
                      NULL);
 
-        if ((uint32_t)h != height) {
+        if ((uint32_t)h != scaled_height) {
 
             //TODO: make sure that redrawing happens in the correct place (it doesn't now).
-            phosh_layer_surface_set_size(self->window, 0, height);
-            phosh_layer_surface_set_exclusive_zone(self->window, height);
+            phosh_layer_surface_set_size(self->window, 0, scaled_height);
+            phosh_layer_surface_set_exclusive_zone(self->window, scaled_height);
             phosh_layer_surface_wl_surface_commit(self->window);
 
             self->current_output = output;
@@ -169,7 +170,7 @@ server_context_service_update_keyboard (ServerContextService *self, struct wl_ou
     self->current_output = output;
 
     if (!self->window) {
-        make_window (self, output, height);
+        make_window (self, output, scaled_height);
     }
     if (!self->widget) {
         make_widget (self);

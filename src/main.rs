@@ -75,7 +75,7 @@ mod c {
     extern "C" {
         #[allow(improper_ctypes)]
         fn init_wayland(wayland: *mut Wayland);
-        fn server_context_service_update_keyboard(service: *const UIManager, output: WlOutput, height: u32);
+        fn server_context_service_update_keyboard(service: *const UIManager, output: WlOutput, scaled_height: u32);
         fn server_context_service_real_hide_keyboard(service: *const UIManager);
         fn server_context_service_set_hint_purpose(service: *const UIManager, hint: u32, purpose: u32);
         // This should probably only get called from the gtk main loop,
@@ -151,7 +151,7 @@ mod c {
     ) {
         match msg.panel_visibility {
             Some(PanelCommand::Show { output, height }) => unsafe {
-                server_context_service_update_keyboard(ui_manager, output.0, height);
+                server_context_service_update_keyboard(ui_manager, output.0, height.as_scaled_ceiling());
             },
             Some(PanelCommand::Hide) => unsafe {
                 server_context_service_real_hide_keyboard(ui_manager);
@@ -177,11 +177,33 @@ mod c {
     }
 }
 
+/// Size in pixels that is aware of scaling
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct PixelSize {
+    pub pixels: u32,
+    pub scale_factor: u32,
+}
+
+fn div_ceil(a: u32, b: u32) -> u32 {
+    // Given that it's for pixels on a screen, an overflow is unlikely.
+    (a + b - 1) / b
+}
+
+impl PixelSize {
+    pub fn as_scaled_floor(&self) -> u32 {
+        self.pixels / self.scale_factor
+    }
+
+    pub fn as_scaled_ceiling(&self) -> u32 {
+        div_ceil(self.pixels, self.scale_factor)
+    }
+}
+
 #[derive(Clone, PartialEq, Debug)]
 pub enum PanelCommand {
     Show {
         output: OutputId,
-        height: u32,
+        height: PixelSize,
     },
     Hide,
 }
