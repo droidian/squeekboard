@@ -152,7 +152,7 @@ pub mod c {
                     else { Some(Millimeter(value)) }
                 }
                 state.geometry = Some(Geometry {
-                    phys_size: GSize {
+                    phys_size: Size {
                         width: maybe_mm(phys_width),
                         height: maybe_mm(phys_height),
                     },
@@ -303,13 +303,12 @@ pub mod c {
 
 /// Generic size
 #[derive(Clone, Copy, Debug)]
-pub struct GSize<Unit> {
+pub struct Size<Unit> {
     pub width: Unit,
     pub height: Unit,
 }
 
-/// Unspecified size (TODO: transitional, remove)
-pub type Size = GSize<u32>;
+pub type PixelSize = Size<u32>;
 
 /// wl_output mode
 #[derive(Clone, Copy, Debug)]
@@ -339,7 +338,7 @@ impl ops::Mul<i32> for Millimeter {
 #[derive(Clone, Copy, Debug)]
 pub struct Geometry {
     pub transform: c::Transform,
-    pub phys_size: GSize<Option<Millimeter>>,
+    pub phys_size: Size<Option<Millimeter>>,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -368,18 +367,18 @@ impl OutputState {
         width: T,
         height: T,
         transform: self::c::Transform,
-    ) -> GSize<T> {
+    ) -> Size<T> {
         use self::c::Transform;
 
         match transform {
             Transform::Normal
             | Transform::Rotated180
             | Transform::Flipped
-            | Transform::FlippedRotated180 => GSize {
+            | Transform::FlippedRotated180 => Size {
                 width,
                 height,
             },
-            _ => GSize {
+            _ => Size {
                 width: height,
                 height: width,
             },
@@ -387,7 +386,7 @@ impl OutputState {
     }
 
     /// Return resolution adjusted for current transform
-    pub fn get_pixel_size(&self) -> Option<Size> {
+    pub fn get_pixel_size(&self) -> Option<PixelSize> {
         match self {
             OutputState {
                 current_mode: Some(Mode { width, height } ),
@@ -397,13 +396,13 @@ impl OutputState {
             OutputState {
                 current_mode: Some(Mode { width, height } ),
                 ..
-            } => Some(Size { width: *width as u32, height: *height as u32 } ),
+            } => Some(PixelSize { width: *width as u32, height: *height as u32 } ),
             _ => None,
         }
     }
 
     /// Return physical dimensions adjusted for current transform
-    pub fn get_physical_size(&self) -> Option<GSize<Option<Millimeter>>> {
+    pub fn get_physical_size(&self) -> Option<Size<Option<Millimeter>>> {
         match self {
             OutputState {
                 geometry: Some(Geometry { transform, phys_size } ),
