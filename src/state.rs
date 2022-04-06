@@ -10,6 +10,7 @@ use crate::imservice::{ ContentHint, ContentPurpose };
 use crate::main::{ Commands, PanelCommand, PixelSize };
 use crate::outputs;
 use crate::outputs::{OutputId, OutputState};
+use crate::util::Rational;
 use std::cmp;
 use std::collections::HashMap;
 use std::time::Instant;
@@ -341,7 +342,7 @@ pub mod test {
             id,
             OutputState {
                 current_mode: None,
-                transform: None,
+                geometry: None,
                 scale: 1,
             },
         );

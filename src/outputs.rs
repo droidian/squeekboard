@@ -126,7 +126,7 @@ pub mod c {
         outputs: COutputs,
         wl_output: WlOutput,
         _x: i32, _y: i32,
-        _phys_width: i32, _phys_height: i32,
+        phys_width: i32, phys_height: i32,
         _subpixel: i32,
         _make: *const c_char, _model: *const c_char,
         transform: i32,
@@ -144,7 +144,19 @@ pub mod c {
                 .find_output_mut(wl_output)
                 .map(|o| &mut o.pending);
         match output_state {
-            Some(state) => { state.transform = Some(transform) },
+            Some(state) => {
+                fn maybe_mm(value: i32) -> Option<Millimeter> {
+                    if value == 0 { None }
+                    else { Some(Millimeter(value)) }
+                }
+                state.geometry = Some(Geometry {
+                    phys_size: GSize {
+                        width: maybe_mm(phys_width),
+                        height: maybe_mm(phys_height),
+                    },
+                    transform,
+                });
+            },
             None => log_print!(
                 logging::Level::Warning,
                 "Got geometry on unknown output",
@@ -286,12 +298,16 @@ pub mod c {
     // TODO: handle unregistration
 }
 
+
 /// Generic size
-#[derive(Clone)]
-pub struct Size {
-    pub width: u32,
-    pub height: u32,
+#[derive(Clone, Copy, Debug)]
+pub struct GSize<Unit> {
+    pub width: Unit,
+    pub height: Unit,
 }
+
+/// Unspecified size (TODO: transitional, remove)
+pub type Size = GSize<u32>;
 
 /// wl_output mode
 #[derive(Clone, Copy, Debug)]
@@ -301,9 +317,19 @@ pub struct Mode {
 }
 
 #[derive(Clone, Copy, Debug)]
+pub struct Millimeter(pub i32);
+
+/// All geometry parameters
+#[derive(Clone, Copy, Debug)]
+pub struct Geometry {
+    pub transform: c::Transform,
+    pub phys_size: GSize<Option<Millimeter>>,
+}
+
+#[derive(Clone, Copy, Debug)]
 pub struct OutputState {
     pub current_mode: Option<Mode>,
-    pub transform: Option<c::Transform>,
+    pub geometry: Option<Geometry>,
     pub scale: i32,
 }
 
@@ -317,7 +343,7 @@ impl OutputState {
     fn uninitialized() -> OutputState {
         OutputState {
             current_mode: None,
-            transform: None,
+            geometry: None,
             scale: 1,
         }
     }
@@ -327,7 +353,7 @@ impl OutputState {
         match self {
             OutputState {
                 current_mode: Some(Mode { width, height } ),
-                transform: Some(transform),
+                geometry: Some(Geometry { transform, .. } ),
                 scale: _,
             } => Some(
                 match transform {

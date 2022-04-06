@@ -157,6 +157,12 @@ pub fn find_max_double<T, I, F>(iterator: I, get: F)
         .0
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct Rational {
+    pub numerator: i32,
+    pub denominator: u32,
+}
+
 /// Compares pointers but not internal values of Rc
 pub struct Pointer<T>(pub Rc<T>);
 
