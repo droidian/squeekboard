@@ -7,6 +7,7 @@ use ::float_ord::FloatOrd;
 use std::borrow::Borrow;
 use std::hash::{ Hash, Hasher };
 use std::iter::FromIterator;
+use std::ops::Mul;
 
 pub mod c {
     use super::*;
@@ -157,10 +158,52 @@ pub fn find_max_double<T, I, F>(iterator: I, get: F)
         .0
 }
 
+pub trait DivCeil<Rhs = Self> {
+    type Output;
+    fn div_ceil(self, rhs: Rhs) -> Self::Output;
+}
+
+/// Newer Rust introduces this natively,
+/// but we don't always have newer Rust.
+impl DivCeil for i32 {
+    type Output = Self;
+    fn div_ceil(self, other: i32) -> Self::Output {
+        let d = self / other;
+        let m = self % other;
+        if m == 0 { d } else { d + 1}
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
-pub struct Rational {
-    pub numerator: i32,
+pub struct Rational<T> {
+    pub numerator: T,
     pub denominator: u32,
+}
+
+impl<U, T: DivCeil<i32, Output=U>> Rational<T> {
+    pub fn ceil(self) -> U {
+        self.numerator.div_ceil(self.denominator as i32)
+    }
+}
+
+impl<T: Mul<i32, Output=T>> Mul<i32> for Rational<T> {
+    type Output = Self;
+    fn mul(self, m: i32) -> Self {
+        Self {
+            numerator: self.numerator * m,
+            denominator: self.denominator,
+        }
+    }
+}
+
+impl<U, T: Mul<U, Output=T>> Mul<Rational<U>> for Rational<T> {
+    type Output = Self;
+    fn mul(self, m: Rational<U>) -> Self {
+        Self {
+            numerator: self.numerator * m.numerator,
+            denominator: self.denominator * m.denominator,
+        }
+    }
 }
 
 /// Compares pointers but not internal values of Rc
