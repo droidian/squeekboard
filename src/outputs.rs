@@ -313,8 +313,8 @@ pub type PixelSize = Size<u32>;
 /// wl_output mode
 #[derive(Clone, Copy, Debug)]
 pub struct Mode {
-    width: i32,
-    height: i32,
+    pub width: i32,
+    pub height: i32,
 }
 
 #[derive(Clone, Copy, Debug)]

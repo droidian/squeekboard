@@ -566,4 +566,29 @@ pub mod test {
         );
 
     }
+
+    #[test]
+    fn size_l5() {
+        use crate::outputs::{Mode, Geometry, c, Size};
+        assert_eq!(
+            Application::get_preferred_height(&OutputState {
+                current_mode: Some(Mode {
+                    width: 720,
+                    height: 1440,
+                }),
+                geometry: Some(Geometry{
+                    transform: c::Transform::Normal,
+                    phys_size: Size {
+                        width: Some(Millimeter(65)),
+                        height: Some(Millimeter(130)),
+                    },
+                }),
+                scale: 2,
+            }),
+            Some(PixelSize {
+                scale_factor: 2,
+                pixels: 420,
+            }),
+        );
+    }
 }
