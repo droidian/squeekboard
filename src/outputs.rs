@@ -4,9 +4,11 @@
 
 /*! Managing Wayland outputs */
 
+use std::ops;
 use std::vec::Vec;
 use crate::event_loop;
 use ::logging;
+use crate::util::DivCeil;
 
 // traits
 use ::logging::Warn;
@@ -126,7 +128,7 @@ pub mod c {
         outputs: COutputs,
         wl_output: WlOutput,
         _x: i32, _y: i32,
-        _phys_width: i32, _phys_height: i32,
+        phys_width: i32, phys_height: i32,
         _subpixel: i32,
         _make: *const c_char, _model: *const c_char,
         transform: i32,
@@ -144,7 +146,19 @@ pub mod c {
                 .find_output_mut(wl_output)
                 .map(|o| &mut o.pending);
         match output_state {
-            Some(state) => { state.transform = Some(transform) },
+            Some(state) => {
+                fn maybe_mm(value: i32) -> Option<Millimeter> {
+                    if value == 0 { None }
+                    else { Some(Millimeter(value)) }
+                }
+                state.geometry = Some(Geometry {
+                    phys_size: Size {
+                        width: maybe_mm(phys_width),
+                        height: maybe_mm(phys_height),
+                    },
+                    transform,
+                });
+            },
             None => log_print!(
                 logging::Level::Warning,
                 "Got geometry on unknown output",
@@ -286,24 +300,51 @@ pub mod c {
     // TODO: handle unregistration
 }
 
+
 /// Generic size
-#[derive(Clone)]
-pub struct Size {
-    pub width: u32,
-    pub height: u32,
+#[derive(Clone, Copy, Debug)]
+pub struct Size<Unit> {
+    pub width: Unit,
+    pub height: Unit,
 }
+
+pub type PixelSize = Size<u32>;
 
 /// wl_output mode
 #[derive(Clone, Copy, Debug)]
 pub struct Mode {
-    width: i32,
-    height: i32,
+    pub width: i32,
+    pub height: i32,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct Millimeter(pub i32);
+
+impl DivCeil<i32> for Millimeter {
+    type Output = Millimeter;
+    fn div_ceil(self, other: i32) -> Self {
+        Self(self.0.div_ceil(other))
+    }
+}
+
+impl ops::Mul<i32> for Millimeter {
+    type Output = Self;
+    fn mul(self, m: i32) -> Self {
+        Self(self.0 * m as i32)
+    }
+}
+
+/// All geometry parameters
+#[derive(Clone, Copy, Debug)]
+pub struct Geometry {
+    pub transform: c::Transform,
+    pub phys_size: Size<Option<Millimeter>>,
 }
 
 #[derive(Clone, Copy, Debug)]
 pub struct OutputState {
     pub current_mode: Option<Mode>,
-    pub transform: Option<c::Transform>,
+    pub geometry: Option<Geometry>,
     pub scale: i32,
 }
 
@@ -317,33 +358,56 @@ impl OutputState {
     fn uninitialized() -> OutputState {
         OutputState {
             current_mode: None,
-            transform: None,
+            geometry: None,
             scale: 1,
         }
     }
 
-    pub fn get_pixel_size(&self) -> Option<Size> {
+    fn transform_size<T>(
+        width: T,
+        height: T,
+        transform: self::c::Transform,
+    ) -> Size<T> {
         use self::c::Transform;
+
+        match transform {
+            Transform::Normal
+            | Transform::Rotated180
+            | Transform::Flipped
+            | Transform::FlippedRotated180 => Size {
+                width,
+                height,
+            },
+            _ => Size {
+                width: height,
+                height: width,
+            },
+        }
+    }
+
+    /// Return resolution adjusted for current transform
+    pub fn get_pixel_size(&self) -> Option<PixelSize> {
         match self {
             OutputState {
                 current_mode: Some(Mode { width, height } ),
-                transform: Some(transform),
+                geometry: Some(Geometry { transform, .. } ),
                 scale: _,
-            } => Some(
-                match transform {
-                    Transform::Normal
-                    | Transform::Rotated180
-                    | Transform::Flipped
-                    | Transform::FlippedRotated180 => Size {
-                        width: *width as u32,
-                        height: *height as u32,
-                    },
-                    _ => Size {
-                        width: *height as u32,
-                        height: *width as u32,
-                    },
-                }
-            ),
+            } => Some(Self::transform_size(*width as u32, *height as u32, *transform)),
+            OutputState {
+                current_mode: Some(Mode { width, height } ),
+                ..
+            } => Some(PixelSize { width: *width as u32, height: *height as u32 } ),
+            _ => None,
+        }
+    }
+
+    /// Return physical dimensions adjusted for current transform
+    pub fn get_physical_size(&self) -> Option<Size<Option<Millimeter>>> {
+        match self {
+            OutputState {
+                geometry: Some(Geometry { transform, phys_size } ),
+                ..
+            } => Some(Self::transform_size(phys_size.width, phys_size.height, *transform)),
             _ => None,
         }
     }

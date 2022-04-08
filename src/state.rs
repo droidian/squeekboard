@@ -9,7 +9,8 @@ use crate::animation;
 use crate::imservice::{ ContentHint, ContentPurpose };
 use crate::main::{ Commands, PanelCommand, PixelSize };
 use crate::outputs;
-use crate::outputs::{OutputId, OutputState};
+use crate::outputs::{Millimeter, OutputId, OutputState};
+use crate::util::Rational;
 use std::cmp;
 use std::collections::HashMap;
 use std::time::Instant;
@@ -241,23 +242,65 @@ impl Application {
     fn get_preferred_height(output: &OutputState) -> Option<PixelSize> {
         output.get_pixel_size()
             .map(|px_size| {
+                // Assume isotropy.
+                // Pixels/mm.
+                let density = output.get_physical_size()
+                    .and_then(|size| size.width)
+                    .map(|width| Rational {
+                        numerator: px_size.width as i32,
+                        denominator: width.0 as u32,
+                    })
+                    // Whatever the Librem 5 has,
+                    // as a good default.
+                    .unwrap_or(Rational {
+                        numerator: 720,
+                        denominator: 65,
+                    });
+
+                // Based on what works on the L5.
+                // Exceeding that probably wastes space. Reducing makes typing harder.
+                const IDEAL_TARGET_SIZE: Rational<Millimeter> = Rational {
+                    numerator: Millimeter(948),
+                    denominator: 100,
+                };
+
+                // TODO: calculate based on selected layout
+                const ROW_COUNT: u32 = 4;
+
                 let height = {
-                    if px_size.width > px_size.height {
-                        px_size.width / 5
-                    } else {
-                        let abstract_width
-                            = PixelSize {
-                                scale_factor: output.scale as u32,
-                                pixels: px_size.width,
-                            } 
-                            .as_scaled_ceiling();
-                        if (abstract_width < 540) && (px_size.width > 0) {
-                            px_size.width * 7 / 12 // to match 360×210
+                    let ideal_height = IDEAL_TARGET_SIZE * ROW_COUNT as i32;
+                    let ideal_height_px = (ideal_height * density).ceil().0 as u32;
+
+                    // Reduce height to match what the layout can fill.
+                    // For this, we need to guess if normal or wide will be picked up.
+                    // This must match `eek_gtk_keyboard.c::get_type`.
+                    // TODO: query layout database and choose one directly
+                    let abstract_width
+                        = PixelSize {
+                            scale_factor: output.scale as u32,
+                            pixels: px_size.width,
+                        } 
+                        .as_scaled_ceiling();
+
+                    let height_as_widths = {
+                        if abstract_width < 540 {
+                            // Normal
+                            Rational {
+                                numerator: 210,
+                                denominator: 360,
+                            }
                         } else {
-                            // Here we switch to wide layout, less height needed
-                            px_size.width * 7 / 22
+                            // Wide
+                            Rational {
+                                numerator: 172,
+                                denominator: 540,
+                            }
                         }
-                    }
+                    };
+                    cmp::min(
+                        ideal_height_px,
+                        (height_as_widths * px_size.width as i32).ceil() as u32,
+                    )
                 };
                 PixelSize {
                     scale_factor: output.scale as u32,
@@ -341,7 +384,7 @@ pub mod test {
             id,
             OutputState {
                 current_mode: None,
-                transform: None,
+                geometry: None,
                 scale: 1,
             },
         );
@@ -522,5 +565,30 @@ pub mod test {
             now.saturating_duration_since(start),
         );
 
+    }
+
+    #[test]
+    fn size_l5() {
+        use crate::outputs::{Mode, Geometry, c, Size};
+        assert_eq!(
+            Application::get_preferred_height(&OutputState {
+                current_mode: Some(Mode {
+                    width: 720,
+                    height: 1440,
+                }),
+                geometry: Some(Geometry{
+                    transform: c::Transform::Normal,
+                    phys_size: Size {
+                        width: Some(Millimeter(65)),
+                        height: Some(Millimeter(130)),
+                    },
+                }),
+                scale: 2,
+            }),
+            Some(PixelSize {
+                scale_factor: 2,
+                pixels: 420,
+            }),
+        );
     }
 }
