@@ -18,6 +18,7 @@
  */
 
 use std::cell::RefCell;
+use std::cmp;
 use std::collections::{ HashMap, HashSet };
 use std::ffi::CString;
 use std::fmt;
@@ -26,6 +27,7 @@ use std::vec::Vec;
 
 use ::action::Action;
 use ::drawing;
+use ::float_ord::FloatOrd;
 use ::keyboard::KeyState;
 use ::logging;
 use ::manager;
@@ -117,28 +119,30 @@ pub mod c {
     pub struct Transformation {
         pub origin_x: f64,
         pub origin_y: f64,
-        pub scale: f64,
+        pub scale_x: f64,
+        pub scale_y: f64,
     }
 
     impl Transformation {
         /// Applies the new transformation after this one
         pub fn chain(self, next: Transformation) -> Transformation {
             Transformation {
-                origin_x: self.origin_x + self.scale * next.origin_x,
-                origin_y: self.origin_y + self.scale * next.origin_y,
-                scale: self.scale * next.scale,
+                origin_x: self.origin_x + self.scale_x * next.origin_x,
+                origin_y: self.origin_y + self.scale_y * next.origin_y,
+                scale_x: self.scale_x * next.scale_x,
+                scale_y: self.scale_y * next.scale_y,
             }
         }
         fn forward(&self, p: Point) -> Point {
             Point {
-                x: (p.x - self.origin_x) / self.scale,
-                y: (p.y - self.origin_y) / self.scale,
+                x: (p.x - self.origin_x) / self.scale_x,
+                y: (p.y - self.origin_y) / self.scale_y,
             }
         }
         fn reverse(&self, p: Point) -> Point {
             Point {
-                x: p.x * self.scale + self.origin_x,
-                y: p.y * self.scale + self.origin_y,
+                x: p.x * self.scale_x + self.origin_x,
+                y: p.y * self.scale_y + self.origin_y,
             }
         }
         pub fn reverse_bounds(&self, b: Bounds) -> Bounds {
@@ -394,7 +398,8 @@ pub mod c {
                 let transform = Transformation {
                     origin_x: 10f64,
                     origin_y: 11f64,
-                    scale: 12f64,
+                    scale_x: 12f64,
+                    scale_y: 13f64,
                 };
                 let point = Point { x: 1f64, y: 1f64 };
                 let transformed = transform.reverse(transform.forward(point.clone()));
@@ -755,16 +760,20 @@ impl Layout {
         let size = self.calculate_size();
         let h_scale = available.width / size.width;
         let v_scale = available.height / size.height;
-        let scale = if h_scale < v_scale { h_scale } else { v_scale };
+        // Allow up to 5% (and a bit more) horizontal stretching for filling up available space
+        let scale_x = if (h_scale / v_scale) < 1.06 { h_scale } else { v_scale };
+        let scale_y = cmp::min(FloatOrd(h_scale), FloatOrd(v_scale)).0;
         let outside_margins = c::Transformation {
-            origin_x: (available.width - (scale * size.width)) / 2.0,
-            origin_y: (available.height - (scale * size.height)) / 2.0,
-            scale: scale,
+            origin_x: (available.width - (scale_x * size.width)) / 2.0,
+            origin_y: (available.height - (scale_y * size.height)) / 2.0,
+            scale_x: scale_x,
+            scale_y: scale_y,
         };
         outside_margins.chain(c::Transformation {
             origin_x: self.margins.left,
             origin_y: self.margins.top,
-            scale: 1.0,
+            scale_x: 1.0,
+            scale_y: 1.0,
         })
     }
 
@@ -1471,8 +1480,63 @@ mod test {
         let transformation = layout.calculate_transformation(
             Size { width: 2.0, height: 2.0 }
         );
-        assert_eq!(transformation.scale, 1.0);
+        assert_eq!(transformation.scale_x, 1.0);
+        assert_eq!(transformation.scale_y, 1.0);
         assert_eq!(transformation.origin_x, 0.5);
         assert_eq!(transformation.origin_y, 0.0);
+    }
+
+    #[test]
+    fn check_stretching() {
+        // just one button
+        let view = View::new(vec![
+            (
+                0.0,
+                Row::new(vec![(
+                    0.0,
+                    Box::new(Button {
+                        size: Size { width: 1.0, height: 1.0 },
+                        ..*make_button_with_state("foo".into(), make_state())
+                    }),
+                )]),
+            ),
+        ]);
+        let layout = Layout {
+            current_view: String::new(),
+            view_latched: LatchedState::Not,
+            keymaps: Vec::new(),
+            kind: ArrangementKind::Base,
+            pressed_keys: HashSet::new(),
+            margins: Margins {
+                top: 0.0,
+                left: 0.0,
+                right: 0.0,
+                bottom: 0.0,
+            },
+            views: hashmap! {
+                String::new() => (c::Point { x: 0.0, y: 0.0 }, view),
+            },
+            purpose: ContentPurpose::Normal,
+        };
+        let transformation = layout.calculate_transformation(
+            Size { width: 100.0, height: 100.0 }
+        );
+        assert_eq!(transformation.scale_x, 100.0);
+        assert_eq!(transformation.scale_y, 100.0);
+        let transformation = layout.calculate_transformation(
+            Size { width: 95.0, height: 100.0 }
+        );
+        assert_eq!(transformation.scale_x, 95.0);
+        assert_eq!(transformation.scale_y, 95.0);
+        let transformation = layout.calculate_transformation(
+            Size { width: 105.0, height: 100.0 }
+        );
+        assert_eq!(transformation.scale_x, 105.0);
+        assert_eq!(transformation.scale_y, 100.0);
+        let transformation = layout.calculate_transformation(
+            Size { width: 106.0, height: 100.0 }
+        );
+        assert_eq!(transformation.scale_x, 100.0);
+        assert_eq!(transformation.scale_y, 100.0);
     }
 }

@@ -418,7 +418,8 @@ eek_gtk_keyboard_new (EekboardContextService *eekservice,
         .widget_to_layout = {
             .origin_x = 0,
             .origin_y = 0,
-            .scale = 1,
+            .scale_x = 1,
+            .scale_y = 1,
         },
     };
     priv->render_geometry = initial_geometry;

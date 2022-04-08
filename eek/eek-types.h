@@ -87,7 +87,8 @@ void       eek_bounds_free     (EekBounds       *bounds);
 struct transformation {
     gdouble origin_x;
     gdouble origin_y;
-    gdouble scale;
+    gdouble scale_x;
+    gdouble scale_y;
 };
 
 G_END_DECLS
