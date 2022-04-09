@@ -3,6 +3,7 @@ image: pureos/byzantium
 stages:
   - build
   - test
+  - deploy
 
 before_script:
   - apt-get -y update
@@ -158,3 +159,17 @@ check_release:
   except:
     variables:
       - $PKG_ONLY == "1"
+
+pages:
+  stage: deploy
+  needs:
+    - build_docs
+    - build_reference
+  script:
+    - mv _build/ public/
+  artifacts:
+    paths:
+      - public
+  only:
+    refs:
+      - master
