@@ -219,7 +219,7 @@ eek_renderer_render_keyboard (EekRenderer *self,
 
     cairo_save(cr);
     cairo_translate (cr, geometry.widget_to_layout.origin_x, geometry.widget_to_layout.origin_y);
-    cairo_scale (cr, geometry.widget_to_layout.scale, geometry.widget_to_layout.scale);
+    cairo_scale (cr, geometry.widget_to_layout.scale_x, geometry.widget_to_layout.scale_y);
 
     squeek_draw_layout_base_view(keyboard->layout, self, cr);
     squeek_layout_draw_all_changed(keyboard->layout, self, cr, submission);
