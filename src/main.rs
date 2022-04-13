@@ -4,6 +4,7 @@
 
 /*! Glue for the main loop. */
 use crate::outputs::OutputId;
+use crate::debug;
 use crate::state;
 use glib::{Continue, MainContext, PRIORITY_DEFAULT, Receiver};
 
@@ -93,6 +94,8 @@ mod c {
         let (sender, receiver) = MainContext::channel(PRIORITY_DEFAULT);
         let now = Instant::now();
         let state_manager = driver::Threaded::new(sender, state::Application::new(now));
+
+        debug::init(state_manager.clone());
 
         let outputs = Outputs::new(state_manager.clone());
         let mut wayland = Box::new(Wayland::new(outputs));

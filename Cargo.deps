@@ -1,6 +1,10 @@
 # Dependencies which change based on build flags
 bitflags = "1.2.*"
 clap = { version = "2.33.*", default-features = false }
+zbus = "1.0.*"
+zvariant = "2.0.*"
+# Newer versions seem to confuse the version of Cargo on Debian Bullseye
+zvariant_derive = "2.0.*"
 
 [dependencies.cairo-rs]
 version = "0.7.*"
