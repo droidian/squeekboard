@@ -1,0 +1,46 @@
+# Korean translation for squeekboard.
+# Copyright (C) 2022 squeekboard'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the squeekboard package.
+# Moon Sungjoon <sumoon@seoulsaram.org>, 2022.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: https://gitlab.gnome.org/World/Phosh/squeekboard/"
+"issues\n"
+"POT-Creation-Date: 2022-04-09 18:43+0000\n"
+"PO-Revision-Date: 2022-04-11 19:23+0900\n"
+"Last-Translator: Moon Sungjoon <sumoon@seoulsaram.org>\n"
+"Language-Team: \n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Poedit 3.0.1\n"
+
+#. translators: This is a emmoji keyboard layout
+#: data/popover.ui:6
+msgid "Emoji"
+msgstr "이모지"
+
+#. translators: This is a terminal keyboard layout
+#: data/popover.ui:12
+msgid "Terminal"
+msgstr "터미널"
+
+#: data/popover.ui:18
+msgid "Keyboard Settings"
+msgstr "키보드 설정"
+
+#: data/sm.puri.Squeekboard.desktop.in.in:3
+msgid "Squeekboard"
+msgstr "스퀴크 보드"
+
+#: data/sm.puri.Squeekboard.desktop.in.in:4
+msgid "On Screen Keyboard"
+msgstr "화상 키보드"
+
+#: data/sm.puri.Squeekboard.desktop.in.in:5
+msgid "An on screen virtual keyboard"
+msgstr "가상 키보드"
