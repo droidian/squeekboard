@@ -2,6 +2,10 @@
 # For the newer-than-Byzantium config
 bitflags = "1.3.*"
 clap = { version = "3.1.*", features=["std"], default-features = false }
+zbus = "1.9.*"
+zvariant = "2.10.*"
+# Newer versions seem to confuse the version of Cargo on Debian Bullseye
+zvariant_derive = "2.10.*"
 
 [dependencies.cairo-rs]
 version = "0.14.*"
