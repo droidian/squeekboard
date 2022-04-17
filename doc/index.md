@@ -7,6 +7,7 @@ Contents
 * [Tutorial](tutorial.md)
 * [Contributing](hacking.md)
 * [Switching views](views.md)
+* [Reference](doc/rs/)
 
 Introduction
 ------------
