@@ -1,14 +1,6 @@
 Welcome to squeekboard's documentation!
 =======================================
 
-Contents
---------
-
-* [Tutorial](tutorial.md)
-* [Contributing](hacking.md)
-* [Switching views](views.md)
-* [Reference](doc/rs/)
-
 Introduction
 ------------
 
@@ -23,9 +15,15 @@ Layouts are created using a text-based format, based on YAML.
 
 TODO: Provide a description of the format.
 
+### Views
+
 Squeekboard layouts are separated into *views* and use a *room metaphor* to [switch views](views.md).
 
 Contributions
 -------------
 
 Anyone is free to modify *squeekboard*. See the [contributing document](hacking.md).
+
+### Code documentation
+
+To expose the structure of Squeekboard in detail, there's a [code reference](doc/rs).
