@@ -3,6 +3,7 @@ image: pureos/byzantium
 stages:
   - build
   - test
+  - deploy
 
 before_script:
   - apt-get -y update
@@ -94,6 +95,22 @@ build_deb:future:
     - debuild -i -us -uc -b
     - cp ../*.deb .
 
+build_reference:
+  stage: build
+  needs:
+    - job: build_meson
+      artifacts: true
+  artifacts:
+    paths:
+      - _build/doc
+  script:
+    - apt-get -y install cargo
+    - cd _build
+    - ../cargo.sh doc --no-deps --document-private-items
+  except:
+    variables:
+      - $PKG_ONLY == "1"
+
 test_lintian:
   stage: test
   needs:
@@ -142,3 +159,17 @@ check_release:
   except:
     variables:
       - $PKG_ONLY == "1"
+
+pages:
+  stage: deploy
+  needs:
+    - build_docs
+    - build_reference
+  script:
+    - mv _build/ public/
+  artifacts:
+    paths:
+      - public
+  only:
+    refs:
+      - master
