@@ -761,7 +761,7 @@ impl Layout {
         let h_scale = available.width / size.width;
         let v_scale = available.height / size.height;
         // Allow up to 5% (and a bit more) horizontal stretching for filling up available space
-        let scale_x = if (h_scale / v_scale) < 1.06 { h_scale } else { v_scale };
+        let scale_x = if (h_scale / v_scale) < 1.055 { h_scale } else { v_scale };
         let scale_y = cmp::min(FloatOrd(h_scale), FloatOrd(v_scale)).0;
         let outside_margins = c::Transformation {
             origin_x: (available.width - (scale_x * size.width)) / 2.0,
