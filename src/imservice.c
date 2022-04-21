@@ -1,6 +1,7 @@
-#include "submission.h"
+#include "input-method-unstable-v2-client-protocol.h"
+#include "virtual-keyboard-unstable-v1-client-protocol.h"
 
-#include <glib.h>
+#include "submission.h"
 
 struct imservice;
 

@@ -6,8 +6,8 @@
 
 use std::time::Duration;
 
-use crate::main::PixelSize;
 use crate::outputs::OutputId;
+use crate::panel::PixelSize;
 
 /// The keyboard should hide after this has elapsed to prevent flickering.
 pub const HIDING_TIMEOUT: Duration = Duration::from_millis(200);

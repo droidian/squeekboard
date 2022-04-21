@@ -151,7 +151,7 @@ mod test {
     use super::*;
     use crate::animation;
     use crate::imservice::{ ContentHint, ContentPurpose };
-    use crate::main::PanelCommand;
+    use crate::panel;
     use crate::state::{ Application, InputMethod, InputMethodDetails, Presence, visibility };
     use crate::state::test::application_with_fake_output;
 
@@ -176,13 +176,13 @@ mod test {
         
         let l = State::new(state, now);
         let (l, commands) = handle_event(l, InputMethod::InactiveSince(now).into(), now);
-        assert_matches!(commands.panel_visibility, Some(PanelCommand::Show{..}));
+        assert_matches!(commands.panel_visibility, Some(panel::Command::Show{..}));
         assert_eq!(l.scheduled_wakeup, Some(now + animation::HIDING_TIMEOUT));
         
         now += animation::HIDING_TIMEOUT;
         
         let (l, commands) = handle_event(l, Event::TimeoutReached(now), now);
-        assert_eq!(commands.panel_visibility, Some(PanelCommand::Hide));
+        assert_eq!(commands.panel_visibility, Some(panel::Command::Hide));
         assert_eq!(l.scheduled_wakeup, None);
     }
 }

@@ -60,10 +60,10 @@ struct _EekboardContextService {
     LevelKeyboard *keyboard; // currently used keyboard
     GSettings *settings; // Owned reference
 
-    // Maybe TODO: it's used only for fetching layout type.
-    // Maybe let UI push the type to this structure?
-    ServerContextService *ui; // unowned reference
-    /// Needed for keymap changes after keyboard updates
+    /// Needed for keymap changes after keyboard updates.
+    // TODO: can the main loop access submission to change the key maps instead?
+    // This should probably land together with passing buttons through state,
+    // to avoid race conditions between setting buttons and key maps.
     struct submission *submission; // unowned
 };
 
@@ -297,6 +297,8 @@ eekboard_context_service_get_keyboard (EekboardContextService *context)
     return context->keyboard;
 }
 
+// Used from Rust.
+// TODO: move hint management to Rust entirely
 void eekboard_context_service_set_hint_purpose(EekboardContextService *context,
                                                uint32_t hint, uint32_t purpose)
 {
@@ -339,8 +341,4 @@ void eekboard_context_service_set_submission(EekboardContextService *context, st
         uint32_t time = gdk_event_get_time(NULL);
         submission_use_layout(context->submission, context->keyboard->layout, time);
     }
-}
-
-void eekboard_context_service_set_ui(EekboardContextService *context, ServerContextService *ui) {
-    context->ui = ui;
 }

@@ -39,16 +39,12 @@ G_DECLARE_FINAL_TYPE(EekboardContextService, eekboard_context_service, EEKBOARD,
 
 EekboardContextService *eekboard_context_service_new(struct squeek_layout_state *state);
 void eekboard_context_service_set_submission(EekboardContextService *context, struct submission *submission);
-void eekboard_context_service_set_ui(EekboardContextService *context, ServerContextService *ui);
 void          eekboard_context_service_destroy (EekboardContextService *context);
 LevelKeyboard *eekboard_context_service_get_keyboard(EekboardContextService *context);
 
 void eekboard_context_service_set_keymap(EekboardContextService *context,
                                          const LevelKeyboard *keyboard);
 
-void eekboard_context_service_set_hint_purpose(EekboardContextService *context,
-                                               uint32_t hint,
-                                               uint32_t purpose);
 void
 eekboard_context_service_use_layout(EekboardContextService *context, struct squeek_layout_state *layout, uint32_t timestamp);
 G_END_DECLS

@@ -55,6 +55,8 @@ typedef struct _EekGtkKeyboardPrivate
 
     GdkEventSequence *sequence; // unowned reference
     LfbEvent *event;
+
+    gulong kb_signal;
 } EekGtkKeyboardPrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE (EekGtkKeyboard, eek_gtk_keyboard, GTK_TYPE_DRAWING_AREA)
@@ -307,11 +309,18 @@ eek_gtk_keyboard_set_property (GObject      *object,
     }
 }
 
+// This may actually get called multiple times in a row
+// if both a parent object and its parent get destroyed
 static void
 eek_gtk_keyboard_dispose (GObject *object)
 {
     EekGtkKeyboard        *self = EEK_GTK_KEYBOARD (object);
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
+
+    if (priv->kb_signal != 0) {
+        g_signal_handler_disconnect(priv->eekboard_context, priv->kb_signal);
+        priv->kb_signal = 0;
+    }
 
     if (priv->renderer) {
         eek_renderer_free(priv->renderer);
@@ -424,7 +433,7 @@ eek_gtk_keyboard_new (EekboardContextService *eekservice,
     };
     priv->render_geometry = initial_geometry;
 
-    g_signal_connect (eekservice,
+    priv->kb_signal = g_signal_connect (eekservice,
                       "notify::keyboard",
                       G_CALLBACK(on_notify_keyboard),
                       ret);
