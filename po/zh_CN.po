@@ -1,0 +1,45 @@
+# Chinese (China) translation for squeekboard.
+# Copyright (C) 2022 squeekboard's COPYRIGHT HOLDER
+# This file is distributed under the same license as the squeekboard package.
+# Luke Luo <2164381336@qq.com>, 2022.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: squeekboard master\n"
+"Report-Msgid-Bugs-To: https://gitlab.gnome.org/World/Phosh/squeekboard/"
+"issues\n"
+"POT-Creation-Date: 2022-04-21 07:28+0000\n"
+"PO-Revision-Date: 2022-04-23 20:30+0800\n"
+"Last-Translator: Luke Luo <njlyf2011@hotmail.com>\n"
+"Language-Team: Chinese (China) <i18n-zh@googlegroups.com>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.0.1\n"
+
+#. translators: This is a emmoji keyboard layout
+#: data/popover.ui:6
+msgid "Emoji"
+msgstr "Emoji 表情"
+
+#. translators: This is a terminal keyboard layout
+#: data/popover.ui:12
+msgid "Terminal"
+msgstr "终端"
+
+#: data/popover.ui:18
+msgid "Keyboard Settings"
+msgstr "键盘设置"
+
+#: data/sm.puri.Squeekboard.desktop.in.in:3
+msgid "Squeekboard"
+msgstr "Squeekboard"
+
+#: data/sm.puri.Squeekboard.desktop.in.in:4
+msgid "On Screen Keyboard"
+msgstr "屏幕键盘"
+
+#: data/sm.puri.Squeekboard.desktop.in.in:5
+msgid "An on screen virtual keyboard"
+msgstr "一个虚拟屏幕键盘"
