@@ -86,4 +86,4 @@ It's strongly recommended to support:
 Developing
 ----------
 
-See [`doc/hacking.md`](doc/hacking.md) for this copy, or the [official documentation](https://developer.puri.sm/projects/squeekboard/) for the current release.
+See [`doc/hacking.md`](doc/hacking.md) for this copy, or the [official documentation](https://world.pages.gitlab.gnome.org/Phosh/squeekboard) for the current release.

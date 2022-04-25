@@ -102,6 +102,17 @@ contain a comma separated list of:
 Coding
 ------
 
+### Reference docs
+
+Reference documentation can be generated using:
+
+```
+cd squeekboard_build/ 
+../squeekboard_source/cargo.sh doc --no-deps --document-private-items
+```
+
+as well as found [online](https://world.pages.gitlab.gnome.org/Phosh/squeekboard/doc/rs/).
+
 ### Project structure
 
 Rust modules should be split into 2 categories: libraries, and user interface. They differ in the way they do error handling.
